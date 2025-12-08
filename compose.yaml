@@ -1,22 +1,23 @@
 services:
   php:
     image: ${IMAGES_PREFIX:-}app-php
-    build:
-      context: .
-      target: frankenphp_dev
     restart: unless-stopped
-    ports:
-      - "8000:80" # Expose le port 80 du conteneur sur le port 8000 de l'hôte pour le développement
     environment:
-      APP_ENV: ${APP_ENV:-dev}
+      SERVER_NAME: ${SERVER_NAME:-localhost}, php:80
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+      TRUSTED_HOSTS: ^${SERVER_NAME:-example\.com|localhost}|php$
+      # The two next lines can be removed after initial installation
+      SYMFONY_VERSION: ${SYMFONY_VERSION:-}
+      STABILITY: ${STABILITY:-stable}
     volumes:
-      - .:/app # Monte le répertoire courant dans /app du conteneur pour le développement
-      - ./var/cache:/app/var/cache # Monte le cache séparément
-      - ./var/log:/app/var/log # Monte les logs séparément
-    depends_on:
-      database:
-        condition: service_healthy
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      # HTTP
+      - target: 80
+        published: ${HTTP_PORT:-80}
+        protocol: tcp
 
   database:
     image: postgres:${POSTGRES_VERSION:-16}-alpine
@@ -24,16 +25,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
       POSTGRES_USER: ${POSTGRES_USER:-app}
-    healthcheck:
-      test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}" ]
-      timeout: 5s
-      retries: 5
-      start_period: 60s
     volumes:
       - database_data:/var/lib/postgresql/data:rw
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
 
 volumes:
-  database_data:
   caddy_data:
   caddy_config:
+  database_data:

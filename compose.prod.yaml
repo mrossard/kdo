@@ -1,7 +1,10 @@
 services:
   php:
     build:
+      context: .
       target: frankenphp_prod
-    ports:
-      # Map container port 80 (HTTP) to host port 8081 for reverse proxy
-      - "8081:80"
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: 0
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-16}&charset=utf8
+      MAILER_DSN: ${MAILER_DSN}
