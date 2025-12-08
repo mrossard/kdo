@@ -94,7 +94,6 @@ class ContactController extends AbstractController
                     $contactRequest->setSender($user);
                     
                     $emailMessage = (new Email())
-                        ->from('no-reply@kdo.fr')
                         ->to($email)
                         ->subject('Nouvelle demande de contact sur KDO');
 
