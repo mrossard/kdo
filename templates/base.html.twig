@@ -38,6 +38,12 @@
                             <span class="icon">{{ ux_icon('material-symbols:euro') }}</span>
                             <span>Finances</span>
                         </a>
+                        {% if is_granted('ROLE_ADMIN') %}
+                            <a class="navbar-item {% if currentRoute starts with 'app_admin_' %}is-active{% endif %}" href="{{ path('app_admin_users') }}">
+                                <span class="icon">{{ ux_icon('material-symbols:crown') }}</span>
+                                <span>Administration</span>
+                            </a>
+                        {% endif %}
                     {% endif %}
                 </div>
                 <div class="navbar-end">
@@ -46,6 +52,12 @@
                             {{ include('theme/_toggle_button.html.twig', {theme: currentTheme}) }}
                         {% endif %}
                     </div>
+                    {% if is_granted('IS_IMPERSONATOR') %}
+                        <a class="navbar-item has-text-danger" href="{{ path('app_home', {'_switch_user': '_exit'}) }}">
+                            <span class="icon">{{ ux_icon('material-symbols:cancel') }}</span>
+                            <span>Quitter l'impersonnation</span>
+                        </a>
+                    {% endif %}
                     {% if app.user %}
                         <div class="navbar-item has-dropdown is-hoverable">
                             <a class="navbar-link">

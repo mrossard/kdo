@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Administration - Utilisateurs{% endblock %}
+
+{% block body %}
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Administration des utilisateurs</h1>
+
+            <div class="table-container">
+                <table class="table is-fullwidth is-striped is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Nom complet</th>
+                            <th>Rôles</th>
+                            {% if app.environment == 'dev' %}
+                                <th>Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.displayName }}</td>
+                                <td>
+                                    {% for role in user.roles %}
+                                        <span class="tag is-info is-light">{{ role }}</span>
+                                    {% endfor %}
+                                </td>
+                                {% if app.environment == 'dev' %}
+                                    <td>
+                                        <a href="{{ path('app_home', {'_switch_user': user.email}) }}" class="button is-small is-warning">
+                                            Se connecter
+                                        </a>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="has-text-centered">Aucun utilisateur trouvé.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+{% endblock %}
