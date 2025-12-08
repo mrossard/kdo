@@ -1,0 +1,60 @@
+<div class="box">
+    <h3 class="title is-4">Liste de souhaits de {{ project.recipient.displayName }}</h3>
+    
+    {% if project.recipient.wishes is not empty %}
+        <div class="columns is-multiline">
+            {% for wish in project.recipient.wishes %}
+                <div class="column is-6">
+                    <div class="card">
+                        <div class="card-content">
+                            <p class="title is-5">{{ wish.name }}</p>
+                            
+                            {% if wish.description %}
+                                <div class="content">{{ wish.description|nl2br }}</div>
+                            {% endif %}
+
+                            {% if wish.price %}
+                                <p class="mb-2"><strong>Prix estimé :</strong> {{ wish.price }} €</p>
+                            {% endif %}
+                            
+                            {% if wish.url %}
+                                <div class="field">
+                                    <div class="control">
+                                        <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer" class="button is-small is-link is-light">
+                                            <span class="icon is-small">{{ ux_icon('material-symbols:open-in-new') }}</span>
+                                            <span>Voir le produit</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <div class="field mt-3">
+                                {% if wish.id in copied_wish_ids|default([]) %}
+                                    <button class="button is-light is-small is-fullwidth" disabled>
+                                        <span class="icon is-small">{{ ux_icon('material-symbols:check') }}</span>
+                                        <span>Déjà copié</span>
+                                    </button>
+                                {% elseif not project.locked %}
+                                    <form method="post" action="{{ path('app_project_copy_wish', {'id': project.id, 'wish_id': wish.id}) }}"
+                                          hx-post="{{ path('app_project_copy_wish', {'id': project.id, 'wish_id': wish.id}) }}"
+                                          hx-target="body"
+                                          hx-swap="outerHTML">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('copy_wish' ~ wish.id) }}">
+                                        <button type="submit" class="button is-primary is-small is-light is-fullwidth">
+                                            <span class="icon is-small">{{ ux_icon('material-symbols:content-copy') }}</span>
+                                            <span>Copier en idée cadeau</span>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="notification is-info is-light">
+            {{ project.recipient.displayName }} n'a pas encore ajouté de souhaits à sa liste.
+        </div>
+    {% endif %}
+</div>

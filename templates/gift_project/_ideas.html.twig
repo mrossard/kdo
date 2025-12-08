@@ -1,0 +1,93 @@
+<div class="box">
+    <div class="level">
+        <div class="level-left">
+            <h3 class="title is-4">Idées de cadeaux</h3>
+        </div>
+        <div class="level-right">
+            <div class="field has-addons">
+                <p class="control">
+                    <a class="button is-small {{ current_sort == 'status' ? 'is-active is-primary' : '' }}"
+                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'status'}) }}"
+                       hx-target="#project-content"
+                       hx-push-url="true">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:sort') }}</span>
+                        <span>Par statut</span>
+                    </a>
+                </p>
+                <p class="control">
+                    <a class="button is-small {{ current_sort == 'price_asc' ? 'is-active is-primary' : '' }}"
+                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'price_asc'}) }}"
+                       hx-target="#project-content"
+                       hx-push-url="true">
+                        Prix {{ ux_icon('material-symbols:arrow-upward') }}
+                    </a>
+                </p>
+                <p class="control">
+                    <a class="button is-small {{ current_sort == 'price_desc' ? 'is-active is-primary' : '' }}"
+                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'price_desc'}) }}"
+                       hx-target="#project-content"
+                       hx-push-url="true">
+                        Prix {{ ux_icon('material-symbols:arrow-downward') }}
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {# Actions centrées en haut: Verrouiller / Déverrouiller #}
+    {% if app.user == project.owner %}
+        <div class="has-text-centered mb-4">
+            {% if not project.locked %}
+                {% set has_selected_idea = project.giftIdeas|filter(i => i.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED'))|length > 0 %}
+                {% if has_selected_idea %}
+                    <form method="post" action="{{ path('app_project_lock', {'id': project.id}) }}"
+                          hx-post="{{ path('app_project_lock', {'id': project.id}) }}"
+                          hx-confirm="Êtes-vous sûr de vouloir verrouiller le projet ? Plus aucune idée ne pourra être ajoutée ou modifiée."
+                          hx-target="body">
+                        <input type="hidden" name="_token" value="{{ csrf_token('lock_project' ~ project.id) }}">
+                        <button type="submit" class="button is-warning" title="Verrouiller les idées">
+                            <span class="icon">{{ ux_icon('material-symbols:lock') }}</span>
+                            <span>Verrouiller</span>
+                        </button>
+                    </form>
+                {% endif %}
+            {% else %}
+                {# Hide unlock button if the project has been delivered #}
+                {% if project.deliveredAt is null %}
+                    <form method="post" action="{{ path('app_project_unlock', {'id': project.id}) }}"
+                          hx-post="{{ path('app_project_unlock', {'id': project.id}) }}"
+                          hx-confirm="Voulez-vous vraiment déverrouiller le projet ?"
+                          hx-target="body">
+                        <input type="hidden" name="_token" value="{{ csrf_token('unlock_project' ~ project.id) }}">
+                        <button type="submit" class="button is-info" title="Déverrouiller">
+                            <span class="icon">{{ ux_icon('material-symbols:lock-open') }}</span>
+                            <span>Déverrouiller</span>
+                        </button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endif %}
+    {% if gift_ideas is not empty %}
+        <div class="columns is-multiline">
+            {% for idea in gift_ideas %}
+                <div class="column is-6">
+                    {% include 'gift_project/_idea_display.html.twig' with {'idea': idea, 'project': project, 'user': app.user, 'comment_forms': comment_forms} %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="notification is-info is-light">
+            Aucune idée de cadeau proposée pour le moment.
+        </div>
+    {% endif %}
+
+    <hr>
+
+    {% if not project.locked %}
+        <div id="add-idea-form-container">
+            {% include 'gift_project/_gift_idea_add_button.html.twig' %}
+        </div>
+    {% endif %}
+</div>
+

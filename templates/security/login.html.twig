@@ -1,0 +1,66 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connexion{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <div class="columns is-centered">
+            <div class="column is-half">
+                <form method="post">
+                    {% if error %}
+                        <div class="notification is-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                    {% endif %}
+
+                    {% if app.user %}
+                        <div class="mb-3">
+                            Vous êtes connecté en tant que {{ app.user.userIdentifier }}, <a href="{{ path('app_logout') }}">Déconnexion</a>
+                        </div>
+                    {% endif %}
+
+                    <h1 class="title">Veuillez vous connecter</h1>
+
+                    <div class="field">
+                        <label class="label" for="username">E-mail</label>
+                        <div class="control">
+                            <input type="email" value="{{ last_username }}" name="email" id="username" class="input" autocomplete="email" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label" for="password">Mot de passe</label>
+                        <div class="control">
+                            <input type="password" name="password" id="password" class="input" autocomplete="current-password" required>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                    {#
+                        Uncomment this section and add a remember_me option below your firewall to activate remember me functionality.
+                        See https://symfony.com/doc/current/security/remember_me.html
+
+                        <div class="field">
+                            <div class="control">
+                                <label class="checkbox">
+                                    <input type="checkbox" name="_remember_me">
+                                    Se souvenir de moi
+                                </label>
+                            </div>
+                        </div>
+                    #}
+
+                    <div class="field">
+                        <div class="control">
+                            <button class="button is-primary" type="submit">
+                                <span class="icon">{{ ux_icon('material-symbols:login') }}</span>
+                                <span>Se connecter</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

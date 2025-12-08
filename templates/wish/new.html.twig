@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau Souhait{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <div class="columns is-centered">
+            <div class="column is-half">
+                <h1 class="title has-text-centered">Nouveau souhait</h1>
+
+                <div class="box">
+                    {{ include('wish/_form.html.twig', {'button_label': 'Créer'}) }}
+                </div>
+
+                <div class="has-text-centered mt-4">
+                    <a href="{{ path('app_wish_index') }}" class="button is-text">
+                        <span class="icon">{{ ux_icon('material-symbols:arrow-back') }}</span>
+                        <span>Retour à la liste</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

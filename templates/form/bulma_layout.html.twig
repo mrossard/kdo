@@ -1,0 +1,141 @@
+{% use "form_div_layout.html.twig" %}
+
+{# Widgets #}
+
+{%- block form_widget_simple -%}
+    {%- set type = type|default('text') -%}
+    {%- if type == 'range' or type == 'color' -%}
+        {# Attribute "required" is not supported #}
+        {%- set required = false -%}
+    {%- endif -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' input')|trim}) -%}
+    <div class="control">
+        {{- parent() -}}
+    </div>
+{%- endblock -%}
+
+{%- block form_widget_compound -%}
+    <div class="control">
+        {{- parent() -}}
+    </div>
+{%- endblock -%}
+
+{%- block collection_widget -%}
+    {%- if 'collection-item' in attr.class|default('') -%}
+        <div class="collection-item">
+            {{- block('form_widget_simple') -}}
+        </div>
+    {%- else -%}
+        {{- parent() -}}
+    {%- endif -%}
+{%- endblock -%}
+
+{%- block textarea_widget -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' textarea')|trim}) -%}
+    <div class="control">
+        {{- parent() -}}
+    </div>
+{%- endblock -%}
+
+{%- block choice_widget -%}
+    <div class="control">
+        {{- parent() -}}
+    </div>
+{%- endblock -%}
+
+{%- block choice_widget_collapsed -%}
+    <div class="control">
+        <div class="select{% if not valid %} is-danger{% endif %}">
+            {{- parent() -}}
+        </div>
+    </div>
+{%- endblock -%}
+
+{%- block choice_widget_expanded -%}
+    <div class="control">
+        {{- parent() -}}
+    </div>
+{%- endblock -%}
+
+{%- block checkbox_widget -%}
+    <label class="checkbox">
+        {{- parent() -}}
+        {{ label|trans({}, translation_domain) }}
+    </label>
+{%- endblock -%}
+
+{%- block radio_widget -%}
+    <label class="radio">
+        {{- parent() -}}
+        {{ label|trans({}, translation_domain) }}
+    </label>
+{%- endblock -%}
+
+{%- block button_widget -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' button')|trim}) -%}
+    <div class="control">
+        {{- parent() -}}
+    </div>
+{%- endblock -%}
+
+{# Rows #}
+
+{%- block form_row -%}
+    <div class="field">
+        {{- form_label(form) -}}
+        {{- form_widget(form) -}}
+        {{- form_errors(form) -}}
+    </div>
+{%- endblock -%}
+
+{%- block choice_row -%}
+    {%- set force_error = true -%}
+    <div class="field">
+        {{- form_label(form) -}}
+        {{- form_widget(form) -}}
+        {{- form_errors(form) -}}
+    </div>
+{%- endblock -%}
+
+{%- block checkbox_radio_row -%}
+    <div class="field">
+        <div class="control">
+            {{- form_widget(form) -}}
+        </div>
+        {{- form_errors(form) -}}
+    </div>
+{%- endblock -%}
+
+{%- block button_row -%}
+    <div class="field">
+        {{- form_widget(form) -}}
+    </div>
+{%- endblock -%}
+
+{# Labels #}
+
+{%- block form_label -%}
+    {%- if label is not same as(false) -%}
+        {%- if not compound -%}
+            {%- set label_attr = label_attr|merge({for: id}) -%}
+        {%- endif -%}
+        {%- if required -%}
+            {%- set label_attr = label_attr|merge({class: (label_attr.class|default('') ~ ' is-required')|trim}) -%}
+        {%- endif -%}
+        {%- if label is empty -%}
+            {%- set label = name|humanize -%}
+        {%- endif -%}
+        {%- set label_attr = label_attr|merge({class: (label_attr.class|default('label'))|trim}) -%}
+        <label{% for attrname, attrvalue in label_attr %} {{ attrname }}="{{ attrvalue }}"{% endfor %}>{{ label|trans({}, translation_domain) }}</label>
+    {%- endif -%}
+{%- endblock -%}
+
+{# Errors #}
+
+{%- block form_errors -%}
+    {%- if errors|length > 0 -%}
+        {%- for error in errors -%}
+            <p class="help is-danger">{{ error.message }}</p>
+        {%- endfor -%}
+    {%- endif -%}
+{%- endblock -%}

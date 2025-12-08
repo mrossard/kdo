@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Liste de {{ owner.displayName }}{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <h1 class="title">Liste de souhaits de {{ owner.displayName }}</h1>
+        <a href="{{ path('app_contact_index') }}" class="button is-link mb-5">
+            <span class="icon">{{ ux_icon('material-symbols:arrow-back') }}</span>
+            <span>Retour aux contacts</span>
+        </a>
+
+        <div class="columns is-multiline">
+        {% for wish in wishes %}
+            <div class="column is-one-third">
+                <div class="card h-100">
+                    <div class="card-content">
+                        <p class="title is-4">{{ wish.name }}</p>
+                        {% if wish.url %}
+                            <p class="subtitle is-6">
+                                <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer">
+                                    <span class="icon is-small">{{ ux_icon('material-symbols:open-in-new') }}</span>
+                                    <span>Voir le produit</span>
+                                </a>
+                            </p>
+                        {% endif %}
+                        <div class="content">
+                            {{ wish.description|nl2br }}
+                        </div>
+                    </div>
+                    <footer class="card-footer">
+                        <form class="card-footer-item" method="post" action="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
+                              hx-post="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
+                              hx-confirm="Voulez-vous créer un projet cadeau avec ce souhait ?"
+                              hx-target="body">
+                            <input type="hidden" name="_token" value="{{ csrf_token('create_project_from_wish' ~ wish.id) }}">
+                            <button type="submit" class="button is-primary is-small is-fullwidth">
+                                <span class="icon is-small">{{ ux_icon('material-symbols:redeem') }}</span>
+                                <span>Offrir</span>
+                            </button>
+                        </form>
+                    </footer>
+                </div>
+            </div>
+        {% else %}
+            <div class="column is-full">
+                <div class="notification is-info">
+                    Cette liste est vide pour le moment.
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

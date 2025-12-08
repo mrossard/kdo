@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier le souhait{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <div class="columns is-centered">
+            <div class="column is-half">
+                <h1 class="title has-text-centered">Modifier le souhait</h1>
+
+                <div class="box">
+                    {{ include('wish/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+                </div>
+
+                <div class="level is-mobile">
+                    <div class="level-left">
+                        <a href="{{ path('app_wish_index') }}" class="button is-text">
+                            <span class="icon">{{ ux_icon('material-symbols:arrow-back') }}</span>
+                            <span>Retour</span>
+                        </a>
+                    </div>
+                    <div class="level-right">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

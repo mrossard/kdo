@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inscription{% endblock %}
+
+{% block body %}
+    <section class="section">
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-half">
+                    <h1 class="title">Inscription</h1>
+
+                    {{ form_start(registrationForm) }}
+                        <div class="field">
+                            {{ form_label(registrationForm.firstname, 'Prénom', {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(registrationForm.firstname, {'attr': {'class': 'input'}}) }}
+                            </div>
+                            <p class="help is-danger">{{ form_errors(registrationForm.firstname) }}</p>
+                        </div>
+
+                        <div class="field">
+                            {{ form_label(registrationForm.lastname, 'Nom', {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(registrationForm.lastname, {'attr': {'class': 'input'}}) }}
+                            </div>
+                            <p class="help is-danger">{{ form_errors(registrationForm.lastname) }}</p>
+                        </div>
+                        <div class="field">
+                            {{ form_label(registrationForm.email, 'Adresse e-mail', {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(registrationForm.email, {'attr': {'class': 'input'}}) }}
+                            </div>
+                            <p class="help is-danger">{{ form_errors(registrationForm.email) }}</p>
+                        </div>
+
+                        <div class="field">
+                            {{ form_label(registrationForm.plainPassword.first, 'Mot de passe', {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(registrationForm.plainPassword.first, {'attr': {'class': 'input'}}) }}
+                            </div>
+                            <p class="help is-danger">{{ form_errors(registrationForm.plainPassword.first) }}</p>
+                        </div>
+
+                        <div class="field">
+                            {{ form_label(registrationForm.plainPassword.second, 'Confirmer le mot de passe', {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(registrationForm.plainPassword.second, {'attr': {'class': 'input'}}) }}
+                            </div>
+                            <p class="help is-danger">{{ form_errors(registrationForm.plainPassword.second) }}</p>
+                        </div>
+
+                        {# Case à cocher des conditions retirée selon la demande #}
+
+                        <div class="field">
+                            <div class="control">
+                                <button class="button is-primary">
+                                    <span class="icon">{{ ux_icon('material-symbols:person-add') }}</span>
+                                    <span>S’inscrire</span>
+                                </button>
+                            </div>
+                        </div>
+                    {{ form_end(registrationForm) }}
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

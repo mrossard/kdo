@@ -1,0 +1,192 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes Contacts{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <h1 class="title">Mes Contacts</h1>
+
+        {% for message in app.flashes('success') %}
+            <div class="notification is-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+        {% for message in app.flashes('warning') %}
+            <div class="notification is-warning">
+                {{ message }}
+            </div>
+        {% endfor %}
+        {% for message in app.flashes('danger') %}
+            <div class="notification is-danger">
+                {{ message }}
+            </div>
+        {% endfor %}
+        {% for message in app.flashes('info') %}
+            <div class="notification is-info">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <div class="columns">
+            {# Contacts mutuels #}
+            <div class="column">
+                <div class="box">
+                    <h2 class="subtitle">Mes contacts mutuels</h2>
+                    <table class="table is-fullwidth mt-4">
+                        <thead>
+                            <tr>
+                                <th>Contact</th>
+                                <th>Balance</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for contact in my_contacts %}
+                            <tr>
+                                <td>{{ contact.displayName }}</td>
+                                <td>
+                                    {% set balance = contact_balances[contact.id] %}
+                                    {% if balance > 0 %}
+                                        <span class="has-text-success">{{ balance|format_currency('EUR', locale='fr') }}</span>
+                                    {% elseif balance < 0 %}
+                                        <span class="has-text-danger">{{ balance|format_currency('EUR', locale='fr') }}</span>
+                                    {% else %}
+                                        <span class="has-text-grey">0.00 €</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="buttons are-small">
+                                        {% if contact_balances[contact.id] < 0 %}
+                                            <form method="post" action="{{ path('app_contact_settle_debt', {'id': contact.id}) }}" onsubmit="return confirm('Confirmer que {{ contact.displayName }} vous a remboursé ?');">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('settle_debt' ~ contact.id) }}">
+                                                <button class="button is-success is-light" title="Signaler dette payée">
+                                                    <span class="icon">{{ ux_icon('material-symbols:paid') }}</span>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        <a href="{{ path('app_contact_view', {'id': contact.id}) }}" class="button is-info" title="Voir la liste de souhaits">
+                                            <span class="icon">{{ ux_icon('material-symbols:list') }}</span>
+                                        </a>
+                                        <form method="post" action="{{ path('app_contact_remove', {'id': contact.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce contact ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('remove_contact' ~ contact.id) }}">
+                                            <button class="button is-small is-danger" title="Supprimer ce contact">
+                                                <span class="icon">{{ ux_icon('material-symbols:delete') }}</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="3" class="has-text-grey-light is-italic">Vous n'avez pas de contacts mutuels.</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# Envoyer une demande de contact #}
+            <div class="column">
+                <div class="box">
+                    <h2 class="subtitle">Envoyer une demande de contact</h2>
+                    {{ form_start(add_contact_form) }}
+                        <div class="field has-addons">
+                            <div class="control is-expanded">
+                                {{ form_widget(add_contact_form.email) }}
+                            </div>
+                            <div class="control">
+                                <button type="submit" class="button is-primary">
+                                    <span class="icon">{{ ux_icon('material-symbols:send') }}</span>
+                                    <span>Envoyer</span>
+                                </button>
+                            </div>
+                        </div>
+                        {{ form_errors(add_contact_form.email) }}
+                    {{ form_end(add_contact_form) }}
+
+                    <h3 class="subtitle is-6 mt-5">Demandes envoyées (en attente)</h3>
+                    <table class="table is-fullwidth">
+                        <thead>
+                            <tr>
+                                <th>Destinataire</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for request in sent_requests %}
+                            <tr>
+                                <td>{{ request.recipientDisplayName }}</td>
+                                <td>
+                                    {% if request.recipient is null %}
+                                        <span class="tag is-info is-light">Invitation envoyée</span>
+                                    {% else %}
+                                        <span class="tag is-warning is-light">En attente</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="2" class="has-text-grey-light is-italic">Aucune demande envoyée.</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# Demandes reçues #}
+            <div class="column">
+                 <div class="box">
+                    <h2 class="subtitle">Demandes de contact reçues</h2>
+                    <table class="table is-fullwidth">
+                        <thead>
+                            <tr>
+                                <th>Expéditeur</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for request in received_requests %}
+                            <tr>
+                                <td>{{ request.sender.displayName }}</td>
+                                <td>
+                                    <div class="buttons are-small">
+                                        <form method="post" action="{{ path('app_contact_request_accept', {'id': request.id}) }}" onsubmit="return confirm('Accepter la demande de {{ request.sender.displayName }} ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('accept_request' ~ request.id) }}">
+                                            <button class="button is-success">
+                                                <span class="icon">{{ ux_icon('material-symbols:check') }}</span>
+                                                <span>Accepter</span>
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{{ path('app_contact_request_decline', {'id': request.id}) }}" onsubmit="return confirm('Refuser la demande de {{ request.sender.displayName }} ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('decline_request' ~ request.id) }}">
+                                            <button class="button is-danger">
+                                                <span class="icon">{{ ux_icon('material-symbols:close') }}</span>
+                                                <span>Refuser</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                             <tr>
+                                <td colspan="2" class="has-text-grey-light is-italic">Aucune demande reçue.</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-5">
+             <a href="{{ path('app_wish_index') }}" class="button">
+                <span class="icon">{{ ux_icon('material-symbols:arrow-back') }}</span>
+                <span>Retour à ma liste</span>
+             </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

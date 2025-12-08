@@ -1,0 +1,99 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes Projets de Cadeaux{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <div class="level">
+            <div class="level-left">
+                <h1 class="title">
+                    {% if show_archived %}
+                        Archives
+                    {% else %}
+                        Projets de Cadeaux
+                    {% endif %}
+                </h1>
+            </div>
+            <div class="level-right">
+                <div class="buttons">
+                    <a href="{{ path('app_project_index', {'archived': show_archived ? 0 : 1}) }}" class="button is-light">
+                        {% if show_archived %}
+                            <span class="icon">{{ ux_icon('material-symbols:arrow-back') }}</span>
+                            <span>Retour aux projets actifs</span>
+                        {% else %}
+                            <span class="icon">{{ ux_icon('material-symbols:archive') }}</span>
+                            <span>Voir les archives</span>
+                        {% endif %}
+                    </a>
+                    <a href="{{ path('app_project_new') }}" class="button is-primary">
+                        <span class="icon">{{ ux_icon('material-symbols:add') }}</span>
+                        <span>Nouveau Projet</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns is-multiline">
+        {% for project in projects %}
+            <div class="column is-half">
+                <div class="card">
+                    <header class="card-header">
+                        <p class="card-header-title is-size-4">
+                            {{ project.name }}
+                            {% if project.locked %}
+                                <span class="tag is-warning is-small ml-2">
+                                    <span class="icon is-small">{{ ux_icon('material-symbols:lock') }}</span>
+                                    <span>Verrouillé</span>
+                                </span>
+                            {% endif %}
+                            
+                            {% set last_read = null %}
+                            {% for status in app.user.projectReadStatuses %}
+                                {% if status.project.id == project.id %}
+                                    {% set last_read = status.lastReadAt %}
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if project.lastActivityAt and (last_read is null or project.lastActivityAt > last_read) %}
+                                <span class="tag is-danger is-small ml-2">
+                                    <span class="icon is-small">{{ ux_icon('material-symbols:mark-email-unread') }}</span>
+                                    <span>Nouveau</span>
+                                </span>
+                            {% endif %}
+                        </p>
+                        <span class="card-header-icon">
+                            <span class="tag is-info is-light">Pour : {{ project.recipient.displayName }}</span>
+                            <span class="tag is-light ml-2">
+                                <span class="icon is-small">{{ ux_icon('material-symbols:group') }}</span>
+                                <span>{{ project.participants|length + 1 }}</span>
+                            </span>
+                        </span>
+                    </header>
+                    <div class="card-content">
+                        <div class="content">
+                            {{ project.description|default('Pas de description')|nl2br }}
+                            <br>
+                            <small class="has-text-grey">Créé le {{ project.createdAt|date('d/m/Y') }} par {{ project.owner.email }}</small>
+                        </div>
+                    </div>
+                    <footer class="card-footer">
+                        <a href="{{ path('app_project_show', {'id': project.id}) }}" class="card-footer-item button is-link">Ouvrir le projet</a>
+                    </footer>
+                </div>
+            </div>
+        {% else %}
+            <div class="column is-full">
+                <div class="notification is-warning">
+                    Vous ne participez à aucun projet de cadeau pour le moment.
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+        
+        <div class="mt-5">
+             <a href="{{ path('app_wish_index') }}" class="button is-light">Retour à ma liste</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

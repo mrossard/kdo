@@ -1,0 +1,35 @@
+<div class="media mb-2">
+    <div class="media-content">
+        <div class="content is-small">
+            <p>
+                <strong>{{ comment.author.displayName }}</strong> <small class="has-text-grey">{{ comment.createdAt|date('d/m H:i') }}</small>
+                <br>
+                {{ comment.content|nl2br }}
+            </p>
+        </div>
+    </div>
+    {% if app.user == comment.author or app.user == comment.giftIdea.giftProject.owner %}
+        <div class="media-right">
+            <div class="buttons are-small">
+                {% if app.user == comment.author %}
+                    <button class="button is-ghost p-0 mx-1"
+                            hx-get="{{ path('app_comment_edit', {'id': comment.id}) }}"
+                            hx-target="closest .media"
+                            hx-swap="outerHTML"
+                            title="Modifier">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:edit') }}</span>
+                    </button>
+                {% endif %}
+                
+                <button class="button is-ghost has-text-danger p-0 mx-1"
+                        hx-delete="{{ path('app_comment_delete', {'id': comment.id, '_token': csrf_token('delete_comment' ~ comment.id)}) }}"
+                        hx-confirm="Supprimer ce commentaire ?"
+                        hx-target="closest .media"
+                        hx-swap="outerHTML"
+                        title="Supprimer">
+                    <span class="icon is-small">{{ ux_icon('material-symbols:delete') }}</span>
+                </button>
+            </div>
+        </div>
+    {% endif %}
+</div>

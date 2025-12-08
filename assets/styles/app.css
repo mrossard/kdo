@@ -1,0 +1,375 @@
+/* Custom app styles */
+
+/* Global CSS Variables for Theming */
+:root {
+    /* Base Colors */
+    --kdo-text-color: #363636;
+    --kdo-background-color: #f5f5f5; /* Bulma's default background */
+    --kdo-body-background-color: #ffffff; /* Actual body background */
+    --kdo-border-color: #dbdbdb;
+
+    /* Component Specific */
+    --kdo-navbar-background: #ffffff;
+    --kdo-navbar-text: #4a4a4a;
+    --kdo-box-background: #ffffff;
+    --kdo-card-background: #ffffff;
+    --kdo-hr-color: #dbdbdb;
+
+    /* Notification/Tag colors - adjusted for better contrast if needed */
+    --kdo-notification-success-bg: #ebfffc;
+    --kdo-notification-success-text: #00947e;
+    --kdo-notification-warning-bg: #fff8eb;
+    --kdo-notification-warning-text: #946c00;
+    --kdo-notification-danger-bg: #feecf0;
+    --kdo-notification-danger-text: #cc0f35;
+    --kdo-notification-info-bg: #eef6fc;
+    --kdo-notification-info-text: #005c94;
+
+    /* Input/Form */
+    --kdo-input-background: #ffffff;
+    --kdo-input-border: #dbdbdb;
+    --kdo-input-text: #363636;
+    --kdo-input-placeholder: #dbdbdb;
+}
+
+/* Dark Theme Overrides */
+html[data-theme="dark"] {
+    /* Base Colors */
+    --kdo-text-color: #c9d1d9; /* Light gray for text */
+    --kdo-background-color: #161b22; /* Dark background */
+    --kdo-body-background-color: #0d1117; /* Even darker for body */
+    --kdo-border-color: #30363d;
+
+    /* Component Specific */
+    --kdo-navbar-background: #161b22;
+    --kdo-navbar-text: #c9d1d9;
+    --kdo-box-background: #0d1117;
+    --kdo-card-background: #0d1117;
+    --kdo-hr-color: #30363d;
+
+    /* Notification/Tag colors - darker versions */
+    --kdo-notification-success-bg: #1c3621;
+    --kdo-notification-success-text: #85e89d;
+    --kdo-notification-warning-bg: #603d15;
+    --kdo-notification-warning-text: #e3b341;
+    --kdo-notification-danger-bg: #6b242e;
+    --kdo-notification-danger-text: #f85149;
+    --kdo-notification-info-bg: #1f3a5f;
+    --kdo-notification-info-text: #79c0ff;
+
+    /* Input/Form */
+    --kdo-input-background: #0d1117;
+    --kdo-input-border: #30363d;
+    --kdo-input-text: #c9d1d9;
+    --kdo-input-placeholder: #6e7681;
+}
+
+/* Apply variables to HTML elements and Bulma components */
+html {
+    background-color: var(--kdo-background-color);
+}
+
+body {
+    background-color: var(--kdo-body-background-color);
+    color: var(--kdo-text-color);
+}
+
+/* Navbar */
+.navbar {
+    background-color: var(--kdo-navbar-background);
+}
+
+.navbar-item, .navbar-link {
+    color: var(--kdo-navbar-text) !important;
+}
+
+.navbar-item:hover, .navbar-link:hover {
+    background-color: var(--kdo-background-color) !important; /* Use a neutral darker background for hover */
+}
+
+.navbar-item.is-active, .navbar-link.is-active {
+    background-color: #3273dc !important; /* Bulma info blue for active */
+    color: #fff !important; /* White text for contrast */
+}
+
+.navbar-dropdown {
+    background-color: var(--kdo-navbar-background) !important;
+    border-top: 1px solid var(--kdo-border-color) !important;
+}
+
+.navbar-dropdown .navbar-item {
+    color: var(--kdo-navbar-text) !important;
+}
+
+.navbar-divider {
+    background-color: var(--kdo-border-color);
+}
+
+/* Box, Card */
+.box, .card {
+    background-color: var(--kdo-box-background);
+    border-color: var(--kdo-border-color); /* Bulma boxes have border */
+    color: var(--kdo-text-color);
+}
+
+.card-header-title {
+    color: var(--kdo-text-color);
+}
+
+/* Titles and Subtitles */
+.title, .subtitle, h1, h2, h3, h4, h5, h6 {
+    color: var(--kdo-text-color);
+}
+
+/* Horizontal Rule */
+hr {
+    background-color: var(--kdo-hr-color);
+}
+
+/* Notifications */
+.notification.is-success {
+    background-color: var(--kdo-notification-success-bg);
+    color: var(--kdo-notification-success-text);
+}
+
+.notification.is-warning {
+    background-color: var(--kdo-notification-warning-bg);
+    color: var(--kdo-notification-warning-text);
+}
+
+.notification.is-danger {
+    background-color: var(--kdo-notification-danger-bg);
+    color: var(--kdo-notification-danger-text);
+}
+
+.notification.is-info {
+    background-color: var(--kdo-notification-info-bg);
+    color: var(--kdo-notification-info-text);
+}
+
+/* Forms */
+.input, .textarea, .select select, .button {
+    background-color: var(--kdo-input-background);
+    border-color: var(--kdo-input-border);
+    color: var(--kdo-input-text);
+}
+
+.input::placeholder, .textarea::placeholder {
+    color: var(--kdo-input-placeholder);
+}
+
+.input:focus, .textarea:focus, .select select:focus {
+    border-color: #3273dc; /* Bulma blue default */
+    box-shadow: 0 0 0 0.125em rgba(50, 115, 220, 0.25);
+}
+
+/* Bulma specific components adjustments */
+.tag:not(body) { /* Target tags not on body (to avoid overriding global text color) */
+    background-color: var(--kdo-box-background); /* Default tag background to match general components */
+    color: var(--kdo-text-color);
+}
+
+.tag.is-success {
+    background-color: var(--kdo-notification-success-bg);
+    color: var(--kdo-notification-success-text);
+}
+
+.tag.is-danger.is-light {
+    background-color: var(--kdo-notification-danger-bg);
+    color: var(--kdo-notification-danger-text);
+}
+
+.tag.is-info.is-light {
+    background-color: var(--kdo-notification-info-bg);
+    color: var(--kdo-notification-info-text);
+}
+
+.button.is-ghost {
+    color: var(--kdo-text-color) !important;
+}
+
+.button.is-ghost.has-text-danger {
+    color: var(--kdo-notification-danger-text) !important;
+}
+
+/* Ensure links in dark mode are visible */
+a {
+    color: var(--kdo-text-color); /* Default link color */
+}
+
+a:hover {
+    color: #4a8ee1; /* A consistent hover color */
+}
+
+.button.is-link, a.button.is-link { /* Override Bulma's hardcoded colors */
+    background-color: #3273dc;
+    border-color: transparent;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .button.is-link, html[data-theme="dark"] a.button.is-link {
+    background-color: #3273dc;
+    color: #fff !important;
+}
+
+.button.is-primary, a.button.is-primary {
+    background-color: #00d1b2;
+    border-color: transparent;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .button.is-primary, html[data-theme="dark"] a.button.is-primary {
+    background-color: #00d1b2;
+    color: #fff !important;
+}
+
+.button.is-warning.is-light, a.button.is-warning.is-light {
+    background-color: var(--kdo-notification-warning-bg);
+    color: var(--kdo-notification-warning-text) !important;
+}
+
+html[data-theme="dark"] .button.is-warning.is-light, html[data-theme="dark"] a.button.is-warning.is-light {
+    background-color: var(--kdo-notification-warning-bg);
+    color: var(--kdo-notification-warning-text) !important;
+}
+
+.button.is-danger.is-outlined, a.button.is-danger.is-outlined {
+    border-color: var(--kdo-notification-danger-text);
+    color: var(--kdo-notification-danger-text) !important;
+}
+
+html[data-theme="dark"] .button.is-danger.is-outlined, html[data-theme="dark"] a.button.is-danger.is-outlined {
+    border-color: var(--kdo-notification-danger-text);
+    color: var(--kdo-notification-danger-text) !important;
+}
+
+.button.is-info.is-outlined, a.button.is-info.is-outlined {
+    border-color: var(--kdo-notification-info-text);
+    color: var(--kdo-notification-info-text) !important;
+}
+
+html[data-theme="dark"] .button.is-info.is-outlined, html[data-theme="dark"] a.button.is-info.is-outlined {
+    border-color: var(--kdo-notification-info-text);
+    color: var(--kdo-notification-info-text) !important;
+}
+
+.button.is-success.is-outlined, a.button.is-success.is-outlined {
+    border-color: var(--kdo-notification-success-text);
+    color: var(--kdo-notification-success-text) !important;
+}
+
+html[data-theme="dark"] .button.is-success.is-outlined, html[data-theme="dark"] a.button.is-success.is-outlined {
+    border-color: var(--kdo-notification-success-text);
+    color: var(--kdo-notification-success-text) !important;
+}
+
+/* Specific to form elements like select */
+.select:not(.is-multiple):not(.is-loading)::after {
+    border-color: var(--kdo-input-text);
+}
+
+html[data-theme="dark"] .select:not(.is-multiple):not(.is-loading)::after {
+    border-color: var(--kdo-input-text);
+}
+
+/* For icons if they also need color adjustment */
+.icon {
+    color: var(--kdo-text-color);
+}
+
+/* Ensure icons inside buttons inherit the button's text color */
+.button .icon {
+    color: inherit !important;
+}
+
+.icon.has-text-danger {
+    color: var(--kdo-notification-danger-text) !important;
+}
+
+/* Add custom button color overrides for warning, info, and dark */
+.button.is-warning, a.button.is-warning {
+    background-color: #ffdd57; /* Bulma default warning color */
+    border-color: transparent;
+    color: rgba(0, 0, 0, 0.7) !important; /* Dark text for contrast on yellow */
+}
+
+html[data-theme="dark"] .button.is-warning, html[data-theme="dark"] a.button.is-warning {
+    background-color: #ffdd57; /* Use same for dark theme or define a darker yellow */
+    color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.button.is-info, a.button.is-info {
+    background-color: #3273dc; /* Bulma default info color */
+    border-color: transparent;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .button.is-info, html[data-theme="dark"] a.button.is-info {
+    background-color: #3273dc;
+    color: #fff !important;
+}
+
+.button.is-dark, a.button.is-dark {
+    background-color: #363636; /* Bulma default dark color */
+    border-color: transparent;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .button.is-dark, html[data-theme="dark"] a.button.is-dark {
+    background-color: #363636;
+    color: #fff !important;
+}
+
+/* Fix for icon color inside is-dark button */
+.button.is-dark .icon {
+    color: #fff !important;
+}
+
+/* Explicit fix for .button.is-danger to ensure red background */
+.button.is-danger, a.button.is-danger {
+    background-color: #f14668; /* Bulma default danger color */
+    border-color: transparent;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .button.is-danger, html[data-theme="dark"] a.button.is-danger {
+    background-color: #f14668;
+    color: #fff !important;
+}
+
+.button.is-danger .icon, a.button.is-danger .icon {
+    color: #fff !important;
+}
+
+/* Explicit fix for .button.is-success to ensure green background */
+.button.is-success, a.button.is-success {
+    background-color: #48c78e; /* Bulma default success color */
+    border-color: transparent;
+    color: #fff !important;
+}
+
+html[data-theme="dark"] .button.is-success, html[data-theme="dark"] a.button.is-success {
+    background-color: #48c78e;
+    color: #fff !important;
+}
+
+.button.is-success .icon, a.button.is-success .icon {
+    color: #fff !important;
+}
+
+/* Dark theme specific override for has-background-grey-lighter */
+html[data-theme="dark"] .has-background-grey-lighter {
+    background-color: #2e3642 !important; /* A slightly lighter dark grey for contrast */
+    color: var(--kdo-text-color) !important; /* Ensure light text */
+}
+
+/* Dark theme specific override for has-background-success-light */
+html[data-theme="dark"] .has-background-success-light {
+    background-color: var(--kdo-notification-success-bg) !important;
+    color: var(--kdo-notification-success-text) !important;
+}
+
+/* Fix for navbar shadow in dark mode */
+html[data-theme="dark"] .navbar {
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+}

@@ -1,0 +1,13 @@
+<button class="button is-ghost"
+        hx-post="{{ path('app_theme_toggle') }}"
+        hx-swap="outerHTML"
+        hx-target="this"
+        hx-on::after-settle="document.documentElement.setAttribute('data-theme', this.dataset.newTheme)"
+        data-new-theme="{{ theme }}"
+        title="Changer de thème">
+    {% if theme == 'dark' %}
+        <span class="icon">{{ ux_icon('material-symbols:light-mode') }}</span>
+    {% else %}
+        <span class="icon">{{ ux_icon('material-symbols:dark-mode') }}</span>
+    {% endif %}
+</button>

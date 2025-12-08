@@ -1,0 +1,13 @@
+{
+	# Debug
+	# debug
+    # fr
+	order php_server before file_server
+}
+
+:80 {
+	root * public/
+	enable_experimental_high_performance_bar
+	encode zstd gzip
+	php_server
+}

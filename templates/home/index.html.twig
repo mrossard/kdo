@@ -1,0 +1,125 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        {% if app.user %}
+            <h1 class="title">Bonjour, {{ app.user.displayName }} !</h1>
+            <h2 class="subtitle">Bienvenue sur votre tableau de bord.</h2>
+
+            <div class="columns is-multiline mt-5">
+                <div class="column is-4">
+                    <div class="box has-text-centered h-100">
+                        <span class="icon is-large has-text-info mb-2">
+                            {{ ux_icon('material-symbols:list', {height: '3rem', width: '3rem'}) }}
+                        </span>
+                        <p class="heading">Ma Liste</p>
+                        <p class="title">{{ wish_count }}</p>
+                        <p class="subtitle is-6">souhaits</p>
+                        <a href="{{ path('app_wish_index') }}" class="button is-info is-fullwidth mt-3">
+                            <span class="icon">{{ ux_icon('material-symbols:edit') }}</span>
+                            <span>Gérer ma liste</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="column is-4">
+                    <div class="box has-text-centered h-100">
+                        <span class="icon is-large has-text-primary mb-2">
+                            {{ ux_icon('material-symbols:redeem', {height: '3rem', width: '3rem'}) }}
+                        </span>
+                        <p class="heading">Projets</p>
+                        <p class="title">{{ active_projects_count }}</p>
+                        <p class="subtitle is-6">en cours</p>
+                        <a href="{{ path('app_project_index') }}" class="button is-primary is-outlined is-fullwidth mt-3">
+                            <span class="icon">{{ ux_icon('material-symbols:visibility') }}</span>
+                            <span>Voir les projets</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="column is-4">
+                    <div class="box has-text-centered h-100">
+                        <span class="icon is-large {{ global_balance >= 0 ? 'has-text-success' : 'has-text-danger' }} mb-2">
+                            {{ ux_icon('material-symbols:savings', {height: '3rem', width: '3rem'}) }}
+                        </span>
+                        <p class="heading">Bilan Global</p>
+                        <p class="title {{ global_balance >= 0 ? 'has-text-success' : 'has-text-danger' }}">
+                            {{ global_balance >= 0 ? '+' : '' }}{{ global_balance|number_format(2, ',', ' ') }} €
+                        </p>
+                        <p class="subtitle is-6">
+                            {% if global_balance > 0 %}
+                                On vous doit de l'argent
+                            {% elseif global_balance < 0 %}
+                                Vous devez de l'argent
+                            {% else %}
+                                À l'équilibre
+                            {% endif %}
+                        </p>
+                        <a href="{{ path('app_project_index') }}" class="button is-text is-fullwidth mt-3">
+                            <span class="icon">{{ ux_icon('material-symbols:info') }}</span>
+                            <span>Détails dans les projets</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="column is-4">
+                    <div class="box has-text-centered h-100">
+                        <span class="icon is-large has-text-link mb-2">
+                            {{ ux_icon('material-symbols:group', {height: '3rem', width: '3rem'}) }}
+                        </span>
+                        <p class="heading">Contacts</p>
+                        <p class="title">{{ contacts_count }}</p>
+                        <p class="subtitle is-6">contact{{ contacts_count == 1 ? '' : 's' }}</p>
+                        <a href="{{ path('app_contact_index') }}" class="button is-link is-outlined is-fullwidth mt-3">
+                            <span class="icon">{{ ux_icon('material-symbols:contacts') }}</span>
+                            <span>Voir mes contacts</span>
+                        </a>
+                    </div>
+                </div>
+
+                {% if pending_contacts_count > 0 %}
+                    <div class="column is-4">
+                        <div class="box has-text-centered h-100">
+                            <span class="icon is-large has-text-warning mb-2">
+                                {{ ux_icon('material-symbols:schedule', {height: '3rem', width: '3rem'}) }}
+                            </span>
+                            <p class="heading">Demandes de contact</p>
+                            <p class="title">{{ pending_contacts_count }}</p>
+                            <p class="subtitle is-6">en attente</p>
+                            <a href="{{ path('app_contact_index') }}" class="button is-warning is-outlined is-fullwidth mt-3">
+                                <span class="icon">{{ ux_icon('material-symbols:checklist') }}</span>
+                                <span>Gérer les demandes</span>
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+        {% else %}
+            <div class="hero is-medium is-primary is-bold rounded">
+                <div class="hero-body has-text-centered">
+                    <h1 class="title">
+                        Bienvenue sur KDO
+                    </h1>
+                    <h2 class="subtitle">
+                        Gérez vos listes de cadeaux et organisez des achats groupés simplement.
+                    </h2>
+                    <div class="buttons is-centered mt-5">
+                        <a href="{{ path('app_login') }}" class="button is-light is-large">
+                            <span class="icon">{{ ux_icon('material-symbols:login') }}</span>
+                            <span>Connexion</span>
+                        </a>
+                        <a href="{{ path('app_register') }}" class="button is-info is-large">
+                            <span class="icon">{{ ux_icon('material-symbols:person-add') }}</span>
+                            <span>Inscription</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

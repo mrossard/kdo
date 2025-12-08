@@ -1,0 +1,121 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li><a href="{{ path('app_project_index') }}">Projets</a></li>
+                <li class="is-active"><a href="#" aria-current="page">{{ project.name }}</a></li>
+            </ul>
+        </nav>
+
+        {% for message in app.flashes('success') %}
+            <div class="notification is-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+        {% for message in app.flashes('warning') %}
+            <div class="notification is-warning">
+                {{ message }}
+            </div>
+        {% endfor %}
+        {% for message in app.flashes('danger') %}
+            <div class="notification is-danger">
+                {{ message }}
+            </div>
+        {% endfor %}
+        {% for message in app.flashes('info') %}
+            <div class="notification is-info">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% set current_tab = app.request.query.get('tab', 'details') %}
+
+        <div class="tabs is-boxed is-medium">
+            <ul>
+                <li class="{{ current_tab == 'details' ? 'is-active' : '' }}">
+                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'details'}) }}"
+                       hx-target="#project-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       onclick="changeTab(this)">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:info') }}</span>
+                        <span>Détails</span>
+                    </a>
+                </li>
+                <li class="{{ current_tab == 'ideas' ? 'is-active' : '' }}">
+                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas'}) }}"
+                       hx-target="#project-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       onclick="changeTab(this)">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:redeem') }}</span>
+                        <span>Idées Cadeaux</span>
+                        <span class="tag is-rounded ml-2">{{ project.giftIdeas|length }}</span>
+                    </a>
+                </li>
+                <li class="{{ current_tab == 'liste_souhaits' ? 'is-active' : '' }}">
+                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'liste_souhaits'}) }}"
+                       hx-target="#project-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       onclick="changeTab(this)">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:list') }}</span>
+                        <span>Liste de souhaits</span>
+                        <span class="tag is-rounded ml-2">{{ project.recipient.wishes|length }}</span>
+                    </a>
+                </li>
+                <li class="{{ current_tab == 'financial' ? 'is-active' : '' }}">
+                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'financial'}) }}"
+                       hx-target="#project-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       onclick="changeTab(this)">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:payments') }}</span>
+                        <span>Bilan Financier</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+                        <div id="project-content">
+
+                            {% if current_tab == 'ideas' %}
+
+                                {% include 'gift_project/_ideas.html.twig' with { project: project, gift_ideas: gift_ideas|default([]), comment_forms: comment_forms|default([]) } %}
+
+                            {% elseif current_tab == 'liste_souhaits' %}
+
+                                {% include 'gift_project/_liste_souhaits.html.twig' with { project: project, copied_wish_ids: copied_wish_ids|default([]) } %}
+
+                            {% elseif current_tab == 'financial' %}
+
+                                {% include 'gift_project/_financial.html.twig' with { project: project, summary: summary|default([]), transfers: transfers|default([]), total_cost: total_cost|default(0), average_cost: average_cost|default(0) } %}
+
+                            {% else %}
+
+                                {% include 'gift_project/_details.html.twig' with { project: project, add_participant_form: add_participant_form } %}
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+</section>
+
+<script>
+function changeTab(element) {
+    // Remove is-active from all tabs
+    var tabs = element.closest('ul').querySelectorAll('li');
+    tabs.forEach(function(tab) {
+        tab.classList.remove('is-active');
+    });
+    // Add is-active to the clicked tab's parent li
+    element.parentElement.classList.add('is-active');
+}
+</script>
+{% endblock %}

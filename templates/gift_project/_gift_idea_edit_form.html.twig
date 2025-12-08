@@ -1,0 +1,24 @@
+{# templates/gift_project/_gift_idea_edit_form.html.twig #}
+
+{% form_theme form 'form/bulma_layout.html.twig' %}
+
+<div id="gift-idea-{{ idea.id }}" class="card"> {# Use card for consistency #}
+    <div class="card-content">
+        {{ form_start(form, {'action': path('app_gift_idea_edit', {'id': idea.id}), 'attr': {'hx-post': path('app_gift_idea_edit', {'id': idea.id}), 'hx-target': '#gift-idea-' ~ idea.id, 'hx-swap': 'outerHTML'}}) }}
+            <h4 class="title is-5">Modifier l'idée cadeau</h4>
+            {{ form_widget(form) }}
+            <div class="field is-grouped is-grouped-right mt-4">
+                <div class="control">
+                    <button type="submit" class="button is-primary">Enregistrer</button>
+                </div>
+                <div class="control">
+                    <button type="button" class="button is-light"
+                            hx-get="{{ path('app_gift_idea_show_display', {'id': idea.id}) }}"
+                            hx-target="#gift-idea-{{ idea.id }}" hx-swap="outerHTML">
+                        Annuler
+                    </button>
+                </div>
+            </div>
+        {{ form_end(form) }}
+    </div>
+</div>

@@ -1,0 +1,11 @@
+{{ form_start(form) }}
+    {{ form_widget(form) }}
+    <div class="field mt-5">
+        <div class="control">
+            <button class="button is-primary is-fullwidth">
+                <span class="icon">{{ ux_icon('material-symbols:save') }}</span>
+                <span>{{ button_label|default('Enregistrer') }}</span>
+            </button>
+        </div>
+    </div>
+{{ form_end(form) }}

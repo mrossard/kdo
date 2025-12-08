@@ -1,0 +1,183 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Finances{% endblock %}
+
+{% block body %}
+<div class="container is-fluid section">
+    <h1 class="title">Mes Finances</h1>
+
+    <div class="columns">
+        <div class="column is-one-half">
+            <h2 class="subtitle">Soldes en cours</h2>
+            
+            <div class="box">
+                <h3 class="title is-5 has-text-danger">Ce que je dois</h3>
+                {% if debts is empty %}
+                    <p class="has-text-grey-light">Rien à signaler, vous êtes à jour !</p>
+                {% else %}
+                    <table class="table is-fullwidth is-striped">
+                        <thead>
+                            <tr>
+                                <th>À qui ?</th>
+                                <th>Projet</th>
+                                <th class="has-text-right">Montant</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for debt in debts %}
+                                <tr>
+                                    <td>{{ debt.to.displayName }}</td>
+                                    <td><a href="{{ path('app_project_show', {id: debt.project.id, tab: 'financial'}) }}">{{ debt.project.name }}</a></td>
+                                    <td class="has-text-right has-text-danger">{{ debt.amount|number_format(2, ',', ' ') }} €</td>
+                                    <td>
+                                        <a href="{{ path('app_project_show', {id: debt.project.id, tab: 'financial'}) }}" class="button is-small is-primary is-outlined">
+                                            <span class="icon">{{ ux_icon('material-symbols:payments') }}</span>
+                                            <span>Régler</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+
+            <div class="box">
+                <h3 class="title is-5 has-text-success">Ce qu'on me doit</h3>
+                {% if credits is empty %}
+                    <p class="has-text-grey-light">Personne ne vous doit d'argent.</p>
+                {% else %}
+                    <table class="table is-fullwidth is-striped">
+                        <thead>
+                            <tr>
+                                <th>Qui ?</th>
+                                <th>Projet</th>
+                                <th class="has-text-right">Montant</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for credit in credits %}
+                                <tr>
+                                    <td>{{ credit.from.displayName }}</td>
+                                    <td><a href="{{ path('app_project_show', {id: credit.project.id, tab: 'financial'}) }}">{{ credit.project.name }}</a></td>
+                                    <td class="has-text-right has-text-success">{{ credit.amount|number_format(2, ',', ' ') }} €</td>
+                                    <td>
+                                         <a href="{{ path('app_project_show', {id: credit.project.id, tab: 'financial'}) }}" class="button is-small is-primary is-outlined">
+                                            <span class="icon">{{ ux_icon('material-symbols:visibility') }}</span>
+                                            <span>Voir</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="column is-one-half">
+            <h2 class="subtitle">Historique des remboursements</h2>
+            <div class="box">
+                {% if history is empty %}
+                    <p class="has-text-grey-light">Aucun historique de remboursement.</p>
+                {% else %}
+                    <table class="table is-fullwidth is-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>De</th>
+                                <th>À</th>
+                                <th>Projet</th>
+                                <th class="has-text-right">Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in history %}
+                                <tr>
+                                    <td>{{ item.createdAt|date('d/m/Y') }}</td>
+                                    <td>
+                                        {% if item.fromUser == app.user %}
+                                            <strong>Moi</strong>
+                                        {% else %}
+                                            {{ item.fromUser.displayName }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.toUser == app.user %}
+                                            <strong>Moi</strong>
+                                        {% else %}
+                                            {{ item.toUser.displayName }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.project %}
+                                            <a href="{{ path('app_project_show', {id: item.project.id}) }}">{{ item.project.name }}</a>
+                                        {% else %}
+                                            <span class="has-text-grey-light">Projet supprimé</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="has-text-right {% if item.toUser == app.user %}has-text-success{% else %}has-text-danger{% endif %}">
+                                        {{ item.amount|number_format(2, ',', ' ') }} €
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="subtitle">Mes Achats</h2>
+        <div class="box">
+            {% if purchasedItems is empty %}
+                <p class="has-text-grey-light">Vous n'avez encore rien acheté.</p>
+            {% else %}
+                <table class="table is-fullwidth is-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Cadeau</th>
+                            <th>Destinataire</th>
+                            <th>Projet</th>
+                            <th class="has-text-right">Prix d'achat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in purchasedItems %}
+                            <tr>
+                                <td>
+                                    {% if item.purchasedAt %}
+                                        {{ item.purchasedAt|date('d/m/Y') }}
+                                    {% else %}
+                                        <span class="has-text-grey-light">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.name }}</td>
+                                <td>
+                                    {% if item.giftProject %}
+                                        {{ item.giftProject.recipient.displayName }}
+                                    {% else %}
+                                        <span class="has-text-grey-light">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.giftProject %}
+                                        <a href="{{ path('app_project_show', {id: item.giftProject.id}) }}">{{ item.giftProject.name }}</a>
+                                    {% else %}
+                                        <span class="has-text-grey-light">Projet supprimé</span>
+                                    {% endif %}
+                                </td>
+                                <td class="has-text-right">{{ item.purchasePrice|number_format(2, ',', ' ') }} €</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

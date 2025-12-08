@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon Profil{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <div class="columns is-centered">
+            <div class="column is-6-tablet is-5-desktop">
+                <h1 class="title has-text-centered">Mon Profil</h1>
+                
+                {% for message in app.flashes('success') %}
+                    <div class="notification is-success">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+                {% for message in app.flashes('danger') %}
+                    <div class="notification is-danger">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+
+                {# Informations Personnelles #}
+                <div class="box mb-5">
+                    <h2 class="subtitle is-5 has-text-weight-bold mb-4">Informations Personnelles</h2>
+                    {{ form_start(form) }}
+                        <div class="field">
+                            {{ form_label(form.firstname, null, {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(form.firstname) }}
+                            </div>
+                            {{ form_errors(form.firstname) }}
+                        </div>
+
+                        <div class="field">
+                            {{ form_label(form.lastname, null, {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(form.lastname) }}
+                            </div>
+                            {{ form_errors(form.lastname) }}
+                        </div>
+
+                        <div class="field mt-4">
+                            <div class="control">
+                                <button type="submit" class="button is-primary is-fullwidth">
+                                    <span class="icon">{{ ux_icon('material-symbols:save') }}</span>
+                                    <span>Mettre à jour mes infos</span>
+                                </button>
+                            </div>
+                        </div>
+                    {{ form_end(form) }}
+                    
+                    <hr>
+                    <p class="has-text-centered is-size-7">
+                        Email du compte : <strong>{{ app.user.email }}</strong>
+                    </p>
+                </div>
+
+                {# Changement de mot de passe #}
+                <div class="box">
+                    <h2 class="subtitle is-5 has-text-weight-bold mb-4">Changer le mot de passe</h2>
+                    {{ form_start(password_form) }}
+                        <div class="field">
+                            {{ form_label(password_form.currentPassword, null, {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(password_form.currentPassword) }}
+                            </div>
+                            {{ form_errors(password_form.currentPassword) }}
+                        </div>
+
+                        <div class="field">
+                            {{ form_label(password_form.plainPassword.first, null, {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(password_form.plainPassword.first) }}
+                            </div>
+                            {{ form_errors(password_form.plainPassword.first) }}
+                        </div>
+
+                        <div class="field">
+                            {{ form_label(password_form.plainPassword.second, null, {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(password_form.plainPassword.second) }}
+                            </div>
+                            {{ form_errors(password_form.plainPassword.second) }}
+                        </div>
+
+                        <div class="field mt-4">
+                            <div class="control">
+                                <button type="submit" class="button is-warning is-light is-fullwidth">
+                                    <span class="icon">{{ ux_icon('material-symbols:key') }}</span>
+                                    <span>Changer le mot de passe</span>
+                                </button>
+                            </div>
+                        </div>
+                    {{ form_end(password_form) }}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

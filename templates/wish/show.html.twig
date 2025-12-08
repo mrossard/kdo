@@ -1,0 +1,40 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ wish.name }}{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <h1 class="title">{{ wish.name }}</h1>
+
+        <div class="box">
+            <table class="table is-fullwidth">
+                <tbody>
+                    <tr>
+                        <th>Prix estimé</th>
+                        <td>{{ wish.price ? wish.price ~ ' €' : '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Description</th>
+                        <td>{{ wish.description|nl2br }}</td>
+                    </tr>
+                    <tr>
+                        <th>Url</th>
+                        <td><a href="{{ wish.url }}" target="_blank">{{ wish.url }}</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="level">
+            <div class="level-left">
+                <a href="{{ path('app_wish_index') }}" class="button is-light">Retour à la liste</a>
+                <a href="{{ path('app_wish_edit', {'id': wish.id}) }}" class="button is-warning">Modifier</a>
+            </div>
+            <div class="level-right">
+                {{ include('wish/_delete_form.html.twig') }}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

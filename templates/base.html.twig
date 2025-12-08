@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+{% set currentTheme = app.user ? (app.user.uiPreferences.theme ?? 'light') : 'light' %}
+<html lang="fr" data-theme="{{ currentTheme }}">
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}Welcome!{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>kdo</text></svg>">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% block stylesheets %}
+            {{ importmap('app') }}
+        {% endblock %}
+    </head>
+    <body>
+        {% set currentRoute = app.request.attributes.get('_route') %}
+        {% if app.user or currentRoute != 'app_home' %}
+        <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+            <div class="navbar-brand">
+                <a class="navbar-item {% if currentRoute == 'app_home' %}is-active{% endif %}" href="{{ path('app_home') }}">
+                    <strong>KDO</strong>
+                </a>
+            </div>
+            <div class="navbar-menu is-active">
+                <div class="navbar-start">
+                    {% if app.user %}
+                        <a class="navbar-item {% if currentRoute starts with 'app_wish_' %}is-active{% endif %}" href="{{ path('app_wish_index') }}">
+                            <span class="icon">{{ ux_icon('material-symbols:list') }}</span>
+                            <span>Ma Liste</span>
+                        </a>
+                        <a class="navbar-item {% if currentRoute starts with 'app_contact_' %}is-active{% endif %}" href="{{ path('app_contact_index') }}">
+                            <span class="icon">{{ ux_icon('material-symbols:contacts') }}</span>
+                            <span>Contacts</span>
+                        </a>
+                        <a class="navbar-item {% if currentRoute starts with 'app_project_' %}is-active{% endif %}" href="{{ path('app_project_index') }}">
+                            <span class="icon">{{ ux_icon('material-symbols:redeem') }}</span>
+                            <span>Projets Cadeaux</span>
+                        </a>
+                        <a class="navbar-item {% if currentRoute starts with 'app_financial_' %}is-active{% endif %}" href="{{ path('app_financial_index') }}">
+                            <span class="icon">{{ ux_icon('material-symbols:euro') }}</span>
+                            <span>Finances</span>
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="navbar-end">
+                    <div class="navbar-item">
+                        {% if app.user %}
+                            {{ include('theme/_toggle_button.html.twig', {theme: currentTheme}) }}
+                        {% endif %}
+                    </div>
+                    {% if app.user %}
+                        <div class="navbar-item has-dropdown is-hoverable">
+                            <a class="navbar-link">
+                                {{ app.user.displayName }}
+                            </a>
+
+                            <div class="navbar-dropdown">
+                                <a class="navbar-item" href="{{ path('app_profile') }}">
+                                    <span class="icon">{{ ux_icon('material-symbols:person') }}</span>
+                                    <span>Mon Profil</span>
+                                </a>
+                                <hr class="navbar-divider">
+                                <a class="navbar-item" href="{{ path('app_logout') }}">
+                                    <span class="icon">{{ ux_icon('material-symbols:logout') }}</span>
+                                    <span>Déconnexion</span>
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a class="navbar-item" href="{{ path('app_login') }}">
+                            <span class="icon">{{ ux_icon('material-symbols:login') }}</span>
+                            <span>Connexion</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+        {% endif %}
+
+        {% for message in app.flashes('success') %}
+            <div class="notification is-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+        {% for message in app.flashes('warning') %}
+            <div class="notification is-warning">
+                {{ message }}
+            </div>
+        {% endfor %}
+        {% for message in app.flashes('danger') %}
+            <div class="notification is-danger">
+                {{ message }}
+            </div>
+        {% endfor %}
+        {% for message in app.flashes('info') %}
+            <div class="notification is-info">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% block body %}{% endblock %}
+    </body>
+</html>

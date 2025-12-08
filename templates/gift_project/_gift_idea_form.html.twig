@@ -1,0 +1,55 @@
+<div class="box">
+    <h4 class="title is-5">Proposer une idée de cadeau</h4>
+    {{ form_start(gift_idea_form) }}
+        <div class="columns">
+            <div class="column is-6">
+                <div class="field">
+                    {{ form_label(gift_idea_form.name, null, {'label_attr': {'class': 'label'}}) }}
+                    <div class="control">
+                        {{ form_widget(gift_idea_form.name, {'attr': {'class': 'input'}}) }}
+                    </div>
+                    {{ form_errors(gift_idea_form.name) }}
+                </div>
+            </div>
+            <div class="column is-3">
+                <div class="field">
+                    {{ form_label(gift_idea_form.price, null, {'label_attr': {'class': 'label'}}) }}
+                    <div class="control">
+                        {{ form_widget(gift_idea_form.price, {'attr': {'class': 'input'}}) }}
+                    </div>
+                    {{ form_errors(gift_idea_form.price) }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="field">
+            {{ form_label(gift_idea_form.description, null, {'label_attr': {'class': 'label'}}) }}
+            <div class="control">
+                {{ form_widget(gift_idea_form.description, {'attr': {'class': 'textarea', 'rows': 3}}) }}
+            </div>
+            {{ form_errors(gift_idea_form.description) }}
+        </div>
+        
+        <div class="field">
+            {{ form_label(gift_idea_form.url, null, {'label_attr': {'class': 'label'}}) }}
+            <div class="control">
+                {{ form_widget(gift_idea_form.url, {'attr': {'class': 'input'}}) }}
+            </div>
+            {{ form_errors(gift_idea_form.url) }}
+        </div>
+        
+        <div class="field is-grouped">
+            <div class="control">
+                <button class="button is-primary">Ajouter l'idée</button>
+            </div>
+            <div class="control">
+                <button type="button" class="button is-light"
+                        hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas'}) }}"
+                        hx-target="#project-content"
+                        hx-swap="innerHTML">
+                    Annuler
+                </button>
+            </div>
+        </div>
+    {{ form_end(gift_idea_form) }}
+</div>

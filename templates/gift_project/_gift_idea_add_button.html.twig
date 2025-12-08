@@ -1,0 +1,7 @@
+<button class="button is-primary"
+        hx-get="{{ path('app_gift_idea_new_form', {'id': project.id}) }}"
+        hx-target="#project-content"
+        hx-swap="innerHTML">
+    <span class="icon is-small">{{ ux_icon('material-symbols:add') }}</span>
+    <span>Proposer une nouvelle idée</span>
+</button>

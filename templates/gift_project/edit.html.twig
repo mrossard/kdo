@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier le Projet{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <h1 class="title">Modifier le projet de cadeau</h1>
+        
+        <div class="box">
+            {{ form_start(form) }}
+                <div class="field">
+                    {{ form_label(form.name, 'Nom du projet', {'label_attr': {'class': 'label'}}) }}
+                    <div class="control">
+                        {{ form_widget(form.name, {'attr': {'class': 'input'}}) }}
+                    </div>
+                    {{ form_errors(form.name) }}
+                </div>
+
+                <div class="field">
+                    {{ form_label(form.recipient, 'Destinataire', {'label_attr': {'class': 'label'}}) }}
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                             {{ form_widget(form.recipient) }}
+                        </div>
+                    </div>
+                    <p class="help">Choisissez parmi les personnes qui ont partagé leur liste avec vous. Le destinataire ne verra PAS ce projet.</p>
+                    {{ form_errors(form.recipient) }}
+                </div>
+
+                <div class="field">
+                    {{ form_label(form.description, 'Description', {'label_attr': {'class': 'label'}}) }}
+                    <div class="control">
+                        {{ form_widget(form.description, {'attr': {'class': 'textarea'}}) }}
+                    </div>
+                    {{ form_errors(form.description) }}
+                </div>
+
+                <div class="field is-grouped">
+                    <div class="control">
+                        <button class="button is-primary">Enregistrer les modifications</button>
+                    </div>
+                    <div class="control">
+                        <a href="{{ path('app_project_show', {'id': project.id}) }}" class="button is-light">Annuler</a>
+                    </div>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+</section>
+{% endblock %}

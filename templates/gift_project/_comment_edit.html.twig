@@ -1,0 +1,34 @@
+<div class="box p-2 mb-2">
+    {{ form_start(form, {
+        'action': path('app_comment_edit', {'id': comment.id}),
+        'attr': {
+            'hx-post': path('app_comment_edit', {'id': comment.id}),
+            'hx-target': 'closest .box',
+            'hx-swap': 'outerHTML'
+        }
+    }) }}
+        <div class="field">
+            <div class="control">
+                {{ form_widget(form.content) }}
+            </div>
+        </div>
+        <div class="field is-grouped is-grouped-right">
+            <div class="control">
+                <button type="button" 
+                        class="button is-small is-light"
+                        hx-get="{{ path('app_comment_show', {'id': comment.id}) }}"
+                        hx-target="closest .box"
+                        hx-swap="outerHTML">
+                    <span class="icon is-small">{{ ux_icon('material-symbols:cancel') }}</span>
+                    <span>Annuler</span>
+                </button>
+            </div>
+            <div class="control">
+                <button type="submit" class="button is-small is-primary">
+                    <span class="icon is-small">{{ ux_icon('material-symbols:save') }}</span>
+                    <span>Enregistrer</span>
+                </button>
+            </div>
+        </div>
+    {{ form_end(form) }}
+</div>
