@@ -1,29 +1,7 @@
 services:
   php:
-    image: ${IMAGES_PREFIX:-}app-php
-    restart: unless-stopped
     build:
-      context: .
       target: frankenphp_prod
     ports:
-      # Map container port 80 (HTTP) to host port 8080 for reverse proxy
-      - "8080:80"
-    environment:
-      # SERVER_NAME is no longer needed as HTTPS is handled by the reverse proxy.
-      # You may still set it if your reverse proxy requires it for host routing.
-      # SERVER_NAME: ${SERVER_NAME:-localhost}
-      MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
-
-  database:
-    image: postgres:${POSTGRES_VERSION:-16}-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
-    volumes:
-      - database_data:/var/lib/postgresql/data:rw
-
-volumes:
-  caddy_data:
-  caddy_config:
-  database_data:
+      # Map container port 80 (HTTP) to host port 8081 for reverse proxy
+      - "8081:80"

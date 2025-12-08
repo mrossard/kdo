@@ -1,10 +1,10 @@
 #syntax=docker/dockerfile:1.4
 
 # Versions
-# We use php 8.5 as requested. 
+# We use php 8.5 as requested.
 # Ensure this tag exists or use the closest available and override.
 # At the time of this writing (future), 1-php8.5 is assumed valid for dunglas/frankenphp
-FROM dunglas/frankenphp:1-php8.5 AS frankenphp_upstream
+FROM dunglas/frankenphp:php8.5-alpine AS frankenphp_upstream
 
 # Base stage for production
 FROM frankenphp_upstream AS frankenphp_base
