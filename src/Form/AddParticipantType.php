@@ -17,29 +17,20 @@ class AddParticipantType extends AbstractType
         /** @var User $currentUser */
         $currentUser = $options['current_user'];
 
-        $builder
-            ->add('participant', EntityType::class, [
-                'class' => User::class,
-                'choice_label' => 'displayName',
-                'label' => 'Inviter un participant',
-                'query_builder' => function (UserRepository $er) use ($currentUser) {
-                    // Find users who have shared their list WITH me ($currentUser)
-                    // OR users with whom I have shared my list ($currentUser is owner)
-                    return $er->createQueryBuilder('u')
-                        ->leftJoin('u.sentShares', 's_sent') // u shared with someone
-                        ->leftJoin('u.receivedShares', 's_received') // someone shared with u
-                        ->where('s_sent.recipient = :me OR s_received.owner = :me')
-                        ->andWhere('u != :me') // Cannot invite myself
-                        ->setParameter('me', $currentUser)
-                        ->orderBy('u.firstname', 'ASC')
-                        ->addOrderBy('u.lastname', 'ASC');
-                },
-                'placeholder' => 'Sélectionnez un contact',
-                'constraints' => [
-                    new NotBlank(message: 'Veuillez sélectionner un participant'),
-                ],
-            ])
-        ;
+        $builder->add('participant', EntityType::class, [
+            'class' => User::class,
+            'choice_label' => 'displayName',
+            'label' => 'Inviter un participant',
+            'query_builder' => static function (UserRepository $er) use ($currentUser) {
+                // Find users who have shared their list WITH me ($currentUser)
+                // OR users with whom I have shared my list ($currentUser is owner)
+                return $er->createQueryBuilder('u')->leftJoin('u.sentShares', 's_sent')->leftJoin('u.receivedShares', 's_received')->where('s_sent.recipient = :me OR s_received.owner = :me')->andWhere('u != :me')->setParameter('me', $currentUser)->orderBy('u.firstname', 'ASC')->addOrderBy('u.lastname', 'ASC'); // u shared with someone // someone shared with u // Cannot invite myself
+            },
+            'placeholder' => 'Sélectionnez un contact',
+            'constraints' => [
+                new NotBlank(message: 'Veuillez sélectionner un participant'),
+            ],
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

@@ -26,7 +26,8 @@ class GiftIdeaRepository extends ServiceEntityRepository
      */
     public function findPurchasedByUser(\App\Entity\User $user): array
     {
-        return $this->createQueryBuilder('g')
+        return $this
+            ->createQueryBuilder('g')
             ->where('g.purchasedBy = :user')
             ->setParameter('user', $user)
             ->orderBy('g.id', 'DESC')
@@ -34,28 +35,27 @@ class GiftIdeaRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-//    /**
-//     * @return GiftIdea[] Returns an array of GiftIdea objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('g')
-//            ->andWhere('g.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('g.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?GiftIdea
-//    {
-//        return $this->createQueryBuilder('g')
-//            ->andWhere('g.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    //    /**
+    //     * @return GiftIdea[] Returns an array of GiftIdea objects
+    //     */
+    //    public function findByExampleField($value): array
+    //    {
+    //        return $this->createQueryBuilder('g')
+    //            ->andWhere('g.exampleField = :val')
+    //            ->setParameter('val', $value)
+    //            ->orderBy('g.id', 'ASC')
+    //            ->setMaxResults(10)
+    //            ->getQuery()
+    //            ->getResult()
+    //        ;
+    //    }
+    //    public function findOneBySomeField($value): ?GiftIdea
+    //    {
+    //        return $this->createQueryBuilder('g')
+    //            ->andWhere('g.exampleField = :val')
+    //            ->setParameter('val', $value)
+    //            ->getQuery()
+    //            ->getOneOrNullResult()
+    //        ;
+    //    }
 }

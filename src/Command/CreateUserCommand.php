@@ -13,15 +13,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-#[AsCommand(
-    name: 'app:user:create',
-    description: 'Create a new user',
-)]
+#[AsCommand(name: 'app:user:create', description: 'Create a new user')]
 class CreateUserCommand extends Command
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private UserPasswordHasherInterface $userPasswordHasher
+        private readonly EntityManagerInterface $entityManager,
+        private UserPasswordHasherInterface $userPasswordHasher,
     ) {
         parent::__construct();
     }
@@ -33,8 +30,7 @@ class CreateUserCommand extends Command
             ->addArgument('password', InputArgument::OPTIONAL, 'The password of the user')
             ->addOption('admin', null, InputOption::VALUE_NONE, 'Set the user as admin')
             ->addOption('firstname', null, InputOption::VALUE_REQUIRED, 'The firstname of the user')
-            ->addOption('lastname', null, InputOption::VALUE_REQUIRED, 'The lastname of the user')
-        ;
+            ->addOption('lastname', null, InputOption::VALUE_REQUIRED, 'The lastname of the user');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -67,12 +63,7 @@ class CreateUserCommand extends Command
         $user->setFirstname($firstname);
         $user->setLastname($lastname);
         $user->setRoles($isAdmin ? ['ROLE_ADMIN'] : []);
-        $user->setPassword(
-            $this->userPasswordHasher->hashPassword(
-                $user,
-                $password
-            )
-        );
+        $user->setPassword($this->userPasswordHasher->hashPassword($user, $password));
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();

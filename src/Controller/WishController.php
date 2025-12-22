@@ -87,7 +87,7 @@ final class WishController extends AbstractController
     #[Security("is_granted('ROLE_USER') and wish.getUser() == user")]
     public function delete(Request $request, Wish $wish, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$wish->getId(), $request->getPayload()->getString('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $wish->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($wish);
             $entityManager->flush();
         }

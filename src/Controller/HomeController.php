@@ -3,9 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Repository\ContactRequestRepository;
 use App\Repository\GiftProjectRepository;
 use App\Repository\WishlistShareRepository;
-use App\Repository\ContactRequestRepository;
 use App\Repository\WishRepository;
 use App\Service\FinancialService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,9 +20,8 @@ class HomeController extends AbstractController
         WishRepository $wishRepository,
         FinancialService $financialService,
         WishlistShareRepository $wishlistShareRepository,
-        ContactRequestRepository $contactRequestRepository
-    ): Response
-    {
+        ContactRequestRepository $contactRequestRepository,
+    ): Response {
         $user = $this->getUser();
 
         if (!$user instanceof User) {
@@ -32,7 +31,7 @@ class HomeController extends AbstractController
         $wishCount = $wishRepository->count(['user' => $user]);
 
         $allProjects = $projectRepository->findAccessibleProjectsForUser($user);
-        $activeProjects = array_filter($allProjects, fn($p) => !$p->isArchived());
+        $activeProjects = array_filter($allProjects, static fn($p) => !$p->isArchived());
         $activeProjectsCount = count($activeProjects);
 
         $globalBalance = 0.0;
@@ -41,14 +40,15 @@ class HomeController extends AbstractController
             // Usually you want to know debts even if archived. Let's include all.
             $financials = $financialService->calculate($project);
             foreach ($financials['summary'] as $row) {
-                if ($row['user'] === $user) {
-                    $globalBalance += $row['balance'];
-                }
+                if ($row['user'] !== $user) { continue; }
+
+$globalBalance += $row['balance'];
             }
         }
 
         // Contacts: count mutual wishlist shares (both directions)
-        $shares = $wishlistShareRepository->createQueryBuilder('ws')
+        $shares = $wishlistShareRepository
+            ->createQueryBuilder('ws')
             ->where('ws.owner = :user OR ws.recipient = :user')
             ->andWhere('ws.owner != ws.recipient')
             ->setParameter('user', $user)
@@ -57,8 +57,10 @@ class HomeController extends AbstractController
 
         $mutualContactIds = [];
         foreach ($shares as $share) {
-            $other = ($share->getOwner() === $user) ? $share->getRecipient() : $share->getOwner();
-            if (!$other) { continue; }
+            $other = $share->getOwner() === $user ? $share->getRecipient() : $share->getOwner();
+            if (!$other) {
+                continue;
+            }
             $reverse = $wishlistShareRepository->findOneBy([
                 'owner' => $other,
                 'recipient' => $user,

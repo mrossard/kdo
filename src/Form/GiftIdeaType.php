@@ -16,31 +16,26 @@ class GiftIdeaType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            ->add('name', TextType::class, [
-                'label' => 'Nom de l\'idée',
-                'constraints' => [
-                    new NotBlank(message: 'Le nom de l\'idée est obligatoire.'),
-                ],
-                'attr' => ['placeholder' => 'Ex: Livre sur les chats'],
-            ])
-            ->add('description', TextareaType::class, [
-                'label' => 'Description',
-                'required' => false,
-                'attr' => ['placeholder' => 'Détails, pourquoi ce cadeau...'],
-            ])
-            ->add('url', UrlType::class, [
-                'label' => 'Lien produit (URL)',
-                'required' => false,
-                'attr' => ['placeholder' => 'https://example.com/produit-chat'],
-            ])
-            ->add('price', MoneyType::class, [
-                'label' => 'Prix estimé',
-                'required' => false,
-                'currency' => 'EUR',
-                'attr' => ['placeholder' => '29.99'],
-            ])
-        ;
+        $builder->add('name', TextType::class, [
+            'label' => 'Nom de l\'idée',
+            'constraints' => [
+                new NotBlank(message: 'Le nom de l\'idée est obligatoire.'),
+            ],
+            'attr' => ['placeholder' => 'Ex: Livre sur les chats'],
+        ])->add('description', TextareaType::class, [
+            'label' => 'Description',
+            'required' => false,
+            'attr' => ['placeholder' => 'Détails, pourquoi ce cadeau...'],
+        ])->add('url', UrlType::class, [
+            'label' => 'Lien produit (URL)',
+            'required' => false,
+            'attr' => ['placeholder' => 'https://example.com/produit-chat'],
+        ])->add('price', MoneyType::class, [
+            'label' => 'Prix estimé',
+            'required' => false,
+            'currency' => 'EUR',
+            'attr' => ['placeholder' => '29.99'],
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

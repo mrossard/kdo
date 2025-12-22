@@ -2,12 +2,12 @@
 
 namespace App\Repository;
 
-use App\Entity\Wish;
-use App\Entity\User;
 use App\Entity\GiftIdea;
+use App\Entity\User;
+use App\Entity\Wish;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+
 use Doctrine\Persistence\ManagerRegistry;
-use Doctrine\ORM\Query\Expr\Join;
 
 /**
  * @extends ServiceEntityRepository<Wish>
@@ -24,9 +24,14 @@ class WishRepository extends ServiceEntityRepository
         parent::__construct($registry, Wish::class);
     }
 
-    public function findUserWishesWithGiftIdeaDetails(User $user, bool $showDelivered = false, ?string $sort = 'name', ?string $direction = 'ASC'): array
-    {
-        $qb = $this->createQueryBuilder('w')
+    public function findUserWishesWithGiftIdeaDetails(
+        User $user,
+        bool $showDelivered = false,
+        ?string $sort = 'name',
+        ?string $direction = 'ASC',
+    ): array {
+        $qb = $this
+            ->createQueryBuilder('w')
             ->addSelect('gi', 'gp')
             ->leftJoin('w.giftIdeasUsedFor', 'gi')
             ->leftJoin('gi.giftProject', 'gp')
@@ -35,7 +40,9 @@ class WishRepository extends ServiceEntityRepository
 
         if (!$showDelivered) {
             // Subquery to find Wishes that HAVE a selected and delivered GiftIdea
-            $subquery = $this->getEntityManager()->createQueryBuilder()
+            $subquery = $this
+                ->getEntityManager()
+                ->createQueryBuilder()
                 ->select('w_delivered.id')
                 ->from(Wish::class, 'w_delivered')
                 ->leftJoin('w_delivered.giftIdeasUsedFor', 'gi_delivered')
@@ -44,8 +51,10 @@ class WishRepository extends ServiceEntityRepository
                 ->andWhere('gp_delivered.deliveredAt IS NOT NULL') // This is the key part
                 ->andWhere('w_delivered.user = :user'); // Important to scope to current user
 
-            $qb->andWhere($qb->expr()->notIn('w.id', $subquery->getDQL()))
-                ->setParameter('selectedStatus', GiftIdea::STATUS_SELECTED);
+            $qb->andWhere($qb->expr()->notIn('w.id', $subquery->getDQL()))->setParameter(
+                'selectedStatus',
+                GiftIdea::STATUS_SELECTED,
+            );
         }
 
         $sortField = match ($sort) {
@@ -53,8 +62,6 @@ class WishRepository extends ServiceEntityRepository
             default => 'w.name',
         };
 
-        return $qb->orderBy($sortField, $direction)
-            ->getQuery()
-            ->getResult();
+        return $qb->orderBy($sortField, $direction)->getQuery()->getResult();
     }
 }

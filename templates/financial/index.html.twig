@@ -9,7 +9,7 @@
     <div class="columns">
         <div class="column is-one-half">
             <h2 class="subtitle">Soldes en cours</h2>
-            
+
             <div class="box">
                 <h3 class="title is-5 has-text-danger">Ce que je dois</h3>
                 {% if debts is empty %}
@@ -159,7 +159,7 @@
                                 <td>{{ item.name }}</td>
                                 <td>
                                     {% if item.giftProject %}
-                                        {{ item.giftProject.recipient.displayName }}
+                                        {{ item.giftProject.recipientDisplayName }}
                                     {% else %}
                                         <span class="has-text-grey-light">-</span>
                                     {% endif %}

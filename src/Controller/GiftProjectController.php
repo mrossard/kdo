@@ -22,7 +22,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Security\Http\Attribute\Security;
+
 
 #[Route('/project')]
 #[IsGranted('ROLE_USER')]
@@ -41,12 +41,13 @@ class GiftProjectController extends AbstractController
 
         if ($request->headers->get('HX-Request')) {
             return new Response(null, 204, [
-                'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId(), 'tab' => $tab])
+                'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId(), 'tab' => $tab]),
             ]);
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => $tab]);
     }
+
     #[Route('/', name: 'app_project_index', methods: ['GET'])]
     public function index(GiftProjectRepository $projectRepository, Request $request): Response
     {
@@ -63,7 +64,7 @@ class GiftProjectController extends AbstractController
 
         $allProjects = $projectRepository->findAccessibleProjectsForUser($user);
 
-        $projects = array_filter($allProjects, function(GiftProject $p) use ($showArchived) {
+        $projects = array_filter($allProjects, static function (GiftProject $p) use ($showArchived) {
             return $p->isArchived() === $showArchived;
         });
 
@@ -109,12 +110,7 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_project_edit', methods: ['GET', 'POST'])]
-    public function edit(
-        Request $request,
-        GiftProject $project,
-        EntityManagerInterface $entityManager
-    ):
- Response
+    public function edit(Request $request, GiftProject $project, EntityManagerInterface $entityManager): Response
     {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
@@ -161,9 +157,8 @@ class GiftProjectController extends AbstractController
         GiftProject $project,
         UserRepository $userRepository,
         EntityManagerInterface $entityManager,
-        FinancialService $financialService
-    ): Response
-    {
+        FinancialService $financialService,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
 
@@ -173,17 +168,19 @@ class GiftProjectController extends AbstractController
         $isRecipient = $project->getRecipient() === $user;
 
         if ($isRecipient) {
-             throw $this->createAccessDeniedException("Surprise ! Vous ne pouvez pas voir ce projet.");
+            throw $this->createAccessDeniedException('Surprise ! Vous ne pouvez pas voir ce projet.');
         }
         if (!$isOwner && !$isParticipant) {
             throw $this->createAccessDeniedException();
         }
 
         // Update Read Status
-        $readStatus = $entityManager->getRepository(ProjectReadStatus::class)->findOneBy([
-            'user' => $user,
-            'project' => $project,
-        ]);
+        $readStatus = $entityManager
+            ->getRepository(ProjectReadStatus::class)
+            ->findOneBy([
+                'user' => $user,
+                'project' => $project,
+            ]);
 
         if (!$readStatus) {
             $readStatus = new ProjectReadStatus();
@@ -197,18 +194,20 @@ class GiftProjectController extends AbstractController
         // Sort Gift Ideas
         $sort = $request->query->get('sort', 'status');
         $sortedGiftIdeas = $project->getGiftIdeas()->toArray();
-        usort($sortedGiftIdeas, function(GiftIdea $a, GiftIdea $b) use ($sort) {
+        usort($sortedGiftIdeas, static function (GiftIdea $a, GiftIdea $b) use ($sort) {
             if ($sort === 'price_asc') {
                 $priceA = (float) $a->getPrice();
                 $priceB = (float) $b->getPrice();
-                if ($priceA === $priceB) return 0;
-                return ($priceA < $priceB) ? -1 : 1;
+                if ($priceA === $priceB)
+                    return 0;
+                return $priceA < $priceB ? -1 : 1;
             }
             if ($sort === 'price_desc') {
                 $priceA = (float) $a->getPrice();
                 $priceB = (float) $b->getPrice();
-                if ($priceA === $priceB) return 0;
-                return ($priceA > $priceB) ? -1 : 1;
+                if ($priceA === $priceB)
+                    return 0;
+                return $priceA > $priceB ? -1 : 1;
             }
 
             // Default: status
@@ -241,7 +240,10 @@ class GiftProjectController extends AbstractController
 
             if ($newParticipant === $project->getRecipient()) {
                 $this->addFlash('warning', 'Vous ne pouvez pas inviter le destinataire du cadeau !');
-            } elseif ($project->getParticipants()->contains($newParticipant) || $project->getOwner() === $newParticipant) {
+            } elseif (
+                $project->getParticipants()->contains($newParticipant)
+                || $project->getOwner() === $newParticipant
+            ) {
                 $this->addFlash('info', 'Cet utilisateur participe déjà.');
             } else {
                 $project->addParticipant($newParticipant);
@@ -289,9 +291,9 @@ class GiftProjectController extends AbstractController
             } elseif ($tab === 'liste_souhaits') {
                 $copiedWishIds = [];
                 foreach ($project->getGiftIdeas() as $idea) {
-                    if ($idea->getFromWish()) {
-                        $copiedWishIds[] = $idea->getFromWish()->getId();
-                    }
+                    if (!($idea->getFromWish())) { continue; }
+
+$copiedWishIds[] = $idea->getFromWish()->getId();
                 }
                 return $this->render('gift_project/_liste_souhaits.html.twig', [
                     'project' => $project,
@@ -337,7 +339,7 @@ class GiftProjectController extends AbstractController
         $isRecipient = $project->getRecipient() === $user;
 
         if ($isRecipient) {
-             throw $this->createAccessDeniedException("Surprise ! Vous ne pouvez pas voir ce projet.");
+            throw $this->createAccessDeniedException('Surprise ! Vous ne pouvez pas voir ce projet.');
         }
         if (!$isOwner && !$isParticipant) {
             throw $this->createAccessDeniedException();
@@ -357,9 +359,8 @@ class GiftProjectController extends AbstractController
         GiftProject $project,
         #[MapEntity(id: 'wish_id')] Wish $wish,
         EntityManagerInterface $entityManager,
-        Request $request
-    ): Response
-    {
+        Request $request,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
 
@@ -369,7 +370,7 @@ class GiftProjectController extends AbstractController
         $isRecipient = $project->getRecipient() === $user;
 
         if ($isRecipient) {
-             throw $this->createAccessDeniedException("Surprise ! Vous ne pouvez pas modifier ce projet.");
+            throw $this->createAccessDeniedException('Surprise ! Vous ne pouvez pas modifier ce projet.');
         }
         if (!$isOwner && !$isParticipant) {
             throw $this->createAccessDeniedException();
@@ -377,17 +378,23 @@ class GiftProjectController extends AbstractController
 
         // Check for duplicates
         foreach ($project->getGiftIdeas() as $idea) {
-            if ($idea->getFromWish() === $wish) {
-                $this->addFlash('warning', 'Ce souhait a déjà été copié dans les idées cadeaux.');
+            if ($idea->getFromWish() !== $wish) { continue; }
+
+$this->addFlash('warning', 'Ce souhait a déjà été copié dans les idées cadeaux.');
 
                 if ($request->headers->get('HX-Request')) {
                     return new Response(null, 204, [
-                        'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId(), 'tab' => 'liste_souhaits'])
+                        'HX-Redirect' => $this->generateUrl('app_project_show', [
+                            'id' => $project->getId(),
+                            'tab' => 'liste_souhaits',
+                        ]),
                     ]);
                 }
 
-                return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'liste_souhaits']);
-            }
+                return $this->redirectToRoute('app_project_show', [
+                    'id' => $project->getId(),
+                    'tab' => 'liste_souhaits',
+                ]);
         }
 
         if ($this->isCsrfTokenValid('copy_wish' . $wish->getId(), $request->request->get('_token'))) {
@@ -411,7 +418,10 @@ class GiftProjectController extends AbstractController
 
             if ($request->headers->get('HX-Request')) {
                 return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas'])
+                    'HX-Redirect' => $this->generateUrl('app_project_show', [
+                        'id' => $project->getId(),
+                        'tab' => 'ideas',
+                    ]),
                 ]);
             }
         }
@@ -438,10 +448,10 @@ class GiftProjectController extends AbstractController
         // Check if at least one idea is selected
         $hasSelectedIdea = false;
         foreach ($project->getGiftIdeas() as $idea) {
-            if ($idea->getStatus() === GiftIdea::STATUS_SELECTED) {
-                $hasSelectedIdea = true;
+            if ($idea->getStatus() !== GiftIdea::STATUS_SELECTED) { continue; }
+
+$hasSelectedIdea = true;
                 break;
-            }
         }
 
         if (!$hasSelectedIdea) {
@@ -456,7 +466,10 @@ class GiftProjectController extends AbstractController
 
             if ($request->headers->get('HX-Request')) {
                 return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas'])
+                    'HX-Redirect' => $this->generateUrl('app_project_show', [
+                        'id' => $project->getId(),
+                        'tab' => 'ideas',
+                    ]),
                 ]);
             }
         }
@@ -465,8 +478,11 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/{id}/unlock', name: 'app_project_unlock', methods: ['POST'])]
-    public function unlockProject(GiftProject $project, EntityManagerInterface $entityManager, Request $request): Response
-    {
+    public function unlockProject(
+        GiftProject $project,
+        EntityManagerInterface $entityManager,
+        Request $request,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
 
@@ -493,7 +509,10 @@ class GiftProjectController extends AbstractController
 
             if ($request->headers->get('HX-Request')) {
                 return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas'])
+                    'HX-Redirect' => $this->generateUrl('app_project_show', [
+                        'id' => $project->getId(),
+                        'tab' => 'ideas',
+                    ]),
                 ]);
             }
         }
@@ -502,8 +521,11 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/idea/{id}/mark-purchased', name: 'app_gift_idea_mark_purchased', methods: ['POST'])]
-    public function markIdeaPurchased(Request $request, GiftIdea $giftIdea, EntityManagerInterface $entityManager): Response
-    {
+    public function markIdeaPurchased(
+        Request $request,
+        GiftIdea $giftIdea,
+        EntityManagerInterface $entityManager,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
         $project = $giftIdea->getGiftProject();
@@ -532,7 +554,7 @@ class GiftProjectController extends AbstractController
         }
 
         $price = $request->request->get('price');
-        
+
         if (!$price) {
             $this->addFlash('warning', 'Le prix est obligatoire pour marquer un achat.');
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
@@ -547,7 +569,10 @@ class GiftProjectController extends AbstractController
 
             if ($request->headers->get('HX-Request')) {
                 return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas'])
+                    'HX-Redirect' => $this->generateUrl('app_project_show', [
+                        'id' => $project->getId(),
+                        'tab' => 'ideas',
+                    ]),
                 ]);
             }
         }
@@ -556,8 +581,11 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/idea/{id}/delete', name: 'app_gift_idea_delete', methods: ['DELETE'])]
-    public function deleteGiftIdea(Request $request, GiftIdea $giftIdea, EntityManagerInterface $entityManager): Response
-    {
+    public function deleteGiftIdea(
+        Request $request,
+        GiftIdea $giftIdea,
+        EntityManagerInterface $entityManager,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
         $project = $giftIdea->getGiftProject();
@@ -598,7 +626,7 @@ class GiftProjectController extends AbstractController
         $isParticipant = $project->getParticipants()->contains($user);
 
         if (!$isOwner && !$isParticipant) {
-             throw $this->createAccessDeniedException();
+            throw $this->createAccessDeniedException();
         }
 
         $comment = new Comment();
@@ -628,18 +656,18 @@ class GiftProjectController extends AbstractController
     #[Route('/comment/{id}', name: 'app_comment_show', methods: ['GET'])]
     public function showComment(Comment $comment): Response
     {
-         /** @var User $user */
+        /** @var User $user */
         $user = $this->getUser();
 
         // Check access rights (reuse logic if possible, or simple check)
         if ($comment->getAuthor() !== $user && $comment->getGiftIdea()->getGiftProject()->getOwner() !== $user) {
-             // At least allow if participant? For simply viewing, usually yes if participant.
-             // But this route is mainly used for cancelling edit (re-fetching view).
-             // Let's strict check: must be participant or owner of project
-             $project = $comment->getGiftIdea()->getGiftProject();
-             if ($project->getOwner() !== $user && !$project->getParticipants()->contains($user)) {
-                 throw $this->createAccessDeniedException();
-             }
+            // At least allow if participant? For simply viewing, usually yes if participant.
+            // But this route is mainly used for cancelling edit (re-fetching view).
+            // Let's strict check: must be participant or owner of project
+            $project = $comment->getGiftIdea()->getGiftProject();
+            if ($project->getOwner() !== $user && !$project->getParticipants()->contains($user)) {
+                throw $this->createAccessDeniedException();
+            }
         }
 
         return $this->render('gift_project/_comment.html.twig', [
@@ -654,7 +682,7 @@ class GiftProjectController extends AbstractController
         $user = $this->getUser();
 
         if ($comment->getAuthor() !== $user) {
-            throw $this->createAccessDeniedException("Vous ne pouvez modifier que vos propres commentaires.");
+            throw $this->createAccessDeniedException('Vous ne pouvez modifier que vos propres commentaires.');
         }
 
         $form = $this->createForm(CommentType::class, $comment);
@@ -669,11 +697,14 @@ class GiftProjectController extends AbstractController
                 ]);
             }
 
-            return $this->redirectToRoute('app_project_show', ['id' => $comment->getGiftIdea()->getGiftProject()->getId(), 'tab' => 'ideas']);
+            return $this->redirectToRoute('app_project_show', [
+                'id' => $comment->getGiftIdea()->getGiftProject()->getId(),
+                'tab' => 'ideas',
+            ]);
         }
 
         if ($request->headers->get('HX-Request')) {
-             return $this->render('gift_project/_comment_edit.html.twig', [
+            return $this->render('gift_project/_comment_edit.html.twig', [
                 'comment' => $comment,
                 'form' => $form,
             ]);
@@ -681,8 +712,8 @@ class GiftProjectController extends AbstractController
 
         // Fallback if not HTMX (should generally not happen in this flow)
         return $this->render('gift_project/edit_comment.html.twig', [ // You might need to create this template if non-htmx access is desired
-             'comment' => $comment,
-             'form' => $form,
+            'comment' => $comment,
+            'form' => $form,
         ]);
     }
 
@@ -706,12 +737,19 @@ class GiftProjectController extends AbstractController
             }
         }
 
-        return $this->redirectToRoute('app_project_show', ['id' => $comment->getGiftIdea()->getGiftProject()->getId(), 'tab' => 'ideas']);
+        return $this->redirectToRoute('app_project_show', [
+            'id' => $comment->getGiftIdea()->getGiftProject()->getId(),
+            'tab' => 'ideas',
+        ]);
     }
 
     #[Route('/idea/{id}/status/{status}', name: 'app_gift_idea_status', methods: ['POST'])]
-    public function changeStatus(Request $request, GiftIdea $giftIdea, string $status, EntityManagerInterface $entityManager): Response
-    {
+    public function changeStatus(
+        Request $request,
+        GiftIdea $giftIdea,
+        string $status,
+        EntityManagerInterface $entityManager,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
         $project = $giftIdea->getGiftProject();
@@ -725,11 +763,11 @@ class GiftProjectController extends AbstractController
         $allowedStatuses = [
             GiftIdea::STATUS_PROPOSED,
             GiftIdea::STATUS_SELECTED,
-            GiftIdea::STATUS_DISCARDED
+            GiftIdea::STATUS_DISCARDED,
         ];
 
         if (!in_array($status, $allowedStatuses)) {
-            throw $this->createNotFoundException("Statut invalide.");
+            throw $this->createNotFoundException('Statut invalide.');
         }
 
         if ($this->isCsrfTokenValid('status_idea' . $giftIdea->getId(), $request->request->get('_token'))) {
@@ -756,7 +794,7 @@ class GiftProjectController extends AbstractController
 
         // Cannot edit if project is locked
         if ($project->isLocked()) {
-            throw $this->createAccessDeniedException("Impossible de modifier une idée dans un projet verrouillé.");
+            throw $this->createAccessDeniedException('Impossible de modifier une idée dans un projet verrouillé.');
         }
 
         $form = $this->createForm(GiftIdeaType::class, $giftIdea);
@@ -796,8 +834,11 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/{id}/archive', name: 'app_project_archive', methods: ['POST'])]
-    public function archiveProject(GiftProject $project, EntityManagerInterface $entityManager, Request $request): Response
-    {
+    public function archiveProject(
+        GiftProject $project,
+        EntityManagerInterface $entityManager,
+        Request $request,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
 
@@ -830,7 +871,7 @@ class GiftProjectController extends AbstractController
         $isRecipient = $project->getRecipient() === $user;
 
         if ($isRecipient) {
-             throw $this->createAccessDeniedException("Surprise ! Vous ne pouvez pas voir ce projet.");
+            throw $this->createAccessDeniedException('Surprise ! Vous ne pouvez pas voir ce projet.');
         }
         if (!$isOwner && !$isParticipant) {
             throw $this->createAccessDeniedException();
@@ -844,8 +885,12 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/{id}/reimburse', name: 'app_project_reimburse', methods: ['POST'])]
-    public function reimburse(GiftProject $project, Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository): Response
-    {
+    public function reimburse(
+        GiftProject $project,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        UserRepository $userRepository,
+    ): Response {
         /** @var User $currentUser */
         $currentUser = $this->getUser(); // The Creditor (who received money)
 
@@ -857,7 +902,7 @@ class GiftProjectController extends AbstractController
         $amount = $request->request->get('amount');
         $debtor = $userRepository->find($debtorId); // The Debtor (who paid)
 
-        if (!$debtor || (!$project->getParticipants()->contains($debtor) && $project->getOwner() !== $debtor)) {
+        if (!$debtor || !$project->getParticipants()->contains($debtor) && $project->getOwner() !== $debtor) {
             $this->addFlash('danger', 'Utilisateur payeur invalide.');
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
         }
@@ -876,7 +921,10 @@ class GiftProjectController extends AbstractController
 
             if ($request->headers->get('HX-Request')) {
                 return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId(), 'tab' => 'financial'])
+                    'HX-Redirect' => $this->generateUrl('app_project_show', [
+                        'id' => $project->getId(),
+                        'tab' => 'financial',
+                    ]),
                 ]);
             }
         }
@@ -885,8 +933,11 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/{id}/leave', name: 'app_project_leave', methods: ['POST'])]
-    public function leaveProject(GiftProject $project, EntityManagerInterface $entityManager, Request $request): Response
-    {
+    public function leaveProject(
+        GiftProject $project,
+        EntityManagerInterface $entityManager,
+        Request $request,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
 
@@ -896,16 +947,19 @@ class GiftProjectController extends AbstractController
         }
 
         if (!$project->getParticipants()->contains($user)) {
-             $this->addFlash('warning', 'Vous ne faites pas partie de ce projet.');
-             return $this->redirectToRoute('app_project_index');
+            $this->addFlash('warning', 'Vous ne faites pas partie de ce projet.');
+            return $this->redirectToRoute('app_project_index');
         }
 
         // Check if any idea has been purchased in this project
         foreach ($project->getGiftIdeas() as $idea) {
-            if ($idea->getPurchasedBy() !== null) {
-                $this->addFlash('danger', 'Vous ne pouvez pas quitter le projet car des achats ont déjà été réalisés pour ce projet.');
+            if ($idea->getPurchasedBy() === null) { continue; }
+
+$this->addFlash(
+                    'danger',
+                    'Vous ne pouvez pas quitter le projet car des achats ont déjà été réalisés pour ce projet.',
+                );
                 return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
-            }
         }
 
         if ($this->isCsrfTokenValid('leave_project' . $project->getId(), $request->request->get('_token'))) {
@@ -915,7 +969,7 @@ class GiftProjectController extends AbstractController
 
             if ($request->headers->get('HX-Request')) {
                 return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_index')
+                    'HX-Redirect' => $this->generateUrl('app_project_index'),
                 ]);
             }
         }
@@ -928,9 +982,8 @@ class GiftProjectController extends AbstractController
         GiftProject $project,
         #[MapEntity(id: 'participant_id')] User $participant,
         EntityManagerInterface $entityManager,
-        Request $request
-    ): Response
-    {
+        Request $request,
+    ): Response {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
 
@@ -946,32 +999,38 @@ class GiftProjectController extends AbstractController
 
         // Check if participant has purchased any items
         foreach ($project->getGiftIdeas() as $idea) {
-            if ($idea->getPurchasedBy() === $participant) {
-                $this->addFlash('danger', 'Impossible de retirer ce participant car il a réalisé des achats pour ce projet.');
+            if ($idea->getPurchasedBy() !== $participant) { continue; }
+
+$this->addFlash(
+                    'danger',
+                    'Impossible de retirer ce participant car il a réalisé des achats pour ce projet.',
+                );
 
                 if ($request->headers->get('HX-Request')) {
                     return new Response(null, 204, [
-                        'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()])
+                        'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
                     ]);
                 }
 
                 return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
-            }
         }
 
         // Check if participant has made any reimbursements
         foreach ($project->getReimbursements() as $reimbursement) {
-            if ($reimbursement->getFromUser() === $participant) {
-                $this->addFlash('danger', 'Impossible de retirer ce participant car il a déjà effectué des remboursements.');
+            if ($reimbursement->getFromUser() !== $participant) { continue; }
+
+$this->addFlash(
+                    'danger',
+                    'Impossible de retirer ce participant car il a déjà effectué des remboursements.',
+                );
 
                 if ($request->headers->get('HX-Request')) {
                     return new Response(null, 204, [
-                        'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()])
+                        'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
                     ]);
                 }
 
                 return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
-            }
         }
 
         if ($this->isCsrfTokenValid('remove_participant' . $participant->getId(), $request->request->get('_token'))) {
@@ -981,7 +1040,7 @@ class GiftProjectController extends AbstractController
 
             if ($request->headers->get('HX-Request')) {
                 return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()])
+                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
                 ]);
             }
         }
@@ -990,8 +1049,11 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/{id}/mark-delivered', name: 'app_project_mark_delivered', methods: ['POST'])]
-    public function markDelivered(GiftProject $project, EntityManagerInterface $entityManager, Request $request): Response
-    {
+    public function markDelivered(
+        GiftProject $project,
+        EntityManagerInterface $entityManager,
+        Request $request,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
 
@@ -1005,7 +1067,7 @@ class GiftProjectController extends AbstractController
             $this->addFlash('warning', 'Le projet est déjà marqué comme remis.');
             if ($request->headers->get('HX-Request')) {
                 return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()])
+                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
                 ]);
             }
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
@@ -1019,7 +1081,7 @@ class GiftProjectController extends AbstractController
 
         if ($request->headers->get('HX-Request')) {
             return new Response(null, 204, [
-                'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()])
+                'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
             ]);
         }
 
@@ -1031,9 +1093,8 @@ class GiftProjectController extends AbstractController
         #[MapEntity(id: 'contactId')] User $recipient,
         #[MapEntity(id: 'wishId')] Wish $wish,
         EntityManagerInterface $entityManager,
-        Request $request
-    ): Response
-    {
+        Request $request,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
 
@@ -1051,7 +1112,9 @@ class GiftProjectController extends AbstractController
             $project->setOwner($user);
             $project->setRecipient($recipient);
             $project->setName("Cadeau pour {$recipient->getDisplayName()} - {$wish->getName()}");
-            $project->setDescription("Projet cadeau créé à partir du souhait de {$recipient->getDisplayName()}: '{$wish->getName()}'.");
+            $project->setDescription(
+                "Projet cadeau créé à partir du souhait de {$recipient->getDisplayName()}: '{$wish->getName()}'.",
+            );
             // The current user is the owner, so not a participant in this context.
             $entityManager->persist($project);
 
@@ -1071,11 +1134,14 @@ class GiftProjectController extends AbstractController
 
             $entityManager->flush();
 
-            $this->addFlash('success', "Projet cadeau créé pour {$recipient->getDisplayName()} avec le souhait '{$wish->getName()}'.");
+            $this->addFlash(
+                'success',
+                "Projet cadeau créé pour {$recipient->getDisplayName()} avec le souhait '{$wish->getName()}'.",
+            );
 
             if ($request->headers->get('HX-Request')) {
                 return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()])
+                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
                 ]);
             }
         }

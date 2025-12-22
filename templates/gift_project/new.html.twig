@@ -6,7 +6,7 @@
 <section class="section">
     <div class="container">
         <h1 class="title">Lancer un projet de cadeau</h1>
-        
+
         <div class="box">
             {{ form_start(form) }}
                 <div class="field">
@@ -17,15 +17,29 @@
                     {{ form_errors(form.name) }}
                 </div>
 
-                <div class="field">
-                    {{ form_label(form.recipient, 'Destinataire', {'label_attr': {'class': 'label'}}) }}
-                    <div class="control">
-                        <div class="select is-fullwidth">
-                             {{ form_widget(form.recipient) }}
+                <div class="columns">
+                    <div class="column is-half">
+                        <div class="field">
+                            {{ form_label(form.recipient, null, {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                     {{ form_widget(form.recipient) }}
+                                </div>
+                            </div>
+                            <p class="help">{{ form.recipient.vars.help }}</p>
+                            {{ form_errors(form.recipient) }}
                         </div>
                     </div>
-                    <p class="help">Choisissez parmi les personnes qui ont partagé leur liste avec vous. Le destinataire ne verra PAS ce projet.</p>
-                    {{ form_errors(form.recipient) }}
+                    <div class="column is-half">
+                        <div class="field">
+                            {{ form_label(form.recipientName, null, {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(form.recipientName, {'attr': {'class': 'input'}}) }}
+                            </div>
+                            <p class="help">{{ form.recipientName.vars.help }}</p>
+                            {{ form_errors(form.recipientName) }}
+                        </div>
+                    </div>
                 </div>
 
                 <div class="field">

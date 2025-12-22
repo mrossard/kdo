@@ -2,7 +2,7 @@
 
 namespace App\Form;
 
-use App\Entity\User;
+
 use App\Entity\Wish;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
@@ -17,44 +17,39 @@ class WishType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            ->add('name', TextType::class, [
-                'label' => 'Nom du souhait',
-                'attr' => [
-                    'class' => 'input',
-                    'placeholder' => 'Ex: Une licorne en peluche',
-                ],
-                'constraints' => [
-                    new NotBlank(message: 'Le nom du souhait est obligatoire.'),
-                ],
-            ])
-            ->add('description', TextareaType::class, [
-                'label' => 'Description',
-                'required' => false,
-                'attr' => [
-                    'class' => 'textarea',
-                    'rows' => 4,
-                    'placeholder' => 'Détails, taille, couleur...',
-                ],
-            ])
-            ->add('url', UrlType::class, [
-                'label' => 'Lien (URL)',
-                'required' => false,
-                'attr' => [
-                    'class' => 'input',
-                    'placeholder' => 'https://...',
-                ],
-            ])
-            ->add('price', MoneyType::class, [
-                'label' => 'Prix estimé',
-                'required' => false,
-                'currency' => 'EUR',
-                'attr' => [
-                    'class' => 'input',
-                    'placeholder' => '25.00',
-                ],
-            ])
-        ;
+        $builder->add('name', TextType::class, [
+            'label' => 'Nom du souhait',
+            'attr' => [
+                'class' => 'input',
+                'placeholder' => 'Ex: Une licorne en peluche',
+            ],
+            'constraints' => [
+                new NotBlank(message: 'Le nom du souhait est obligatoire.'),
+            ],
+        ])->add('description', TextareaType::class, [
+            'label' => 'Description',
+            'required' => false,
+            'attr' => [
+                'class' => 'textarea',
+                'rows' => 4,
+                'placeholder' => 'Détails, taille, couleur...',
+            ],
+        ])->add('url', UrlType::class, [
+            'label' => 'Lien (URL)',
+            'required' => false,
+            'attr' => [
+                'class' => 'input',
+                'placeholder' => 'https://...',
+            ],
+        ])->add('price', MoneyType::class, [
+            'label' => 'Prix estimé',
+            'required' => false,
+            'currency' => 'EUR',
+            'attr' => [
+                'class' => 'input',
+                'placeholder' => '25.00',
+            ],
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

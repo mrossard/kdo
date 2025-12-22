@@ -26,17 +26,16 @@ class FinancialService
         foreach ($projects as $project) {
             $financials = $this->calculate($project);
             foreach ($financials['transfers'] as $transfer) {
-                if ($transfer['from'] === $debtor && $transfer['to'] === $creditor) {
-                    // Create Reimbursement
-                    $reimbursement = new Reimbursement();
+                if (!($transfer['from'] === $debtor && $transfer['to'] === $creditor)) { continue; }
+
+$reimbursement = new Reimbursement();
                     $reimbursement->setProject($project);
                     $reimbursement->setFromUser($debtor);
                     $reimbursement->setToUser($creditor);
-                    $reimbursement->setAmount((string)$transfer['amount']);
+                    $reimbursement->setAmount((string) $transfer['amount']);
 
                     $entityManager->persist($reimbursement);
                     $count++;
-                }
             }
         }
         $entityManager->flush();
@@ -60,16 +59,20 @@ class FinancialService
 
         $totalCost = 0.0;
         foreach ($project->getGiftIdeas() as $idea) {
-            if ($idea->getStatus() === GiftIdea::STATUS_SELECTED && $idea->getPurchasedBy() && $idea->getPurchasePrice()) {
-                $uid = $idea->getPurchasedBy()->getId();
+            if (
+                !($idea->getStatus() === GiftIdea::STATUS_SELECTED
+                && $idea->getPurchasedBy()
+                && $idea->getPurchasePrice())
+            ) { continue; }
+
+$uid = $idea->getPurchasedBy()->getId();
                 $amount = (float) $idea->getPurchasePrice();
-                
+
                 // Only count if the purchaser is part of the group (should be, but safety check)
                 if (isset($paidBy[$uid])) {
                     $paidBy[$uid] += $amount;
                     $totalCost += $amount;
                 }
-            }
         }
 
         $count = count($participants);
@@ -110,7 +113,7 @@ class FinancialService
         // If A owed 50 and paid 50, A's Net Position is 0.
         // Users want to see if they are "squared".
         // So yes, update summary balances too.
-        
+
         foreach ($summary as &$row) {
             $uid = $row['user']->getId();
             $row['balance'] = $balances[$uid];
@@ -121,36 +124,40 @@ class FinancialService
         $debtors = [];
         $creditors = [];
         foreach ($balances as $uid => $balance) {
-            if ($balance < -0.01) $debtors[$uid] = $balance; // Negative balance = owes money
-            if ($balance > 0.01) $creditors[$uid] = $balance; // Positive balance = needs reimbursement
+            if ($balance < -0.01)
+                $debtors[$uid] = $balance; // Negative balance = owes money
+            if ($balance > 0.01)
+                $creditors[$uid] = $balance; // Positive balance = needs reimbursement
         }
 
         $transfers = [];
-        
+
         // While we have both debtors and creditors
         while (count($debtors) > 0 && count($creditors) > 0) {
             // Get first debtor and creditor
             $dUid = array_key_first($debtors);
             $cUid = array_key_first($creditors);
-            
+
             $debt = abs($debtors[$dUid]);
             $credit = $creditors[$cUid];
-            
+
             $amount = min($debt, $credit);
-            
+
             $transfers[] = [
                 'from' => $userMap[$dUid],
                 'to' => $userMap[$cUid],
-                'amount' => $amount
+                'amount' => $amount,
             ];
-            
+
             // Update balances
             $debtors[$dUid] += $amount;
             $creditors[$cUid] -= $amount;
-            
+
             // Remove settled accounts
-            if (abs($debtors[$dUid]) < 0.01) unset($debtors[$dUid]);
-            if ($creditors[$cUid] < 0.01) unset($creditors[$cUid]);
+            if (abs($debtors[$dUid]) < 0.01)
+                unset($debtors[$dUid]);
+            if ($creditors[$cUid] < 0.01)
+                unset($creditors[$cUid]);
         }
 
         return [
@@ -173,10 +180,10 @@ class FinancialService
             $financials = $this->calculate($project); // Use existing calculation logic
 
             foreach ($financials['summary'] as $participantSummary) {
-                if ($participantSummary['user']->getId() === $contact->getId()) {
-                    $cumulativeBalance += $participantSummary['balance'];
-                    break; // Found contact's balance for this project, move to next project
-                }
+                if ($participantSummary['user']->getId() !== $contact->getId()) { continue; }
+
+$cumulativeBalance += $participantSummary['balance'];
+                    break;
             }
         }
 

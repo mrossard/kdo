@@ -40,7 +40,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private array $roles = [];
 
     /**
-     * @var string The hashed password
+     * @var ?string The hashed password
      */
     #[ORM\Column]
     private ?string $password = null;
@@ -218,7 +218,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->password;
     }
 
-    public function setPassword(string $password): static
+    public function setPassword(#[\SensitiveParameter] string $password): static
     {
         $this->password = $password;
 

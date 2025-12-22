@@ -19,11 +19,11 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
 {
     use TargetPathTrait;
 
-    public const LOGIN_ROUTE = 'app_login';
+    public const string LOGIN_ROUTE = 'app_login';
 
-    public function __construct(private UrlGeneratorInterface $urlGenerator)
-    {
-    }
+    public function __construct(
+        private readonly UrlGeneratorInterface $urlGenerator,
+    ) {}
 
     public function authenticate(Request $request): Passport
     {
@@ -36,11 +36,11 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
             new PasswordCredentials($request->getPayload()->getString('password')),
             [
                 new CsrfTokenBadge('authenticate', $request->getPayload()->getString('_csrf_token')),
-            ]
+            ],
         );
     }
 
-    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
+    public function onAuthenticationSuccess(Request $request, #[\SensitiveParameter] TokenInterface $token, string $firewallName): ?Response
     {
         if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {
             return new RedirectResponse($targetPath);

@@ -47,7 +47,7 @@
                                     <span>Verrouillé</span>
                                 </span>
                             {% endif %}
-                            
+
                             {% set last_read = null %}
                             {% for status in app.user.projectReadStatuses %}
                                 {% if status.project.id == project.id %}
@@ -63,7 +63,7 @@
                             {% endif %}
                         </p>
                         <span class="card-header-icon">
-                            <span class="tag is-info is-light">Pour : {{ project.recipient.displayName }}</span>
+                            <span class="tag is-info is-light">Pour : {{ project.recipientDisplayName }}</span>
                             <span class="tag is-light ml-2">
                                 <span class="icon is-small">{{ ux_icon('material-symbols:group') }}</span>
                                 <span>{{ project.participants|length + 1 }}</span>
@@ -90,7 +90,7 @@
             </div>
         {% endfor %}
         </div>
-        
+
         <div class="mt-5">
              <a href="{{ path('app_wish_index') }}" class="button is-light">Retour à ma liste</a>
         </div>

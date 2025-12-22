@@ -58,6 +58,7 @@
                         <span class="tag is-rounded ml-2">{{ project.giftIdeas|length }}</span>
                     </a>
                 </li>
+                {% if project.recipient %}
                 <li class="{{ current_tab == 'liste_souhaits' ? 'is-active' : '' }}">
                     <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'liste_souhaits'}) }}"
                        hx-target="#project-content"
@@ -69,6 +70,7 @@
                         <span class="tag is-rounded ml-2">{{ project.recipient.wishes|length }}</span>
                     </a>
                 </li>
+                {% endif %}
                 <li class="{{ current_tab == 'financial' ? 'is-active' : '' }}">
                     <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'financial'}) }}"
                        hx-target="#project-content"

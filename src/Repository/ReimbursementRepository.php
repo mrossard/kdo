@@ -21,7 +21,8 @@ class ReimbursementRepository extends ServiceEntityRepository
      */
     public function findByUserInvolvement(\App\Entity\User $user): array
     {
-        return $this->createQueryBuilder('r')
+        return $this
+            ->createQueryBuilder('r')
             ->where('r.fromUser = :user OR r.toUser = :user')
             ->setParameter('user', $user)
             ->orderBy('r.createdAt', 'DESC')
@@ -43,7 +44,6 @@ class ReimbursementRepository extends ServiceEntityRepository
     //            ->getResult()
     //        ;
     //    }
-
     //    public function findOneBySomeField($value): ?Reimbursement
     //    {
     //        return $this->createQueryBuilder('r')

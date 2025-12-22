@@ -4,8 +4,8 @@ namespace App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
+
+
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -19,14 +19,14 @@ class UserThemeController extends AbstractController
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
         $prefs = $user->getUiPreferences() ?? [];
-        
+
         // Default is light, so if not set or light, switch to dark
         $currentTheme = $prefs['theme'] ?? 'light';
-        $newTheme = ($currentTheme === 'light') ? 'dark' : 'light';
-        
+        $newTheme = $currentTheme === 'light' ? 'dark' : 'light';
+
         $prefs['theme'] = $newTheme;
         $user->setUiPreferences($prefs);
-        
+
         $entityManager->flush();
 
         // If HTMX request, we can return a partial or just a 200 OK with headers

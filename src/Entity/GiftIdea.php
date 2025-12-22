@@ -60,9 +60,9 @@ class GiftIdea
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $purchasedAt = null;
 
-    public const STATUS_PROPOSED = 'PROPOSED';
-    public const STATUS_SELECTED = 'SELECTED';
-    public const STATUS_DISCARDED = 'DISCARDED';
+    public const string STATUS_PROPOSED = 'PROPOSED';
+    public const string STATUS_SELECTED = 'SELECTED';
+    public const string STATUS_DISCARDED = 'DISCARDED';
 
     public function __construct()
     {

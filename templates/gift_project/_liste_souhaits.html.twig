@@ -1,6 +1,7 @@
+{% if project.recipient %}
 <div class="box">
     <h3 class="title is-4">Liste de souhaits de {{ project.recipient.displayName }}</h3>
-    
+
     {% if project.recipient.wishes is not empty %}
         <div class="columns is-multiline">
             {% for wish in project.recipient.wishes %}
@@ -8,7 +9,7 @@
                     <div class="card">
                         <div class="card-content">
                             <p class="title is-5">{{ wish.name }}</p>
-                            
+
                             {% if wish.description %}
                                 <div class="content">{{ wish.description|nl2br }}</div>
                             {% endif %}
@@ -16,7 +17,7 @@
                             {% if wish.price %}
                                 <p class="mb-2"><strong>Prix estimé :</strong> {{ wish.price }} €</p>
                             {% endif %}
-                            
+
                             {% if wish.url %}
                                 <div class="field">
                                     <div class="control">
@@ -58,3 +59,4 @@
         </div>
     {% endif %}
 </div>
+{% endif %}

@@ -10,13 +10,13 @@ use App\Repository\ContactRequestRepository;
 use App\Security\AppAuthenticator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\UserAuthenticatorInterface;
 use Symfony\Component\Uid\Uuid;
-use Symfony\Component\Form\FormError;
 
 class RegistrationController extends AbstractController
 {
@@ -27,9 +27,8 @@ class RegistrationController extends AbstractController
         UserAuthenticatorInterface $userAuthenticator,
         AppAuthenticator $authenticator,
         EntityManagerInterface $entityManager,
-        ContactRequestRepository $contactRequestRepository
-    ): Response
-    {
+        ContactRequestRepository $contactRequestRepository,
+    ): Response {
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
@@ -71,19 +70,18 @@ class RegistrationController extends AbstractController
             }
 
             if (!$hasInvitation) {
-                $form->get('email')->addError(new FormError('Vous ne pouvez vous inscrire que si vous avez reçu au moins une invitation pour cette adresse e-mail.'));
+                $form->get('email')->addError(
+                    new FormError(
+                        'Vous ne pouvez vous inscrire que si vous avez reçu au moins une invitation pour cette adresse e-mail.',
+                    ),
+                );
                 return $this->render('registration/register.html.twig', [
                     'registrationForm' => $form,
                 ]);
             }
 
             // encode the plain password
-            $user->setPassword(
-                $userPasswordHasher->hashPassword(
-                    $user,
-                    $form->get('plainPassword')->getData()
-                )
-            );
+            $user->setPassword($userPasswordHasher->hashPassword($user, $form->get('plainPassword')->getData()));
 
             $entityManager->persist($user);
             $entityManager->flush();
@@ -141,11 +139,7 @@ class RegistrationController extends AbstractController
                 $this->addFlash('info', 'Vos invitations en attente ont été rattachées à votre compte.');
             }
 
-            return $userAuthenticator->authenticateUser(
-                $user,
-                $authenticator,
-                $request
-            );
+            return $userAuthenticator->authenticateUser($user, $authenticator, $request);
         }
 
         return $this->render('registration/register.html.twig', [

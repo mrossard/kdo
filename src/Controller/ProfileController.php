@@ -18,14 +18,13 @@ class ProfileController extends AbstractController
 {
     #[Route('/profile', name: 'app_profile')]
     public function index(
-        Request $request, 
+        Request $request,
         EntityManagerInterface $entityManager,
-        UserPasswordHasherInterface $passwordHasher
-    ): Response
-    {
+        UserPasswordHasherInterface $passwordHasher,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
-        
+
         $profileForm = $this->createForm(UserProfileType::class, $user);
         $profileForm->handleRequest($request);
 
@@ -42,12 +41,12 @@ class ProfileController extends AbstractController
         if ($passwordForm->isSubmitted() && $passwordForm->isValid()) {
             $newPassword = $passwordForm->get('plainPassword')->getData();
             $encodedPassword = $passwordHasher->hashPassword($user, $newPassword);
-            
+
             $user->setPassword($encodedPassword);
             $entityManager->flush();
 
             $this->addFlash('success', 'Mot de passe modifié avec succès.');
-            
+
             return $this->redirectToRoute('app_profile');
         }
 

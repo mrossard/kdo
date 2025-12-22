@@ -38,13 +38,15 @@ class GiftProject
     private ?\DateTimeImmutable $deliveredAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'ownedGiftProjects')]
-
     #[ORM\JoinColumn(nullable: false)]
     private ?User $owner = null;
 
     #[ORM\ManyToOne(inversedBy: 'targetedGiftProjects')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?User $recipient = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $recipientName = null;
 
     /**
      * @var Collection<int, User>
@@ -183,6 +185,27 @@ class GiftProject
         $this->recipient = $recipient;
 
         return $this;
+    }
+
+    public function getRecipientName(): ?string
+    {
+        return $this->recipientName;
+    }
+
+    public function setRecipientName(?string $recipientName): static
+    {
+        $this->recipientName = $recipientName;
+
+        return $this;
+    }
+
+    public function getRecipientDisplayName(): string
+    {
+        if ($this->recipient) {
+            return $this->recipient->getDisplayName();
+        }
+
+        return $this->recipientName ?? 'Anonyme';
     }
 
     /**

@@ -21,9 +21,8 @@ class FinancialController extends AbstractController
         GiftProjectRepository $projectRepository,
         FinancialService $financialService,
         ReimbursementRepository $reimbursementRepository,
-        GiftIdeaRepository $giftIdeaRepository
-    ): Response
-    {
+        GiftIdeaRepository $giftIdeaRepository,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
         $projects = $projectRepository->findAccessibleProjectsForUser($user);
@@ -33,7 +32,7 @@ class FinancialController extends AbstractController
 
         foreach ($projects as $project) {
             $financials = $financialService->calculate($project);
-            
+
             foreach ($financials['transfers'] as $transfer) {
                 if ($transfer['from']->getId() === $user->getId()) {
                     $debts[] = [

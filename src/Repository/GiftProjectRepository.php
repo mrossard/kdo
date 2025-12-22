@@ -5,7 +5,7 @@ namespace App\Repository;
 use App\Entity\GiftProject;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Common\Collections\ArrayCollection;
+
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -26,7 +26,8 @@ class GiftProjectRepository extends ServiceEntityRepository
      */
     public function findAccessibleProjectsForUser(User $user): array
     {
-        return $this->createQueryBuilder('g')
+        return $this
+            ->createQueryBuilder('g')
             ->leftJoin('g.participants', 'p')
             ->where('g.recipient != :user') // Important: Never show if I am the recipient
             ->andWhere('g.owner = :user OR p = :user') // Show if owner OR participant
@@ -43,12 +44,13 @@ class GiftProjectRepository extends ServiceEntityRepository
      */
     public function findProjectsInvolvingUsers(User $user1, User $user2): array
     {
-        $qb = $this->createQueryBuilder('gp')
-                ->leftJoin('gp.participants', 'p')
-                ->where('gp.owner = :user1 OR p = :user1')
-                ->andWhere('gp.owner = :user2 OR p = :user2')
-        ->setParameter('user1', $user1)
-        ->setParameter('user2', $user2);
+        $qb = $this
+            ->createQueryBuilder('gp')
+            ->leftJoin('gp.participants', 'p')
+            ->where('gp.owner = :user1 OR p = :user1')
+            ->andWhere('gp.owner = :user2 OR p = :user2')
+            ->setParameter('user1', $user1)
+            ->setParameter('user2', $user2);
 
         return $qb->getQuery()->getResult();
     }

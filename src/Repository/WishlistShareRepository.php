@@ -30,7 +30,6 @@ class WishlistShareRepository extends ServiceEntityRepository
     //            ->getResult()
     //        ;
     //    }
-
     //    public function findOneBySomeField($value): ?WishlistShare
     //    {
     //        return $this->createQueryBuilder('w')

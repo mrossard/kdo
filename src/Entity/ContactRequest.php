@@ -3,8 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\ContactRequestRepository;
+
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\DBAL\Types\Types;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Uid\Uuid;
 
@@ -41,9 +41,9 @@ class ContactRequest
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    public const STATUS_PENDING = 'PENDING';
-    public const STATUS_ACCEPTED = 'ACCEPTED';
-    public const STATUS_DECLINED = 'DECLINED';
+    public const string STATUS_PENDING = 'PENDING';
+    public const string STATUS_ACCEPTED = 'ACCEPTED';
+    public const string STATUS_DECLINED = 'DECLINED';
 
     public function __construct()
     {
@@ -96,7 +96,7 @@ class ContactRequest
         return $this->invitationToken;
     }
 
-    public function setInvitationToken(?Uuid $invitationToken): static
+    public function setInvitationToken(#[\SensitiveParameter] ?Uuid $invitationToken): static
     {
         $this->invitationToken = $invitationToken;
 
