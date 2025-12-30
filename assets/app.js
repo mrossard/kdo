@@ -6,4 +6,28 @@
  */
 import 'bulma/css/bulma.min.css';
 import './styles/app.css';
-import 'htmx.org';
+import htmx from 'htmx.org';
+
+window.htmx = htmx;
+
+htmx.onLoad((content) => {
+    const $navbarBurgers = content.querySelectorAll('.navbar-burger');
+
+    $navbarBurgers.forEach(el => {
+        el.addEventListener('click', () => {
+            const target = el.dataset.target;
+            const $target = document.getElementById(target);
+
+            if ($target) {
+                el.classList.toggle('is-active');
+                $target.classList.toggle('is-active');
+
+                const expanded = el.getAttribute('aria-expanded') === 'true';
+                el.setAttribute('aria-expanded', !expanded);
+
+                // Lock/unlock body scroll
+                document.documentElement.classList.toggle('is-clipped-mobile');
+            }
+        });
+    });
+});
