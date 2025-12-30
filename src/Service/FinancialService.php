@@ -26,16 +26,18 @@ class FinancialService
         foreach ($projects as $project) {
             $financials = $this->calculate($project);
             foreach ($financials['transfers'] as $transfer) {
-                if (!($transfer['from'] === $debtor && $transfer['to'] === $creditor)) { continue; }
+                if (!($transfer['from'] === $debtor && $transfer['to'] === $creditor)) {
+                    continue;
+                }
 
-$reimbursement = new Reimbursement();
-                    $reimbursement->setProject($project);
-                    $reimbursement->setFromUser($debtor);
-                    $reimbursement->setToUser($creditor);
-                    $reimbursement->setAmount((string) $transfer['amount']);
+                $reimbursement = new Reimbursement();
+                $reimbursement->setProject($project);
+                $reimbursement->setFromUser($debtor);
+                $reimbursement->setToUser($creditor);
+                $reimbursement->setAmount((string) $transfer['amount']);
 
-                    $entityManager->persist($reimbursement);
-                    $count++;
+                $entityManager->persist($reimbursement);
+                $count++;
             }
         }
         $entityManager->flush();
@@ -60,19 +62,23 @@ $reimbursement = new Reimbursement();
         $totalCost = 0.0;
         foreach ($project->getGiftIdeas() as $idea) {
             if (
-                !($idea->getStatus() === GiftIdea::STATUS_SELECTED
-                && $idea->getPurchasedBy()
-                && $idea->getPurchasePrice())
-            ) { continue; }
+                !(
+                    $idea->getStatus() === GiftIdea::STATUS_SELECTED
+                    && $idea->getPurchasedBy()
+                    && $idea->getPurchasePrice()
+                )
+            ) {
+                continue;
+            }
 
-$uid = $idea->getPurchasedBy()->getId();
-                $amount = (float) $idea->getPurchasePrice();
+            $uid = $idea->getPurchasedBy()->getId();
+            $amount = (float) $idea->getPurchasePrice();
 
-                // Only count if the purchaser is part of the group (should be, but safety check)
-                if (isset($paidBy[$uid])) {
-                    $paidBy[$uid] += $amount;
-                    $totalCost += $amount;
-                }
+            // Only count if the purchaser is part of the group (should be, but safety check)
+            if (isset($paidBy[$uid])) {
+                $paidBy[$uid] += $amount;
+                $totalCost += $amount;
+            }
         }
 
         $count = count($participants);
@@ -180,10 +186,12 @@ $uid = $idea->getPurchasedBy()->getId();
             $financials = $this->calculate($project); // Use existing calculation logic
 
             foreach ($financials['summary'] as $participantSummary) {
-                if ($participantSummary['user']->getId() !== $contact->getId()) { continue; }
+                if ($participantSummary['user']->getId() !== $contact->getId()) {
+                    continue;
+                }
 
-$cumulativeBalance += $participantSummary['balance'];
-                    break;
+                $cumulativeBalance += $participantSummary['balance'];
+                break;
             }
         }
 

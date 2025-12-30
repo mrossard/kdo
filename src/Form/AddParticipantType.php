@@ -24,7 +24,15 @@ class AddParticipantType extends AbstractType
             'query_builder' => static function (UserRepository $er) use ($currentUser) {
                 // Find users who have shared their list WITH me ($currentUser)
                 // OR users with whom I have shared my list ($currentUser is owner)
-                return $er->createQueryBuilder('u')->leftJoin('u.sentShares', 's_sent')->leftJoin('u.receivedShares', 's_received')->where('s_sent.recipient = :me OR s_received.owner = :me')->andWhere('u != :me')->setParameter('me', $currentUser)->orderBy('u.firstname', 'ASC')->addOrderBy('u.lastname', 'ASC'); // u shared with someone // someone shared with u // Cannot invite myself
+                return $er
+                    ->createQueryBuilder('u')
+                    ->leftJoin('u.sentShares', 's_sent')
+                    ->leftJoin('u.receivedShares', 's_received')
+                    ->where('s_sent.recipient = :me OR s_received.owner = :me')
+                    ->andWhere('u != :me')
+                    ->setParameter('me', $currentUser)
+                    ->orderBy('u.firstname', 'ASC')
+                    ->addOrderBy('u.lastname', 'ASC'); // u shared with someone // someone shared with u // Cannot invite myself
             },
             'placeholder' => 'Sélectionnez un contact',
             'constraints' => [

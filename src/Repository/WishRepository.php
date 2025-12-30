@@ -6,7 +6,6 @@ use App\Entity\GiftIdea;
 use App\Entity\User;
 use App\Entity\Wish;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-
 use Doctrine\Persistence\ManagerRegistry;
 
 /**

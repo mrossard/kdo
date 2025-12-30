@@ -353,7 +353,12 @@ class ContactController extends AbstractController
     private function getMutualContacts(User $user, WishlistShareRepository $wishlistShareRepository): array
     {
         $qb = $wishlistShareRepository->createQueryBuilder('ws');
-        $contacts = $qb->where('ws.owner = :user OR ws.recipient = :user')->andWhere('ws.owner != ws.recipient')->setParameter('user', $user)->getQuery()->getResult(); // Ensure it's not a self-share (shouldn't happen)
+        $contacts = $qb
+            ->where('ws.owner = :user OR ws.recipient = :user')
+            ->andWhere('ws.owner != ws.recipient')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getResult(); // Ensure it's not a self-share (shouldn't happen)
 
         $mutualContacts = [];
         foreach ($contacts as $share) {

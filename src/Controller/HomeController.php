@@ -40,9 +40,11 @@ class HomeController extends AbstractController
             // Usually you want to know debts even if archived. Let's include all.
             $financials = $financialService->calculate($project);
             foreach ($financials['summary'] as $row) {
-                if ($row['user'] !== $user) { continue; }
+                if ($row['user'] !== $user) {
+                    continue;
+                }
 
-$globalBalance += $row['balance'];
+                $globalBalance += $row['balance'];
             }
         }
 

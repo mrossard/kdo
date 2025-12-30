@@ -4,7 +4,6 @@ namespace App\Form;
 
 use App\Entity\GiftProject;
 use App\Entity\User;
-
 use App\Repository\UserRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -38,7 +37,12 @@ class GiftProjectType extends AbstractType
                 // So we look for WishlistShare where recipient = $currentUser
                 // And select the owner of that share.
 
-                return $er->createQueryBuilder('u')->join('u.sentShares', 's')->where('s.recipient = :me')->setParameter('me', $currentUser)->orderBy('u.email', 'ASC'); // s is a WishlistShare where s.owner = u
+                return $er
+                    ->createQueryBuilder('u')
+                    ->join('u.sentShares', 's')
+                    ->where('s.recipient = :me')
+                    ->setParameter('me', $currentUser)
+                    ->orderBy('u.email', 'ASC'); // s is a WishlistShare where s.owner = u
             },
             'placeholder' => 'Sélectionnez un destinataire',
             'help' => 'Si le destinataire a un compte et partage sa liste avec vous. Le destinataire ne verra PAS ce projet.',

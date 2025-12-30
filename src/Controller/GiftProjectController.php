@@ -23,7 +23,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-
 #[Route('/project')]
 #[IsGranted('ROLE_USER')]
 class GiftProjectController extends AbstractController
@@ -291,9 +290,11 @@ class GiftProjectController extends AbstractController
             } elseif ($tab === 'liste_souhaits') {
                 $copiedWishIds = [];
                 foreach ($project->getGiftIdeas() as $idea) {
-                    if (!($idea->getFromWish())) { continue; }
+                    if (!$idea->getFromWish()) {
+                        continue;
+                    }
 
-$copiedWishIds[] = $idea->getFromWish()->getId();
+                    $copiedWishIds[] = $idea->getFromWish()->getId();
                 }
                 return $this->render('gift_project/_liste_souhaits.html.twig', [
                     'project' => $project,
@@ -378,23 +379,25 @@ $copiedWishIds[] = $idea->getFromWish()->getId();
 
         // Check for duplicates
         foreach ($project->getGiftIdeas() as $idea) {
-            if ($idea->getFromWish() !== $wish) { continue; }
+            if ($idea->getFromWish() !== $wish) {
+                continue;
+            }
 
-$this->addFlash('warning', 'Ce souhait a déjà été copié dans les idées cadeaux.');
+            $this->addFlash('warning', 'Ce souhait a déjà été copié dans les idées cadeaux.');
 
-                if ($request->headers->get('HX-Request')) {
-                    return new Response(null, 204, [
-                        'HX-Redirect' => $this->generateUrl('app_project_show', [
-                            'id' => $project->getId(),
-                            'tab' => 'liste_souhaits',
-                        ]),
-                    ]);
-                }
-
-                return $this->redirectToRoute('app_project_show', [
-                    'id' => $project->getId(),
-                    'tab' => 'liste_souhaits',
+            if ($request->headers->get('HX-Request')) {
+                return new Response(null, 204, [
+                    'HX-Redirect' => $this->generateUrl('app_project_show', [
+                        'id' => $project->getId(),
+                        'tab' => 'liste_souhaits',
+                    ]),
                 ]);
+            }
+
+            return $this->redirectToRoute('app_project_show', [
+                'id' => $project->getId(),
+                'tab' => 'liste_souhaits',
+            ]);
         }
 
         if ($this->isCsrfTokenValid('copy_wish' . $wish->getId(), $request->request->get('_token'))) {
@@ -448,10 +451,12 @@ $this->addFlash('warning', 'Ce souhait a déjà été copié dans les idées cad
         // Check if at least one idea is selected
         $hasSelectedIdea = false;
         foreach ($project->getGiftIdeas() as $idea) {
-            if ($idea->getStatus() !== GiftIdea::STATUS_SELECTED) { continue; }
+            if ($idea->getStatus() !== GiftIdea::STATUS_SELECTED) {
+                continue;
+            }
 
-$hasSelectedIdea = true;
-                break;
+            $hasSelectedIdea = true;
+            break;
         }
 
         if (!$hasSelectedIdea) {
@@ -953,13 +958,15 @@ $hasSelectedIdea = true;
 
         // Check if any idea has been purchased in this project
         foreach ($project->getGiftIdeas() as $idea) {
-            if ($idea->getPurchasedBy() === null) { continue; }
+            if ($idea->getPurchasedBy() === null) {
+                continue;
+            }
 
-$this->addFlash(
-                    'danger',
-                    'Vous ne pouvez pas quitter le projet car des achats ont déjà été réalisés pour ce projet.',
-                );
-                return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
+            $this->addFlash(
+                'danger',
+                'Vous ne pouvez pas quitter le projet car des achats ont déjà été réalisés pour ce projet.',
+            );
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
         }
 
         if ($this->isCsrfTokenValid('leave_project' . $project->getId(), $request->request->get('_token'))) {
@@ -999,38 +1006,42 @@ $this->addFlash(
 
         // Check if participant has purchased any items
         foreach ($project->getGiftIdeas() as $idea) {
-            if ($idea->getPurchasedBy() !== $participant) { continue; }
+            if ($idea->getPurchasedBy() !== $participant) {
+                continue;
+            }
 
-$this->addFlash(
-                    'danger',
-                    'Impossible de retirer ce participant car il a réalisé des achats pour ce projet.',
-                );
+            $this->addFlash(
+                'danger',
+                'Impossible de retirer ce participant car il a réalisé des achats pour ce projet.',
+            );
 
-                if ($request->headers->get('HX-Request')) {
-                    return new Response(null, 204, [
-                        'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
-                    ]);
-                }
+            if ($request->headers->get('HX-Request')) {
+                return new Response(null, 204, [
+                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
+                ]);
+            }
 
-                return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
         }
 
         // Check if participant has made any reimbursements
         foreach ($project->getReimbursements() as $reimbursement) {
-            if ($reimbursement->getFromUser() !== $participant) { continue; }
+            if ($reimbursement->getFromUser() !== $participant) {
+                continue;
+            }
 
-$this->addFlash(
-                    'danger',
-                    'Impossible de retirer ce participant car il a déjà effectué des remboursements.',
-                );
+            $this->addFlash(
+                'danger',
+                'Impossible de retirer ce participant car il a déjà effectué des remboursements.',
+            );
 
-                if ($request->headers->get('HX-Request')) {
-                    return new Response(null, 204, [
-                        'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
-                    ]);
-                }
+            if ($request->headers->get('HX-Request')) {
+                return new Response(null, 204, [
+                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
+                ]);
+            }
 
-                return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
         }
 
         if ($this->isCsrfTokenValid('remove_participant' . $participant->getId(), $request->request->get('_token'))) {
