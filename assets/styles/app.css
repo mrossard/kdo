@@ -390,3 +390,29 @@ html[data-theme="dark"] .has-background-success-light {
 html[data-theme="dark"] .navbar {
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
 }
+
+/* Notification badge */
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.65rem;
+    min-width: 1.2rem;
+    height: 1.2rem;
+    padding: 0 0.3rem;
+}
+
+.has-badge-danger {
+    position: relative;
+}
+
+/* Notification box hover */
+.notification-box:hover {
+    border-color: var(--kdo-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Timeline fixes */
+.timeline-content .box {
+    margin-bottom: 0.5rem;
+}

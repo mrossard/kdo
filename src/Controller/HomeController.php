@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Repository\ActivityRepository;
 use App\Repository\ContactRequestRepository;
 use App\Repository\GiftProjectRepository;
 use App\Repository\WishlistShareRepository;
@@ -21,6 +22,7 @@ class HomeController extends AbstractController
         FinancialService $financialService,
         WishlistShareRepository $wishlistShareRepository,
         ContactRequestRepository $contactRequestRepository,
+        ActivityRepository $activityRepository,
     ): Response {
         $user = $this->getUser();
 
@@ -85,6 +87,7 @@ class HomeController extends AbstractController
             'global_balance' => $globalBalance,
             'contacts_count' => $contactsCount,
             'pending_contacts_count' => $pendingContactsCount,
+            'recent_activities' => $activityRepository->findRecentForUser($user, 5),
         ]);
     }
 }

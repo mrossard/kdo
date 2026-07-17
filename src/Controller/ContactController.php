@@ -2,14 +2,17 @@
 
 namespace App\Controller;
 
+use App\Entity\Activity;
 use App\Entity\ContactRequest;
 use App\Entity\User;
 use App\Entity\WishlistShare;
 use App\Form\AddContactFormType;
 use App\Repository\ContactRequestRepository;
+use App\Repository\GiftProjectRepository;
 use App\Repository\UserRepository;
 use App\Repository\WishlistShareRepository;
-use App\Service\FinancialService; // New import
+use App\Service\ActivityLogger;
+use App\Service\FinancialService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -309,16 +312,23 @@ class ContactController extends AbstractController
         User $contactUser,
         EntityManagerInterface $entityManager,
         FinancialService $financialService,
+        ActivityLogger $activityLogger,
+        GiftProjectRepository $projectRepository,
     ): Response {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
 
         if ($this->isCsrfTokenValid('settle_debt' . $contactUser->getId(), $request->request->get('_token'))) {
-            // The contact has a negative balance, meaning they owe ME.
-            // So Debtor = Contact, Creditor = Me.
             $count = $financialService->settleDebts($contactUser, $currentUser, $entityManager);
 
             if ($count > 0) {
+                $projects = $projectRepository->findProjectsInvolvingUsers($currentUser, $contactUser);
+                foreach ($projects as $project) {
+                    $activityLogger->log($project, Activity::TYPE_REIMBURSEMENT_CREATED, $currentUser, [
+                        'amount' => 'régler',
+                    ]);
+                }
+                $entityManager->flush();
                 $this->addFlash('success', "Dettes réglées pour {$count} projet(s).");
             } else {
                 $this->addFlash('info', 'Aucune dette à régler trouvée.');

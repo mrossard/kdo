@@ -48,17 +48,11 @@
                                 </span>
                             {% endif %}
 
-                            {% set last_read = null %}
-                            {% for status in app.user.projectReadStatuses %}
-                                {% if status.project.id == project.id %}
-                                    {% set last_read = status.lastReadAt %}
-                                {% endif %}
-                            {% endfor %}
-
-                            {% if project.lastActivityAt and (last_read is null or project.lastActivityAt > last_read) %}
+                            {% set unread = unread_counts[project.id]|default(0) %}
+                            {% if unread > 0 %}
                                 <span class="tag is-danger is-small ml-2">
                                     <span class="icon is-small">{{ ux_icon('material-symbols:mark-email-unread') }}</span>
-                                    <span>Nouveau</span>
+                                    <span>{{ unread }} nouveaut{{ unread > 1 ? 'és' : 'é' }}</span>
                                 </span>
                             {% endif %}
                         </p>

@@ -4,10 +4,8 @@ namespace App\Entity;
 
 use App\Repository\ProjectReadStatusRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: ProjectReadStatusRepository::class)]
-#[UniqueEntity(fields: ['user', 'project'], message: 'This user already has a read status for this project.')]
 class ProjectReadStatus
 {
     #[ORM\Id]

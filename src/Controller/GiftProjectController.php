@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Activity;
 use App\Entity\Comment;
 use App\Entity\GiftIdea;
 use App\Entity\GiftProject;
@@ -14,6 +15,7 @@ use App\Form\GiftIdeaType;
 use App\Form\GiftProjectType;
 use App\Repository\GiftProjectRepository;
 use App\Repository\UserRepository;
+use App\Service\ActivityLogger;
 use App\Service\FinancialService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -27,6 +29,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 class GiftProjectController extends AbstractController
 {
+    public function __construct(
+        private readonly ActivityLogger $activityLogger,
+    ) {
+    }
     /**
      * If the project is delivered, prevent any modification and redirect to show page with a warning.
      */
@@ -48,18 +54,14 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/', name: 'app_project_index', methods: ['GET'])]
-    public function index(GiftProjectRepository $projectRepository, Request $request): Response
-    {
+    public function index(
+        GiftProjectRepository $projectRepository,
+        Request $request,
+        \App\Repository\ActivityRepository $activityRepository,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
         $showArchived = $request->query->getBoolean('archived');
-
-        // We need a custom repository method or filter the results
-        // The existing method `findAccessibleProjectsForUser` probably returns all.
-        // Let's update the repository call or filter in PHP (less efficient but ok for now)
-        // or better: update repository. But I can't see repository code easily without read.
-        // Let's try to filter in PHP for quick win, or assume repository returns QueryBuilder and I can refine?
-        // `findAccessibleProjectsForUser` returns `mixed`. Likely result array.
 
         $allProjects = $projectRepository->findAccessibleProjectsForUser($user);
 
@@ -67,9 +69,12 @@ class GiftProjectController extends AbstractController
             return $p->isArchived() === $showArchived;
         });
 
+        $unreadCounts = $activityRepository->countUnreadPerProjectForUser($user);
+
         return $this->render('gift_project/index.html.twig', [
             'projects' => $projects,
             'show_archived' => $showArchived,
+            'unread_counts' => $unreadCounts,
         ]);
     }
 
@@ -157,6 +162,7 @@ class GiftProjectController extends AbstractController
         UserRepository $userRepository,
         EntityManagerInterface $entityManager,
         FinancialService $financialService,
+        \App\Repository\ActivityRepository $activityRepository,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -246,6 +252,7 @@ class GiftProjectController extends AbstractController
                 $this->addFlash('info', 'Cet utilisateur participe déjà.');
             } else {
                 $project->addParticipant($newParticipant);
+                $this->activityLogger->log($project, Activity::TYPE_PARTICIPANT_ADDED, $user);
                 $entityManager->flush();
                 $this->addFlash('success', 'Invitation envoyée à ' . $newParticipant->getDisplayName());
             }
@@ -262,8 +269,7 @@ class GiftProjectController extends AbstractController
             $giftIdea->setGiftProject($project);
             $giftIdea->setProposer($user);
 
-            // Mark project as active
-            $project->setLastActivityAt(new \DateTimeImmutable());
+            $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, ['idea_name' => $giftIdea->getName()]);
 
             $entityManager->persist($giftIdea);
             $entityManager->flush();
@@ -305,6 +311,13 @@ class GiftProjectController extends AbstractController
                 return $this->render('gift_project/_financial.html.twig', array_merge([
                     'project' => $project,
                 ], $financials));
+            } elseif ($tab === 'activite') {
+                $activities = $activityRepository->findRecentForProject($project, 30);
+
+                return $this->render('gift_project/_activity.html.twig', [
+                    'project' => $project,
+                    'activities' => $activities,
+                ]);
             } else {
                 return $this->render('gift_project/_details.html.twig', [
                     'project' => $project,
@@ -411,8 +424,7 @@ class GiftProjectController extends AbstractController
             $giftIdea->setStatus(GiftIdea::STATUS_PROPOSED);
             $giftIdea->setFromWish($wish);
 
-            // Mark project as active
-            $project->setLastActivityAt(new \DateTimeImmutable());
+            $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, ['idea_name' => $giftIdea->getName()]);
 
             $entityManager->persist($giftIdea);
             $entityManager->flush();
@@ -466,6 +478,7 @@ class GiftProjectController extends AbstractController
 
         if ($this->isCsrfTokenValid('lock_project' . $project->getId(), $request->request->get('_token'))) {
             $project->setLocked(true);
+            $this->activityLogger->log($project, Activity::TYPE_PROJECT_LOCKED, $user);
             $entityManager->flush();
             $this->addFlash('success', 'Projet verrouillé ! Les idées sont figées.');
 
@@ -509,6 +522,7 @@ class GiftProjectController extends AbstractController
 
         if ($this->isCsrfTokenValid('unlock_project' . $project->getId(), $request->request->get('_token'))) {
             $project->setLocked(false);
+            $this->activityLogger->log($project, Activity::TYPE_PROJECT_UNLOCKED, $user);
             $entityManager->flush();
             $this->addFlash('success', 'Projet déverrouillé.');
 
@@ -569,6 +583,10 @@ class GiftProjectController extends AbstractController
             $giftIdea->setPurchasedBy($user);
             $giftIdea->setPurchasePrice($price);
             $giftIdea->setPurchasedAt(new \DateTimeImmutable());
+            $this->activityLogger->log($project, Activity::TYPE_IDEA_PURCHASED, $user, [
+                'idea_name' => $giftIdea->getName(),
+                'price' => $price,
+            ]);
             $entityManager->flush();
             $this->addFlash('success', 'Cadeau marqué comme acheté !');
 
@@ -642,8 +660,9 @@ class GiftProjectController extends AbstractController
             $comment->setAuthor($user);
             $comment->setGiftIdea($giftIdea);
 
-            // Mark project as active
-            $project->setLastActivityAt(new \DateTimeImmutable());
+            $this->activityLogger->log($project, Activity::TYPE_COMMENT_ADDED, $user, [
+                'idea_name' => $giftIdea->getName(),
+            ]);
 
             $entityManager->persist($comment);
             $entityManager->flush();
@@ -777,6 +796,18 @@ class GiftProjectController extends AbstractController
 
         if ($this->isCsrfTokenValid('status_idea' . $giftIdea->getId(), $request->request->get('_token'))) {
             $giftIdea->setStatus($status);
+
+            $activityType = match ($status) {
+                GiftIdea::STATUS_SELECTED => Activity::TYPE_IDEA_SELECTED,
+                GiftIdea::STATUS_DISCARDED => Activity::TYPE_IDEA_DISCARDED,
+                default => null,
+            };
+            if ($activityType) {
+                $this->activityLogger->log($project, $activityType, $user, [
+                    'idea_name' => $giftIdea->getName(),
+                ]);
+            }
+
             $entityManager->flush();
 
             $this->addFlash('success', 'Statut mis à jour.');
@@ -857,7 +888,7 @@ class GiftProjectController extends AbstractController
             $entityManager->flush();
 
             $status = $newState ? 'archivé' : 'désarchivé';
-            $this->addFlash('success', "Projet $status.");
+            $this->addFlash('success', "Projet {$status}.");
         }
 
         return $this->redirectToRoute('app_project_index', ['archived' => $project->isArchived() ? 1 : 0]);
@@ -919,6 +950,10 @@ class GiftProjectController extends AbstractController
             $reimbursement->setToUser($currentUser); // Current user receives
             $reimbursement->setAmount($amount);
 
+            $this->activityLogger->log($project, Activity::TYPE_REIMBURSEMENT_CREATED, $currentUser, [
+                'amount' => $amount,
+            ]);
+
             $entityManager->persist($reimbursement);
             $entityManager->flush();
 
@@ -971,6 +1006,7 @@ class GiftProjectController extends AbstractController
 
         if ($this->isCsrfTokenValid('leave_project' . $project->getId(), $request->request->get('_token'))) {
             $project->removeParticipant($user);
+            $this->activityLogger->log($project, Activity::TYPE_PARTICIPANT_REMOVED, $user);
             $entityManager->flush();
             $this->addFlash('success', 'Vous avez quitté le projet.');
 
@@ -1046,6 +1082,7 @@ class GiftProjectController extends AbstractController
 
         if ($this->isCsrfTokenValid('remove_participant' . $participant->getId(), $request->request->get('_token'))) {
             $project->removeParticipant($participant);
+            $this->activityLogger->log($project, Activity::TYPE_PARTICIPANT_REMOVED, $currentUser);
             $entityManager->flush();
             $this->addFlash('success', $participant->getDisplayName() . ' a été retiré du projet.');
 
@@ -1086,6 +1123,7 @@ class GiftProjectController extends AbstractController
 
         if ($this->isCsrfTokenValid('mark_delivered' . $project->getId(), $request->request->get('_token'))) {
             $project->setDeliveredAt(new \DateTimeImmutable());
+            $this->activityLogger->log($project, Activity::TYPE_PROJECT_DELIVERED, $user);
             $entityManager->flush();
             $this->addFlash('success', 'Projet marqué comme remis au destinataire !');
         }
@@ -1140,8 +1178,7 @@ class GiftProjectController extends AbstractController
             $giftIdea->setFromWish($wish);
             $entityManager->persist($giftIdea);
 
-            // Mark project as active (lastActivityAt)
-            $project->setLastActivityAt(new \DateTimeImmutable());
+            $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, ['idea_name' => $giftIdea->getName()]);
 
             $entityManager->flush();
 
@@ -1158,5 +1195,36 @@ class GiftProjectController extends AbstractController
         }
 
         return $this->redirectToRoute('app_contact_view', ['id' => $recipient->getId()]);
+    }
+
+    #[Route('/{id}/mark-read', name: 'app_project_mark_read', methods: ['POST'])]
+    public function markAsRead(
+        GiftProject $project,
+        EntityManagerInterface $entityManager,
+        Request $request,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $readStatus = $entityManager
+            ->getRepository(ProjectReadStatus::class)
+            ->findOneBy(['user' => $user, 'project' => $project]);
+
+        if (!$readStatus) {
+            $readStatus = new ProjectReadStatus();
+            $readStatus->setUser($user);
+            $readStatus->setProject($project);
+            $entityManager->persist($readStatus);
+        }
+        $readStatus->setLastReadAt(new \DateTimeImmutable());
+        $entityManager->flush();
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response(null, 204, [
+                'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
+            ]);
+        }
+
+        return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
     }
 }

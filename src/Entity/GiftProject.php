@@ -66,12 +66,19 @@ class GiftProject
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: Reimbursement::class, orphanRemoval: true)]
     private Collection $reimbursements;
 
+    /**
+     * @var Collection<int, Activity>
+     */
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Activity::class, orphanRemoval: true)]
+    private Collection $activities;
+
     public function __construct()
     {
         $this->participants = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->giftIdeas = new ArrayCollection();
         $this->reimbursements = new ArrayCollection();
+        $this->activities = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -286,6 +293,35 @@ class GiftProject
             // set the owning side to null (unless already changed)
             if ($reimbursement->getProject() === $this) {
                 $reimbursement->setProject(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Activity>
+     */
+    public function getActivities(): Collection
+    {
+        return $this->activities;
+    }
+
+    public function addActivity(Activity $activity): static
+    {
+        if (!$this->activities->contains($activity)) {
+            $this->activities->add($activity);
+            $activity->setProject($this);
+        }
+
+        return $this;
+    }
+
+    public function removeActivity(Activity $activity): static
+    {
+        if ($this->activities->removeElement($activity)) {
+            if ($activity->getProject() === $this) {
+                $activity->setProject(null);
             }
         }
 

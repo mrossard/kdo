@@ -81,6 +81,16 @@
                         <span>Bilan Financier</span>
                     </a>
                 </li>
+                <li class="{{ current_tab == 'activite' ? 'is-active' : '' }}">
+                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'activite'}) }}"
+                       hx-target="#project-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       onclick="changeTab(this)">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:history') }}</span>
+                        <span>Activité</span>
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -97,6 +107,10 @@
                             {% elseif current_tab == 'financial' %}
 
                                 {% include 'gift_project/_financial.html.twig' with { project: project, summary: summary|default([]), transfers: transfers|default([]), total_cost: total_cost|default(0), average_cost: average_cost|default(0) } %}
+
+                            {% elseif current_tab == 'activite' %}
+
+                                {% include 'gift_project/_activity.html.twig' with { project: project, activities: activities|default([]) } %}
 
                             {% else %}
 

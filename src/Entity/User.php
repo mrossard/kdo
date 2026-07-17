@@ -111,6 +111,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'recipient', targetEntity: ContactRequest::class, orphanRemoval: true)]
     private Collection $receivedContactRequests;
 
+    /**
+     * @var Collection<int, Activity>
+     */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Activity::class, orphanRemoval: true)]
+    private Collection $activities;
+
     public function __construct()
     {
         $this->wishes = new ArrayCollection();
@@ -124,6 +130,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->proposedGiftIdeas = new ArrayCollection();
         $this->sentContactRequests = new ArrayCollection();
         $this->receivedContactRequests = new ArrayCollection();
+        $this->activities = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -504,6 +511,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($receivedContactRequest->getRecipient() === $this) {
                 $receivedContactRequest->setRecipient(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Activity>
+     */
+    public function getActivities(): Collection
+    {
+        return $this->activities;
+    }
+
+    public function addActivity(Activity $activity): static
+    {
+        if (!$this->activities->contains($activity)) {
+            $this->activities->add($activity);
+            $activity->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeActivity(Activity $activity): static
+    {
+        if ($this->activities->removeElement($activity)) {
+            if ($activity->getUser() === $this) {
+                $activity->setUser(null);
             }
         }
 

@@ -1,0 +1,72 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <div class="level">
+            <div class="level-left">
+                <h1 class="title">
+                    <span class="icon">{{ ux_icon('material-symbols:notifications') }}</span>
+                    <span>Notifications</span>
+                </h1>
+            </div>
+            {% if total_unread > 0 %}
+            <div class="level-right">
+                <form method="post" action="{{ path('app_notification_mark_all_read') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('mark_all_read') }}">
+                    <button class="button is-link is-outlined" type="submit">
+                        <span class="icon">{{ ux_icon('material-symbols:done') }}</span>
+                        <span>Tout marquer comme lu</span>
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if unread_projects is empty %}
+            <div class="notification is-info is-light">
+                <span class="icon">{{ ux_icon('material-symbols:info') }}</span>
+                <span>Aucune nouveauté pour le moment.</span>
+            </div>
+        {% else %}
+            <div class="content">
+                {% for data in unread_projects %}
+                    {% set project = data.project %}
+                    {% set count = data.count %}
+                    {% set activity = data.latestActivity %}
+                    <a href="{{ path('app_project_show', {'id': project.id, 'tab': 'activite'}) }}" class="box notification-box">
+                        <div class="level is-mobile">
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <span class="icon is-large has-text-danger">
+                                        {{ ux_icon('material-symbols:mark-email-unread') }}
+                                    </span>
+                                </div>
+                                <div class="level-item">
+                                    <div>
+                                        <p class="has-text-weight-bold is-size-5">{{ project.name }}</p>
+                                        <p class="has-text-grey">
+                                            <span class="tag is-danger is-rounded">{{ count }}</span>
+                                            nouveaut{{ count > 1 ? 'és' : 'é' }}
+                                        </p>
+                                        <p class="has-text-grey-dark is-size-7 mt-1">
+                                            {{ activity.message }} — {{ activity.createdAt|date('d/m/Y H:i') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="level-right">
+                                <div class="level-item">
+                                    <span class="icon">{{ ux_icon('material-symbols:chevron-right') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

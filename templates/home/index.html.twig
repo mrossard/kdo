@@ -98,6 +98,38 @@
                 {% endif %}
             </div>
 
+            {% if recent_activities is not empty %}
+                <div class="mt-6">
+                    <h2 class="title is-4">
+                        <span class="icon">{{ ux_icon('material-symbols:history') }}</span>
+                        <span>Activité récente</span>
+                    </h2>
+                    <div class="box">
+                        {% for activity in recent_activities %}
+                            <div class="level is-mobile {% if not loop.last %}mb-3{% endif %}">
+                                <div class="level-left">
+                                    <div class="level-item">
+                                        <span class="icon has-text-grey">
+                                            {{ ux_icon(activity.icon) }}
+                                        </span>
+                                    </div>
+                                    <div class="level-item">
+                                        <div>
+                                            <p class="has-text-weight-semibold is-size-7">{{ activity.message }}</p>
+                                            <p class="has-text-grey is-size-7">
+                                                dans <a href="{{ path('app_project_show', {'id': activity.project.id, 'tab': 'activite'}) }}">{{ activity.project.name }}</a>
+                                                — {{ activity.createdAt|date('d/m/Y H:i') }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if not loop.last %}<hr class="my-2">{% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
         {% else %}
             <div class="hero is-medium is-primary is-bold rounded">
                 <div class="hero-body has-text-centered">

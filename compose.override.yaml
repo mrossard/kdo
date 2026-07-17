@@ -12,6 +12,7 @@ services:
       APP_DEBUG: ${APP_DEBUG:-1}
       DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-16}&charset=utf8
       MAILER_DSN: smtp://mailer:1025
+      PHP_IDE_CONFIG: serverName=docker
     depends_on:
       database:
         condition: service_healthy
@@ -20,7 +21,7 @@ services:
     ports:
       - "5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}"]
+      test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}" ]
       timeout: 5s
       retries: 5
       start_period: 60s

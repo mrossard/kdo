@@ -1,0 +1,53 @@
+<div class="content">
+    {% if activities is empty %}
+        <div class="notification is-info is-light">
+            <span class="icon">{{ ux_icon('material-symbols:info') }}</span>
+            <span>Aucune activité pour le moment.</span>
+        </div>
+    {% else %}
+        <div class="timeline">
+            {% set current_date = '' %}
+            {% for activity in activities %}
+                {% set activity_date = activity.createdAt|date('d/m/Y') %}
+                {% if activity_date != current_date %}
+                    {% set current_date = activity_date %}
+                    <header class="timeline-header">
+                        <span class="tag is-medium is-primary">{{ activity_date }}</span>
+                    </header>
+                {% endif %}
+                <div class="timeline-item">
+                    <div class="timeline-marker {% if activity.type == 'idea_selected' %}is-success{% elseif activity.type == 'idea_discarded' %}is-danger{% else %}is-info{% endif %}"></div>
+                    <div class="timeline-content">
+                        <div class="box">
+                            <div class="level is-mobile">
+                                <div class="level-left">
+                                    <div class="level-item">
+                                        <span class="icon is-medium has-text-grey">
+                                            {{ ux_icon(activity.icon) }}
+                                        </span>
+                                    </div>
+                                    <div class="level-item">
+                                        <div>
+                                            <p class="has-text-weight-semibold">{{ activity.message }}</p>
+                                            <p class="has-text-grey is-size-7">{{ activity.createdAt|date('H:i') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="has-text-centered mt-4">
+            <form method="post" action="{{ path('app_project_mark_read', {'id': project.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('mark_read' ~ project.id) }}">
+                <button class="button is-link is-outlined is-small" type="submit">
+                    <span class="icon">{{ ux_icon('material-symbols:done') }}</span>
+                    <span>Marquer comme lu</span>
+                </button>
+            </form>
+        </div>
+    {% endif %}
+</div>
