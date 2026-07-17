@@ -58,6 +58,12 @@
                         </p>
                         <span class="card-header-icon">
                             <span class="tag is-info is-light">Pour : {{ project.recipientDisplayName }}</span>
+                            {% if project.targetDate %}
+                                <span class="tag is-light ml-2 {{ project.targetDate < date() and project.deliveredAt is null ? 'is-warning' : '' }}">
+                                    <span class="icon is-small">{{ ux_icon('material-symbols:event') }}</span>
+                                    <span>{{ project.targetDate|date('d/m/Y') }}</span>
+                                </span>
+                            {% endif %}
                             <span class="tag is-light ml-2">
                                 <span class="icon is-small">{{ ux_icon('material-symbols:group') }}</span>
                                 <span>{{ project.participants|length + 1 }}</span>

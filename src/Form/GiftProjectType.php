@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Repository\UserRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -50,6 +51,12 @@ class GiftProjectType extends AbstractType
             'label' => 'Ou destinataire libre (si pas de compte)',
             'required' => false,
             'help' => 'Renseignez ce champ uniquement si vous ne sélectionnez pas d\'utilisateur ci-dessus.',
+        ])->add('targetDate', DateType::class, [
+            'label' => 'Date cible',
+            'required' => false,
+            'widget' => 'single_text',
+            'help' => 'Date à laquelle le cadeau doit être remis (optionnel).',
+            'attr' => ['min' => (new \DateTime())->format('Y-m-d')],
         ]);
     }
 

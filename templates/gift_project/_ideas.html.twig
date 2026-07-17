@@ -34,6 +34,46 @@
         </div>
     </div>
 
+    {% set proposable_ideas = gift_ideas|filter(i => i.status != constant('App\\Entity\\GiftIdea::STATUS_DISCARDED')) %}
+    {% set proposable_ideas = proposable_ideas|sort((a, b) => b.voteCount <=> a.voteCount) %}
+    {% if not project.locked and proposable_ideas is not empty %}
+        {% set max_votes = proposable_ideas|first.voteCount %}
+        {% set max_votes = max_votes > 0 ? max_votes : 1 %}
+        <div class="box is-small has-background-light mb-4">
+            <div class="level mb-0">
+                <div class="level-left">
+                    <span class="icon has-text-info">{{ ux_icon('material-symbols:how-to-vote') }}</span>
+                    <strong class="ml-1">Sondage</strong>
+                    <span class="has-text-grey ml-2 is-size-7">Cliquez pour voter</span>
+                </div>
+            </div>
+            <div class="mt-2">
+                {% for idea in proposable_ideas %}
+                    {% set width = (idea.voteCount / max_votes * 100)|round %}
+                    <div class="mb-1" style="cursor:pointer"
+                         hx-post="{{ path('app_gift_idea_vote', {'id': idea.id}) }}"
+                         hx-target="#project-content"
+                         hx-swap="innerHTML">
+                        <div class="level is-mobile mb-0">
+                            <div class="level-left">
+                                <span class="has-text-weight-semibold is-size-7">{{ idea.name }}</span>
+                            </div>
+                            <div class="level-right">
+                                <span class="tag is-small {{ idea.hasVoteFromUser(app.user) ? 'is-success' : 'is-light' }}">
+                                    <span class="icon is-small">{{ ux_icon('material-symbols:thumb-up') }}</span>
+                                    <span>{{ idea.voteCount }}</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="is-relative" style="height:6px;background:var(--bulma-scheme-main);border-radius:3px;">
+                            <div class="{{ idea.hasVoteFromUser(app.user) ? 'has-background-success' : 'has-background-grey-light' }}" style="width:{{ width }}%;height:100%;border-radius:3px;transition:width .2s;"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
     {# Actions centrées en haut: Verrouiller / Déverrouiller #}
     {% if app.user == project.owner %}
         <div class="has-text-centered mb-4">

@@ -23,6 +23,18 @@
 
             <div class="content">
                 {{ project.description|default('Aucune description.')|nl2br }}
+                {% if project.targetDate %}
+                    <p>
+                        <span class="icon is-small has-text-info">{{ ux_icon('material-symbols:event') }}</span>
+                        Date cible : <strong>{{ project.targetDate|date('d/m/Y') }}</strong>
+                        {% if project.targetDate < date() and project.deliveredAt is null %}
+                            <span class="tag is-warning is-small ml-2">
+                                <span class="icon is-small">{{ ux_icon('material-symbols:schedule') }}</span>
+                                <span>Échéance dépassée</span>
+                            </span>
+                        {% endif %}
+                    </p>
+                {% endif %}
                 {% if project.deliveredAt %}
                     <p class="has-text-success">Cadeau remis le : {{ project.deliveredAt|date('d/m/Y') }}</p>
                 {% endif %}

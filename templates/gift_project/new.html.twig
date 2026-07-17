@@ -50,6 +50,15 @@
                     {{ form_errors(form.description) }}
                 </div>
 
+                <div class="field">
+                    {{ form_label(form.targetDate, null, {'label_attr': {'class': 'label'}}) }}
+                    <div class="control">
+                        {{ form_widget(form.targetDate, {'attr': {'class': 'input'}}) }}
+                    </div>
+                    <p class="help">{{ form.targetDate.vars.help }}</p>
+                    {{ form_errors(form.targetDate) }}
+                </div>
+
                 <div class="field is-grouped">
                     <div class="control">
                         <button class="button is-primary">Créer le projet</button>

@@ -8,6 +8,7 @@ use App\Entity\GiftIdea;
 use App\Entity\GiftProject;
 use App\Entity\ProjectReadStatus;
 use App\Entity\User;
+use App\Entity\Vote;
 use App\Entity\Wish;
 use App\Form\AddParticipantType;
 use App\Form\CommentType;
@@ -1226,5 +1227,92 @@ class GiftProjectController extends AbstractController
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
+    }
+
+    #[Route('/idea/{id}/vote', name: 'app_gift_idea_vote', methods: ['POST'])]
+    public function toggleVote(
+        GiftIdea $giftIdea,
+        EntityManagerInterface $entityManager,
+        Request $request,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+        $project = $giftIdea->getGiftProject();
+
+        $isOwner = $project->getOwner() === $user;
+        $isParticipant = $project->getParticipants()->contains($user);
+
+        if (!$isOwner && !$isParticipant) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if ($project->isLocked() || $project->getDeliveredAt()) {
+            return new Response(null, 204);
+        }
+
+        $existingVote = $entityManager
+            ->getRepository(Vote::class)
+            ->findOneBy(['giftIdea' => $giftIdea, 'user' => $user]);
+
+        if ($existingVote) {
+            $entityManager->remove($existingVote);
+        } else {
+            $vote = new Vote();
+            $vote->setGiftIdea($giftIdea);
+            $vote->setUser($user);
+            $entityManager->persist($vote);
+        }
+
+        $entityManager->flush();
+
+        if ($request->headers->get('HX-Request')) {
+            $sort = $request->query->get('sort', 'status');
+            $sortedGiftIdeas = $project->getGiftIdeas()->toArray();
+            usort($sortedGiftIdeas, static function (GiftIdea $a, GiftIdea $b) use ($sort) {
+                if ($sort === 'price_asc') {
+                    $priceA = (float) $a->getPrice();
+                    $priceB = (float) $b->getPrice();
+                    if ($priceA === $priceB)
+                        return 0;
+                    return $priceA < $priceB ? -1 : 1;
+                }
+                if ($sort === 'price_desc') {
+                    $priceA = (float) $a->getPrice();
+                    $priceB = (float) $b->getPrice();
+                    if ($priceA === $priceB)
+                        return 0;
+                    return $priceA > $priceB ? -1 : 1;
+                }
+
+                $statusOrder = [
+                    GiftIdea::STATUS_SELECTED => 1,
+                    GiftIdea::STATUS_PROPOSED => 2,
+                    GiftIdea::STATUS_DISCARDED => 3,
+                ];
+
+                $statusA = $statusOrder[$a->getStatus()] ?? 99;
+                $statusB = $statusOrder[$b->getStatus()] ?? 99;
+
+                if ($statusA === $statusB) {
+                    return $b->getId() <=> $a->getId();
+                }
+
+                return $statusA <=> $statusB;
+            });
+
+            $commentForms = [];
+            foreach ($sortedGiftIdeas as $idea) {
+                $commentForms[$idea->getId()] = $this->createForm(CommentType::class)->createView();
+            }
+
+            return $this->render('gift_project/_ideas.html.twig', [
+                'project' => $project,
+                'gift_ideas' => $sortedGiftIdeas,
+                'comment_forms' => $commentForms,
+                'current_sort' => $sort,
+            ]);
+        }
+
+        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
     }
 }

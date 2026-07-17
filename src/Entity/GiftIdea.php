@@ -60,6 +60,12 @@ class GiftIdea
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $purchasedAt = null;
 
+    /**
+     * @var Collection<int, Vote>
+     */
+    #[ORM\OneToMany(mappedBy: 'giftIdea', targetEntity: Vote::class, orphanRemoval: true)]
+    private Collection $votes;
+
     public const string STATUS_PROPOSED = 'PROPOSED';
     public const string STATUS_SELECTED = 'SELECTED';
     public const string STATUS_DISCARDED = 'DISCARDED';
@@ -67,6 +73,7 @@ class GiftIdea
     public function __construct()
     {
         $this->comments = new ArrayCollection();
+        $this->votes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -234,5 +241,50 @@ class GiftIdea
         }
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, Vote>
+     */
+    public function getVotes(): Collection
+    {
+        return $this->votes;
+    }
+
+    public function addVote(Vote $vote): static
+    {
+        if (!$this->votes->contains($vote)) {
+            $this->votes->add($vote);
+            $vote->setGiftIdea($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVote(Vote $vote): static
+    {
+        if ($this->votes->removeElement($vote)) {
+            if ($vote->getGiftIdea() === $this) {
+                $vote->setGiftIdea(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getVoteCount(): int
+    {
+        return $this->votes->count();
+    }
+
+    public function hasVoteFromUser(User $user): bool
+    {
+        foreach ($this->votes as $vote) {
+            if ($vote->getUser() === $user) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

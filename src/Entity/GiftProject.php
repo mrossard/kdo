@@ -37,6 +37,9 @@ class GiftProject
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $deliveredAt = null;
 
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $targetDate = null;
+
     #[ORM\ManyToOne(inversedBy: 'ownedGiftProjects')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $owner = null;
@@ -166,6 +169,18 @@ class GiftProject
     public function setDeliveredAt(?\DateTimeImmutable $deliveredAt): static
     {
         $this->deliveredAt = $deliveredAt;
+
+        return $this;
+    }
+
+    public function getTargetDate(): ?\DateTimeImmutable
+    {
+        return $this->targetDate;
+    }
+
+    public function setTargetDate(?\DateTimeImmutable $targetDate): static
+    {
+        $this->targetDate = $targetDate;
 
         return $this;
     }

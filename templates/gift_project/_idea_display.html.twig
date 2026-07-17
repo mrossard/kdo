@@ -14,6 +14,7 @@ Expected variables:
 {% elseif idea.status == constant('App\\Entity\\GiftIdea::STATUS_DISCARDED') %}
     {% set card_class = 'has-background-grey-lighter' %}
 {% endif %}
+{% set comment_forms = comment_forms|default([]) %}
 
 <div class="card {{ card_class }}" id="gift-idea-{{ idea.id }}"> {# Add an ID for HTMX targeting #}
     <div class="card-content">
@@ -47,7 +48,6 @@ Expected variables:
                     </a>
                 </div>
             {% endif %}
-
         </div>
 
         {% if project.locked and idea.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED') %}

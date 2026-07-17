@@ -117,6 +117,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Activity::class, orphanRemoval: true)]
     private Collection $activities;
 
+    /**
+     * @var Collection<int, Vote>
+     */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Vote::class, orphanRemoval: true)]
+    private Collection $votes;
+
     public function __construct()
     {
         $this->wishes = new ArrayCollection();
@@ -131,6 +137,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->sentContactRequests = new ArrayCollection();
         $this->receivedContactRequests = new ArrayCollection();
         $this->activities = new ArrayCollection();
+        $this->votes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -540,6 +547,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->activities->removeElement($activity)) {
             if ($activity->getUser() === $this) {
                 $activity->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Vote>
+     */
+    public function getVotes(): Collection
+    {
+        return $this->votes;
+    }
+
+    public function addVote(Vote $vote): static
+    {
+        if (!$this->votes->contains($vote)) {
+            $this->votes->add($vote);
+            $vote->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVote(Vote $vote): static
+    {
+        if ($this->votes->removeElement($vote)) {
+            if ($vote->getUser() === $this) {
+                $vote->setUser(null);
             }
         }
 
