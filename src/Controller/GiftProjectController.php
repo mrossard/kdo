@@ -437,7 +437,7 @@ final class GiftProjectController extends AbstractController
             ]);
         }
 
-        if ($this->isCsrfTokenValid('copy_wish' . $wish->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('copy_wish' . $wish->getId(), $request->getPayload()->getString('_token'))) {
             $giftIdea = new GiftIdea();
             $giftIdea->setName($wish->getName());
             $giftIdea->setDescription($wish->getDescription());
@@ -507,7 +507,7 @@ final class GiftProjectController extends AbstractController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
         }
 
-        if ($this->isCsrfTokenValid('lock_project' . $project->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('lock_project' . $project->getId(), $request->getPayload()->getString('_token'))) {
             $project->setLocked(true);
             $this->activityLogger->log($project, Activity::TYPE_PROJECT_LOCKED, $user);
             $entityManager->flush();
@@ -551,7 +551,9 @@ final class GiftProjectController extends AbstractController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
         }
 
-        if ($this->isCsrfTokenValid('unlock_project' . $project->getId(), $request->request->get('_token'))) {
+        if (
+            $this->isCsrfTokenValid('unlock_project' . $project->getId(), $request->getPayload()->getString('_token'))
+        ) {
             $project->setLocked(false);
             $this->activityLogger->log($project, Activity::TYPE_PROJECT_UNLOCKED, $user);
             $entityManager->flush();
@@ -608,14 +610,16 @@ final class GiftProjectController extends AbstractController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
         }
 
-        $price = $request->request->get('price');
+        $price = $request->getPayload()->getString('price');
 
-        if (!$price) {
+        if ($price === '') {
             $this->addFlash('warning', 'Le prix est obligatoire pour marquer un achat.');
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
         }
 
-        if ($this->isCsrfTokenValid('mark_purchased' . $giftIdea->getId(), $request->request->get('_token'))) {
+        if (
+            $this->isCsrfTokenValid('mark_purchased' . $giftIdea->getId(), $request->getPayload()->getString('_token'))
+        ) {
             $giftIdea->setPurchasedBy($user);
             $giftIdea->setPurchasePrice($price);
             $giftIdea->setPurchasedAt(new \DateTimeImmutable());
@@ -856,7 +860,7 @@ final class GiftProjectController extends AbstractController
             throw $this->createNotFoundException('Statut invalide.');
         }
 
-        if ($this->isCsrfTokenValid('status_idea' . $giftIdea->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('status_idea' . $giftIdea->getId(), $request->getPayload()->getString('_token'))) {
             $giftIdea->setStatus($status);
 
             $activityType = match ($status) {
@@ -944,7 +948,9 @@ final class GiftProjectController extends AbstractController
             throw $this->createAccessDeniedException("Seul l'organisateur peut archiver le projet.");
         }
 
-        if ($this->isCsrfTokenValid('archive_project' . $project->getId(), $request->request->get('_token'))) {
+        if (
+            $this->isCsrfTokenValid('archive_project' . $project->getId(), $request->getPayload()->getString('_token'))
+        ) {
             $newState = !$project->isArchived();
             $project->setArchived($newState);
             $entityManager->flush();
@@ -996,8 +1002,8 @@ final class GiftProjectController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
-        $debtorId = $request->request->get('debtor_id');
-        $amount = $request->request->get('amount');
+        $debtorId = $request->getPayload()->getInt('debtor_id');
+        $amount = $request->getPayload()->getString('amount');
         $debtor = $userRepository->find($debtorId); // The Debtor (who paid)
 
         if (!$debtor || !$project->getParticipants()->contains($debtor) && $project->getOwner() !== $debtor) {
@@ -1005,7 +1011,7 @@ final class GiftProjectController extends AbstractController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
         }
 
-        if ($this->isCsrfTokenValid('reimburse_' . $project->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('reimburse_' . $project->getId(), $request->getPayload()->getString('_token'))) {
             $reimbursement = new \App\Entity\Reimbursement();
             $reimbursement->setProject($project);
             $reimbursement->setFromUser($debtor); // Debtor pays
@@ -1071,7 +1077,7 @@ final class GiftProjectController extends AbstractController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
         }
 
-        if ($this->isCsrfTokenValid('leave_project' . $project->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('leave_project' . $project->getId(), $request->getPayload()->getString('_token'))) {
             $project->removeParticipant($user);
             $this->activityLogger->log($project, Activity::TYPE_PARTICIPANT_REMOVED, $user);
             $entityManager->flush();
@@ -1153,7 +1159,12 @@ final class GiftProjectController extends AbstractController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
         }
 
-        if ($this->isCsrfTokenValid('remove_participant' . $participant->getId(), $request->request->get('_token'))) {
+        if (
+            $this->isCsrfTokenValid(
+                'remove_participant' . $participant->getId(),
+                $request->getPayload()->getString('_token'),
+            )
+        ) {
             $project->removeParticipant($participant);
             $this->activityLogger->log($project, Activity::TYPE_PARTICIPANT_REMOVED, $currentUser);
             $entityManager->flush();
@@ -1194,7 +1205,9 @@ final class GiftProjectController extends AbstractController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
         }
 
-        if ($this->isCsrfTokenValid('mark_delivered' . $project->getId(), $request->request->get('_token'))) {
+        if (
+            $this->isCsrfTokenValid('mark_delivered' . $project->getId(), $request->getPayload()->getString('_token'))
+        ) {
             $project->setLocked(true);
             $project->setDeliveredAt(new \DateTimeImmutable());
             $this->activityLogger->log($project, Activity::TYPE_PROJECT_DELIVERED, $user);
@@ -1232,7 +1245,12 @@ final class GiftProjectController extends AbstractController
         // This is implicitly handled by the ContactController::viewContactListeDeSouhaits's security
         // But good to double check, or trust the previous route guards.
 
-        if ($this->isCsrfTokenValid('create_project_from_wish' . $wish->getId(), $request->request->get('_token'))) {
+        if (
+            $this->isCsrfTokenValid(
+                'create_project_from_wish' . $wish->getId(),
+                $request->getPayload()->getString('_token'),
+            )
+        ) {
             $project = new GiftProject();
             $project->setOwner($user);
             $project->setRecipient($recipient);

@@ -203,7 +203,12 @@ final class ContactController extends AbstractController
             );
         }
 
-        if ($this->isCsrfTokenValid('accept_request' . $contactRequest->getId(), $request->request->get('_token'))) {
+        if (
+            $this->isCsrfTokenValid(
+                'accept_request' . $contactRequest->getId(),
+                $request->getPayload()->getString('_token'),
+            )
+        ) {
             $contactRequest->setStatus(ContactRequest::STATUS_ACCEPTED);
             $contactRequest->setUpdatedAt(new \DateTimeImmutable());
 
@@ -247,7 +252,12 @@ final class ContactController extends AbstractController
             throw $this->createAccessDeniedException('Impossible de refuser cette demande.');
         }
 
-        if ($this->isCsrfTokenValid('decline_request' . $contactRequest->getId(), $request->request->get('_token'))) {
+        if (
+            $this->isCsrfTokenValid(
+                'decline_request' . $contactRequest->getId(),
+                $request->getPayload()->getString('_token'),
+            )
+        ) {
             $contactRequest->setStatus(ContactRequest::STATUS_DECLINED);
             $contactRequest->setUpdatedAt(new \DateTimeImmutable());
             $entityManager->flush();
@@ -276,7 +286,12 @@ final class ContactController extends AbstractController
             throw $this->createAccessDeniedException('Ce contact n´existe pas ou n´est pas mutuel.');
         }
 
-        if ($this->isCsrfTokenValid('remove_contact' . $contactUser->getId(), $request->request->get('_token'))) {
+        if (
+            $this->isCsrfTokenValid(
+                'remove_contact' . $contactUser->getId(),
+                $request->getPayload()->getString('_token'),
+            )
+        ) {
             if ($share1) {
                 $entityManager->remove($share1);
             }
@@ -320,7 +335,9 @@ final class ContactController extends AbstractController
         /** @var User $currentUser */
         $currentUser = $this->getUser();
 
-        if ($this->isCsrfTokenValid('settle_debt' . $contactUser->getId(), $request->request->get('_token'))) {
+        if (
+            $this->isCsrfTokenValid('settle_debt' . $contactUser->getId(), $request->getPayload()->getString('_token'))
+        ) {
             $count = $financialService->settleDebts($contactUser, $currentUser, $entityManager);
 
             if ($count > 0) {
