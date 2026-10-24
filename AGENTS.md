@@ -9,7 +9,7 @@ KDO — gift list / gift project management app. Backend-only Symfony app, no RE
 - **PHP 8.5**, Symfony 8, Doctrine ORM 3, PostgreSQL 16
 - **Frontend**: Bulma CSS, HTMX. Minimal JS (`assets/app.js`). Use Symfony UX Icons for icons.
 - **Server**: FrankenPHP (Caddy) via Docker
-- **Linter**: Mago (not PHP-CS-Fixer or Rector). Run `vendor/bin/mago check` and `vendor/bin/mago format`.
+- **Linter**: Mago (not PHP-CS-Fixer or Rector). Run `vendor/bin/mago lint` and `vendor/bin/mago format`.
 
 ## Key commands
 
@@ -19,7 +19,8 @@ docker compose up -d database       # start Postgres only (dev with local PHP)
 php bin/console doctrine:migrations:diff   # generate migration
 php bin/console doctrine:migrations:migrate -n  # apply migrations
 php bin/console doctrine:fixtures:load -n  # load fixtures (dev)
-vendor/bin/mago check               # lint
+vendor/bin/mago lint                # lint
+vendor/bin/mago analyze             # static analysis
 vendor/bin/mago format              # auto-format
 ```
 

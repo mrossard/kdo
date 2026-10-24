@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\User;
@@ -29,7 +31,8 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      */
     public function upgradePassword(
         PasswordAuthenticatedUserInterface $user,
-        #[\SensitiveParameter] string $newHashedPassword,
+        #[\SensitiveParameter]
+        string $newHashedPassword,
     ): void {
         if (!$user instanceof User) {
             throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $user::class));

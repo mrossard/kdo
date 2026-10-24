@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Entity\User;
@@ -19,7 +21,7 @@ use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
 #[Route('/reset-password')]
-class ResetPasswordController extends AbstractController
+final class ResetPasswordController extends AbstractController
 {
     use ResetPasswordControllerTrait;
 
@@ -70,7 +72,8 @@ class ResetPasswordController extends AbstractController
     public function reset(
         Request $request,
         UserPasswordHasherInterface $passwordHasher,
-        #[\SensitiveParameter] ?string $token = null,
+        #[\SensitiveParameter]
+        ?string $token = null,
     ): Response {
         if ($token) {
             // We store the token in session and remove it from the URL, to avoid the URL being

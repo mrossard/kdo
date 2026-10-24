@@ -35,7 +35,7 @@
                                         <span class="icon is-small">{{ ux_icon('material-symbols:check') }}</span>
                                         <span>Déjà copié</span>
                                     </button>
-                                {% elseif not project.locked %}
+                                {% elseif not project.locked and project.deliveredAt is null %}
                                     <form method="post" action="{{ path('app_project_copy_wish', {'id': project.id, 'wish_id': wish.id}) }}"
                                           hx-post="{{ path('app_project_copy_wish', {'id': project.id, 'wish_id': wish.id}) }}"
                                           hx-target="body"

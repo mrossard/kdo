@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\ResetPasswordRequest;
@@ -30,7 +32,8 @@ class ResetPasswordRequestRepository extends ServiceEntityRepository implements 
         object $user,
         \DateTimeInterface $expiresAt,
         string $selector,
-        #[\SensitiveParameter] string $hashedToken,
+        #[\SensitiveParameter]
+        string $hashedToken,
     ): ResetPasswordRequestInterface {
         return new ResetPasswordRequest($user, $expiresAt, $selector, $hashedToken);
     }

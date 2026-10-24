@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Entity\User;
@@ -14,7 +16,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/financial')]
 #[IsGranted('ROLE_USER')]
-class FinancialController extends AbstractController
+final class FinancialController extends AbstractController
 {
     #[Route('/', name: 'app_financial_index', methods: ['GET'])]
     public function index(

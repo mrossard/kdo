@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Entity\Activity;
@@ -28,12 +30,12 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/project')]
 #[IsGranted('ROLE_USER')]
-class GiftProjectController extends AbstractController
+final class GiftProjectController extends AbstractController
 {
     public function __construct(
         private readonly ActivityLogger $activityLogger,
-    ) {
-    }
+    ) {}
+
     /**
      * If the project is delivered, prevent any modification and redirect to show page with a warning.
      */
@@ -66,9 +68,7 @@ class GiftProjectController extends AbstractController
 
         $allProjects = $projectRepository->findAccessibleProjectsForUser($user);
 
-        $projects = array_filter($allProjects, static function (GiftProject $p) use ($showArchived) {
-            return $p->isArchived() === $showArchived;
-        });
+        $projects = array_filter($allProjects, static fn(GiftProject $p) => $p->isArchived() === $showArchived);
 
         $unreadCounts = $activityRepository->countUnreadPerProjectForUser($user);
 
@@ -126,9 +126,9 @@ class GiftProjectController extends AbstractController
         }
 
         // Business rule: A delivered project can no longer be modified
-        if ($project->getDeliveredAt() !== null) {
-            $this->addFlash('warning', "Le projet a été remis et n'est plus modifiable.");
-            return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
+        $denied = $this->denyWhenDelivered($project, $request, 'details');
+        if ($denied !== null) {
+            return $denied;
         }
 
         $form = $this->createForm(GiftProjectType::class, $project, [
@@ -242,6 +242,11 @@ class GiftProjectController extends AbstractController
         $addParticipantForm->handleRequest($request);
 
         if ($addParticipantForm->isSubmitted() && $addParticipantForm->isValid()) {
+            $denied = $this->denyWhenDelivered($project, $request, 'details');
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $newParticipant = $addParticipantForm->get('participant')->getData(); // Get User object directly
 
             if ($newParticipant === $project->getRecipient()) {
@@ -267,10 +272,17 @@ class GiftProjectController extends AbstractController
         $giftIdeaForm->handleRequest($request);
 
         if ($giftIdeaForm->isSubmitted() && $giftIdeaForm->isValid()) {
+            $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+            if ($denied !== null) {
+                return $denied;
+            }
+
             $giftIdea->setGiftProject($project);
             $giftIdea->setProposer($user);
 
-            $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, ['idea_name' => $giftIdea->getName()]);
+            $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, [
+                'idea_name' => $giftIdea->getName(),
+            ]);
 
             $entityManager->persist($giftIdea);
             $entityManager->flush();
@@ -344,7 +356,7 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/{id}/new-idea-form', name: 'app_gift_idea_new_form', methods: ['GET'])]
-    public function newGiftIdeaForm(GiftProject $project): Response
+    public function newGiftIdeaForm(GiftProject $project, Request $request): Response
     {
         // Security check: Must be Owner OR Participant, AND NOT Recipient
         /** @var User $user */
@@ -360,6 +372,11 @@ class GiftProjectController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
+        }
+
         $giftIdea = new GiftIdea();
         $giftIdeaForm = $this->createForm(GiftIdeaType::class, $giftIdea);
 
@@ -372,7 +389,8 @@ class GiftProjectController extends AbstractController
     #[Route('/{id}/copy-wish/{wish_id}', name: 'app_project_copy_wish', methods: ['POST'])]
     public function copyWishToIdea(
         GiftProject $project,
-        #[MapEntity(id: 'wish_id')] Wish $wish,
+        #[MapEntity(id: 'wish_id')]
+        Wish $wish,
         EntityManagerInterface $entityManager,
         Request $request,
     ): Response {
@@ -389,6 +407,11 @@ class GiftProjectController extends AbstractController
         }
         if (!$isOwner && !$isParticipant) {
             throw $this->createAccessDeniedException();
+        }
+
+        $denied = $this->denyWhenDelivered($project, $request, 'liste_souhaits');
+        if ($denied !== null) {
+            return $denied;
         }
 
         // Check for duplicates
@@ -425,7 +448,9 @@ class GiftProjectController extends AbstractController
             $giftIdea->setStatus(GiftIdea::STATUS_PROPOSED);
             $giftIdea->setFromWish($wish);
 
-            $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, ['idea_name' => $giftIdea->getName()]);
+            $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, [
+                'idea_name' => $giftIdea->getName(),
+            ]);
 
             $entityManager->persist($giftIdea);
             $entityManager->flush();
@@ -454,6 +479,11 @@ class GiftProjectController extends AbstractController
         // Security check: Only Owner can lock
         if ($project->getOwner() !== $user) {
             throw $this->createAccessDeniedException("Seul l'organisateur peut verrouiller le projet.");
+        }
+
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
         }
 
         if ($project->isLocked()) {
@@ -511,9 +541,9 @@ class GiftProjectController extends AbstractController
         }
 
         // Business rule: A delivered project cannot be unlocked
-        if ($project->getDeliveredAt() !== null) {
-            $this->addFlash('warning', 'Le projet a été remis et ne peut pas être déverrouillé.');
-            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
         }
 
         if (!$project->isLocked()) {
@@ -556,6 +586,11 @@ class GiftProjectController extends AbstractController
 
         if (!$isOwner && !$isParticipant) {
             throw $this->createAccessDeniedException();
+        }
+
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
         }
 
         if (!$project->isLocked()) {
@@ -624,6 +659,11 @@ class GiftProjectController extends AbstractController
             throw $this->createAccessDeniedException("Vous n'avez pas le droit de supprimer cette idée.");
         }
 
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
+        }
+
         if ($this->isCsrfTokenValid('delete_idea' . $giftIdea->getId(), $request->query->get('_token'))) {
             $entityManager->remove($giftIdea);
             $entityManager->flush();
@@ -651,6 +691,11 @@ class GiftProjectController extends AbstractController
 
         if (!$isOwner && !$isParticipant) {
             throw $this->createAccessDeniedException();
+        }
+
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
         }
 
         $comment = new Comment();
@@ -705,9 +750,15 @@ class GiftProjectController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
+        $project = $comment->getGiftIdea()->getGiftProject();
 
         if ($comment->getAuthor() !== $user) {
             throw $this->createAccessDeniedException('Vous ne pouvez modifier que vos propres commentaires.');
+        }
+
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
         }
 
         $form = $this->createForm(CommentType::class, $comment);
@@ -723,7 +774,7 @@ class GiftProjectController extends AbstractController
             }
 
             return $this->redirectToRoute('app_project_show', [
-                'id' => $comment->getGiftIdea()->getGiftProject()->getId(),
+                'id' => $project->getId(),
                 'tab' => 'ideas',
             ]);
         }
@@ -735,10 +786,9 @@ class GiftProjectController extends AbstractController
             ]);
         }
 
-        // Fallback if not HTMX (should generally not happen in this flow)
-        return $this->render('gift_project/edit_comment.html.twig', [ // You might need to create this template if non-htmx access is desired
-            'comment' => $comment,
-            'form' => $form,
+        return $this->redirectToRoute('app_project_show', [
+            'id' => $project->getId(),
+            'tab' => 'ideas',
         ]);
     }
 
@@ -747,10 +797,16 @@ class GiftProjectController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
+        $project = $comment->getGiftIdea()->getGiftProject();
 
         // Author OR Project Owner can delete
-        if ($comment->getAuthor() !== $user && $comment->getGiftIdea()->getGiftProject()->getOwner() !== $user) {
+        if ($comment->getAuthor() !== $user && $project->getOwner() !== $user) {
             throw $this->createAccessDeniedException();
+        }
+
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
         }
 
         if ($this->isCsrfTokenValid('delete_comment' . $comment->getId(), $request->query->get('_token'))) {
@@ -763,7 +819,7 @@ class GiftProjectController extends AbstractController
         }
 
         return $this->redirectToRoute('app_project_show', [
-            'id' => $comment->getGiftIdea()->getGiftProject()->getId(),
+            'id' => $project->getId(),
             'tab' => 'ideas',
         ]);
     }
@@ -784,6 +840,11 @@ class GiftProjectController extends AbstractController
             throw $this->createAccessDeniedException("Seul l'organisateur peut changer le statut.");
         }
 
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
+        }
+
         // Validate status
         $allowedStatuses = [
             GiftIdea::STATUS_PROPOSED,
@@ -791,7 +852,7 @@ class GiftProjectController extends AbstractController
             GiftIdea::STATUS_DISCARDED,
         ];
 
-        if (!in_array($status, $allowedStatuses)) {
+        if (!in_array($status, $allowedStatuses, strict: true)) {
             throw $this->createNotFoundException('Statut invalide.');
         }
 
@@ -829,6 +890,11 @@ class GiftProjectController extends AbstractController
             throw $this->createAccessDeniedException("Vous n'avez pas le droit de modifier cette idée.");
         }
 
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
+        }
+
         // Cannot edit if project is locked
         if ($project->isLocked()) {
             throw $this->createAccessDeniedException('Impossible de modifier une idée dans un projet verrouillé.');
@@ -843,7 +909,7 @@ class GiftProjectController extends AbstractController
 
             // Return the updated idea fragment for HTMX
             if ($request->headers->get('HX-Request')) {
-                return $this->render('gift_project/_idea_display.html.twig', [ // This template will be created next
+                return $this->render('gift_project/_idea_display.html.twig', [
                     'project' => $project,
                     'idea' => $giftIdea,
                     'user' => $user,
@@ -855,19 +921,14 @@ class GiftProjectController extends AbstractController
 
         // If HTMX request, render only the form fragment
         if ($request->headers->get('HX-Request')) {
-            return $this->render('gift_project/_gift_idea_edit_form.html.twig', [ // This template will be created next
+            return $this->render('gift_project/_gift_idea_edit_form.html.twig', [
                 'form' => $form,
                 'project' => $project,
                 'idea' => $giftIdea,
             ]);
         }
 
-        // Fallback for non-HTMX (should generally not happen)
-        return $this->render('gift_project/edit_gift_idea.html.twig', [ // This template would be a full page
-            'form' => $form,
-            'project' => $project,
-            'idea' => $giftIdea,
-        ]);
+        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
     }
 
     #[Route('/{id}/archive', name: 'app_project_archive', methods: ['POST'])]
@@ -987,6 +1048,11 @@ class GiftProjectController extends AbstractController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
         }
 
+        $denied = $this->denyWhenDelivered($project, $request, 'details');
+        if ($denied !== null) {
+            return $denied;
+        }
+
         if (!$project->getParticipants()->contains($user)) {
             $this->addFlash('warning', 'Vous ne faites pas partie de ce projet.');
             return $this->redirectToRoute('app_project_index');
@@ -1024,7 +1090,8 @@ class GiftProjectController extends AbstractController
     #[Route('/{id}/remove-participant/{participant_id}', name: 'app_project_remove_participant', methods: ['POST'])]
     public function removeParticipant(
         GiftProject $project,
-        #[MapEntity(id: 'participant_id')] User $participant,
+        #[MapEntity(id: 'participant_id')]
+        User $participant,
         EntityManagerInterface $entityManager,
         Request $request,
     ): Response {
@@ -1034,6 +1101,11 @@ class GiftProjectController extends AbstractController
         // Only Owner can remove participants
         if ($project->getOwner() !== $currentUser) {
             throw $this->createAccessDeniedException("Seul l'organisateur peut retirer des participants.");
+        }
+
+        $denied = $this->denyWhenDelivered($project, $request, 'details');
+        if ($denied !== null) {
+            return $denied;
         }
 
         if (!$project->getParticipants()->contains($participant)) {
@@ -1123,6 +1195,7 @@ class GiftProjectController extends AbstractController
         }
 
         if ($this->isCsrfTokenValid('mark_delivered' . $project->getId(), $request->request->get('_token'))) {
+            $project->setLocked(true);
             $project->setDeliveredAt(new \DateTimeImmutable());
             $this->activityLogger->log($project, Activity::TYPE_PROJECT_DELIVERED, $user);
             $entityManager->flush();
@@ -1140,8 +1213,10 @@ class GiftProjectController extends AbstractController
 
     #[Route('/create-from-wish/{contactId}/{wishId}', name: 'app_project_create_from_wish', methods: ['POST'])]
     public function createProjectFromWish(
-        #[MapEntity(id: 'contactId')] User $recipient,
-        #[MapEntity(id: 'wishId')] Wish $wish,
+        #[MapEntity(id: 'contactId')]
+        User $recipient,
+        #[MapEntity(id: 'wishId')]
+        Wish $wish,
         EntityManagerInterface $entityManager,
         Request $request,
     ): Response {
@@ -1179,7 +1254,9 @@ class GiftProjectController extends AbstractController
             $giftIdea->setFromWish($wish);
             $entityManager->persist($giftIdea);
 
-            $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, ['idea_name' => $giftIdea->getName()]);
+            $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, [
+                'idea_name' => $giftIdea->getName(),
+            ]);
 
             $entityManager->flush();
 
@@ -1199,11 +1276,8 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/{id}/mark-read', name: 'app_project_mark_read', methods: ['POST'])]
-    public function markAsRead(
-        GiftProject $project,
-        EntityManagerInterface $entityManager,
-        Request $request,
-    ): Response {
+    public function markAsRead(GiftProject $project, EntityManagerInterface $entityManager, Request $request): Response
+    {
         /** @var User $user */
         $user = $this->getUser();
 
@@ -1230,11 +1304,8 @@ class GiftProjectController extends AbstractController
     }
 
     #[Route('/idea/{id}/vote', name: 'app_gift_idea_vote', methods: ['POST'])]
-    public function toggleVote(
-        GiftIdea $giftIdea,
-        EntityManagerInterface $entityManager,
-        Request $request,
-    ): Response {
+    public function toggleVote(GiftIdea $giftIdea, EntityManagerInterface $entityManager, Request $request): Response
+    {
         /** @var User $user */
         $user = $this->getUser();
         $project = $giftIdea->getGiftProject();

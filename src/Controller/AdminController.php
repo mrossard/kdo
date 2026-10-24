@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Repository\UserRepository;
@@ -10,7 +12,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin', name: 'app_admin_')]
 #[IsGranted('ROLE_ADMIN')]
-class AdminController extends AbstractController
+final class AdminController extends AbstractController
 {
     #[Route('/users', name: 'users')]
     public function users(UserRepository $userRepository): Response

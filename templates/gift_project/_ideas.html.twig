@@ -36,7 +36,7 @@
 
     {% set proposable_ideas = gift_ideas|filter(i => i.status != constant('App\\Entity\\GiftIdea::STATUS_DISCARDED')) %}
     {% set proposable_ideas = proposable_ideas|sort((a, b) => b.voteCount <=> a.voteCount) %}
-    {% if not project.locked and proposable_ideas is not empty %}
+    {% if not project.locked and project.deliveredAt is null and proposable_ideas is not empty %}
         {% set max_votes = proposable_ideas|first.voteCount %}
         {% set max_votes = max_votes > 0 ? max_votes : 1 %}
         <div class="box is-small has-background-light mb-4">
@@ -124,7 +124,7 @@
 
     <hr>
 
-    {% if not project.locked %}
+    {% if not project.locked and project.deliveredAt is null %}
         <div id="add-idea-form-container">
             {% include 'gift_project/_gift_idea_add_button.html.twig' %}
         </div>

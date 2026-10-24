@@ -50,7 +50,7 @@
 
                 {% set has_purchased_ideas = project.giftIdeas|filter(idea => idea.purchasedBy is not null)|length > 0 %}
 
-                {% if app.user in project.participants and not has_purchased_ideas %}
+                {% if app.user in project.participants and not has_purchased_ideas and project.deliveredAt is null %}
                     <form method="post" action="{{ path('app_project_leave', {'id': project.id}) }}"
                           class="ml-2"
                           hx-post="{{ path('app_project_leave', {'id': project.id}) }}"
@@ -113,7 +113,7 @@
                                     <span class="icon is-small mr-1">{{ ux_icon('material-symbols:person') }}</span>
                                     {{ participant.displayName }}
                                 </div>
-                                {% if app.user == project.owner %}
+                                {% if app.user == project.owner and project.deliveredAt is null %}
                                     <div class="level-right">
                                         <form method="post" action="{{ path('app_project_remove_participant', {'id': project.id, 'participant_id': participant.id}) }}"
                                               hx-post="{{ path('app_project_remove_participant', {'id': project.id, 'participant_id': participant.id}) }}"
@@ -132,26 +132,28 @@
                 </ul>
             </div>
 
-            <hr>
-            <h4 class="title is-6">Inviter quelqu'un</h4>
-            {{ form_start(add_participant_form) }}
-                <div class="field">
-                    <div class="control">
-                        <div class="select is-fullwidth">
-                            {{ form_widget(add_participant_form.participant) }}
+            {% if project.deliveredAt is null %}
+                <hr>
+                <h4 class="title is-6">Inviter quelqu'un</h4>
+                {{ form_start(add_participant_form) }}
+                    <div class="field">
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                {{ form_widget(add_participant_form.participant) }}
+                            </div>
+                        </div>
+                        {{ form_errors(add_participant_form.participant) }}
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <button type="submit" class="button is-link is-light is-small">
+                                <span class="icon is-small">{{ ux_icon('material-symbols:person-add') }}</span>
+                                <span>Inviter</span>
+                            </button>
                         </div>
                     </div>
-                    {{ form_errors(add_participant_form.participant) }}
-                </div>
-                <div class="field">
-                    <div class="control">
-                        <button type="submit" class="button is-link is-light is-small">
-                            <span class="icon is-small">{{ ux_icon('material-symbols:person-add') }}</span>
-                            <span>Inviter</span>
-                        </button>
-                    </div>
-                </div>
-            {{ form_end(add_participant_form) }}
+                {{ form_end(add_participant_form) }}
+            {% endif %}
         </div>
     </div>
 </div>

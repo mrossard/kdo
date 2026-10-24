@@ -15,8 +15,7 @@ class NotificationExtension extends AbstractExtension implements GlobalsInterfac
     public function __construct(
         private readonly ActivityRepository $activityRepository,
         private readonly TokenStorageInterface $tokenStorage,
-    ) {
-    }
+    ) {}
 
     public function getGlobals(): array
     {

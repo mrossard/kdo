@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Repository\ContactRequestRepository;
@@ -141,6 +143,6 @@ class ContactRequest
     // Helper to get the display name of the recipient (email or user's display name)
     public function getRecipientDisplayName(): string
     {
-        return $this->recipient ? $this->recipient->getDisplayName() : $this->recipientEmail;
+        return $this->recipient ? $this->recipient->getDisplayName() : $this->recipientEmail ?? '';
     }
 }

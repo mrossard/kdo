@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Security;
 
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -42,7 +44,8 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
 
     public function onAuthenticationSuccess(
         Request $request,
-        #[\SensitiveParameter] TokenInterface $token,
+        #[\SensitiveParameter]
+        TokenInterface $token,
         string $firewallName,
     ): ?Response {
         if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {

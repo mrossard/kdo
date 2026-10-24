@@ -16,7 +16,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/notifications')]
 #[IsGranted('ROLE_USER')]
-class NotificationController extends AbstractController
+final class NotificationController extends AbstractController
 {
     #[Route('/', name: 'app_notification_index', methods: ['GET'])]
     public function index(ActivityRepository $activityRepository): Response

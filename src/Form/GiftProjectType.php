@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Form;
 
 use App\Entity\GiftProject;
@@ -33,18 +35,12 @@ class GiftProjectType extends AbstractType
             'choice_label' => 'displayName',
             'label' => 'Destinataire (utilisateur inscrit)',
             'required' => false,
-            'query_builder' => static function (UserRepository $er) use ($currentUser) {
-                // Find users who have shared their list WITH me ($currentUser)
-                // So we look for WishlistShare where recipient = $currentUser
-                // And select the owner of that share.
-
-                return $er
-                    ->createQueryBuilder('u')
-                    ->join('u.sentShares', 's')
-                    ->where('s.recipient = :me')
-                    ->setParameter('me', $currentUser)
-                    ->orderBy('u.email', 'ASC'); // s is a WishlistShare where s.owner = u
-            },
+            'query_builder' => static fn(UserRepository $er) => $er
+                ->createQueryBuilder('u')
+                ->join('u.sentShares', 's')
+                ->where('s.recipient = :me')
+                ->setParameter('me', $currentUser)
+                ->orderBy('u.email', 'ASC'),
             'placeholder' => 'Sélectionnez un destinataire',
             'help' => 'Si le destinataire a un compte et partage sa liste avec vous. Le destinataire ne verra PAS ce projet.',
         ])->add('recipientName', TextType::class, [
@@ -56,7 +52,7 @@ class GiftProjectType extends AbstractType
             'required' => false,
             'widget' => 'single_text',
             'help' => 'Date à laquelle le cadeau doit être remis (optionnel).',
-            'attr' => ['min' => (new \DateTime())->format('Y-m-d')],
+            'attr' => ['min' => new \DateTime()->format('Y-m-d')],
         ]);
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Entity\Activity;
@@ -26,7 +28,7 @@ use Symfony\Component\Uid\Uuid;
 
 #[Route('/contact')]
 #[IsGranted('ROLE_USER')]
-class ContactController extends AbstractController
+final class ContactController extends AbstractController
 {
     #[Route('/', name: 'app_contact_index', methods: ['GET', 'POST'])]
     public function index(
@@ -386,9 +388,7 @@ class ContactController extends AbstractController
         }
 
         // Sort by display name (or email if no display name)
-        uasort($mutualContacts, static function (User $a, User $b) {
-            return strcmp($a->getDisplayName(), $b->getDisplayName());
-        });
+        uasort($mutualContacts, static fn(User $a, User $b) => strcmp($a->getDisplayName(), $b->getDisplayName()));
 
         return array_values($mutualContacts);
     }

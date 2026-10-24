@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
@@ -9,7 +11,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_USER')]
-class UserThemeController extends AbstractController
+final class UserThemeController extends AbstractController
 {
     #[Route('/theme/toggle', name: 'app_theme_toggle', methods: ['POST'])]
     public function toggle(EntityManagerInterface $entityManager): Response

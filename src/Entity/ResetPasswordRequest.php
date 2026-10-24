@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Repository\ResetPasswordRequestRepository;
@@ -25,7 +27,8 @@ class ResetPasswordRequest implements ResetPasswordRequestInterface
         object $user,
         \DateTimeInterface $expiresAt,
         string $selector,
-        #[\SensitiveParameter] string $hashedToken,
+        #[\SensitiveParameter]
+        string $hashedToken,
     ) {
         assert($user instanceof User);
         $this->user = $user;
