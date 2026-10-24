@@ -160,7 +160,7 @@ Expected variables:
                             'hx-post': path('app_gift_idea_comment', {'id': idea.id}),
                             'hx-target': '#comments-list-' ~ idea.id,
                             'hx-swap': 'beforeend',
-                            'hx-on::after-request': 'if(event.detail.successful) this.reset()'
+                            'hx-on::after:request': 'if(ctx.response.raw.ok) this.reset()'
                         }
                     }) }}
                     <div class="field has-addons">

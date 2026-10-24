@@ -19,6 +19,7 @@ docker compose up -d database       # start Postgres only (dev with local PHP)
 php bin/console doctrine:migrations:diff   # generate migration
 php bin/console doctrine:migrations:migrate -n  # apply migrations
 php bin/console doctrine:fixtures:load -n  # load fixtures (dev)
+docker compose exec php php bin/phpunit    # run test suite (or php bin/phpunit tests/Service tests/Entity for unit tests)
 vendor/bin/mago lint                # lint
 vendor/bin/mago analyze             # static analysis
 vendor/bin/mago format              # auto-format

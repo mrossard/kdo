@@ -8,9 +8,7 @@ use App\Repository\VoteRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: VoteRepository::class)]
-#[ORM\Table(uniqueConstraints: [
-    new ORM\UniqueConstraint(name: 'uniq_vote_idea_user', columns: ['gift_idea_id', 'user_id']),
-])]
+#[ORM\UniqueConstraint(name: 'uniq_vote_idea_user', columns: ['gift_idea_id', 'user_id'])]
 class Vote
 {
     #[ORM\Id]

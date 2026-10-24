@@ -2,7 +2,7 @@
         hx-post="{{ path('app_theme_toggle') }}"
         hx-swap="outerHTML"
         hx-target="this"
-        hx-on::after-settle="document.documentElement.setAttribute('data-theme', this.dataset.newTheme)"
+        hx-on::after:settle="document.documentElement.setAttribute('data-theme', this.dataset.newTheme)"
         data-new-theme="{{ theme }}"
         title="Changer de thème">
     {% if theme == 'dark' %}

@@ -9,6 +9,7 @@ import './styles/app.css';
 import htmx from 'htmx.org';
 
 window.htmx = htmx;
+htmx.config.noSwap = [204, 304, '4xx', '5xx'];
 
 htmx.onLoad((content) => {
     const $navbarBurgers = content.querySelectorAll('.navbar-burger');
