@@ -212,7 +212,41 @@ final class FinancialServiceTest extends TestCase
         $service = new FinancialService($repo);
         $balance = $service->getContactCumulativeBalance($alice, $bob);
 
-        // Bob paid 0, average is 20 -> Bob's balance is -20.0
+        // Bob paid 0, average is 20 -> Bob owes 20.0 to Alice (-20.0)
         self::assertEqualsWithDelta(-20.0, $balance, 0.001);
+    }
+
+    public function testGetContactCumulativeBalanceWithThreeParticipantsOnlyCountsDirectTransfers(): void
+    {
+        $alice = $this->createUserWithId(1, 'Alice');
+        $bob = $this->createUserWithId(2, 'Bob');
+        $charlie = $this->createUserWithId(3, 'Charlie');
+
+        $project = new GiftProject();
+        $project->setOwner($bob);
+        $project->addParticipant($alice);
+        $project->addParticipant($charlie);
+
+        // Bob paid 90 € -> Alice owes 30 € to Bob, Charlie owes 30 € to Bob, Charlie owes 0 € to Alice
+        $idea = new GiftIdea();
+        $idea
+            ->setName('Cadeau Commun')
+            ->setStatus(GiftIdea::STATUS_SELECTED)
+            ->setPurchasedBy($bob)
+            ->setPurchasePrice('90.00');
+        $project->addGiftIdea($idea);
+
+        $repo = $this->createMock(GiftProjectRepository::class);
+        $repo
+            ->expects(self::exactly(2))
+            ->method('findProjectsInvolvingUsers')
+            ->willReturn([$project]);
+
+        $service = new FinancialService($repo);
+
+        // Charlie owes Bob, not Alice -> balance between Alice and Charlie is 0.0
+        self::assertEqualsWithDelta(0.0, $service->getContactCumulativeBalance($alice, $charlie), 0.001);
+        // Alice owes Bob 30 € -> balance from Alice's perspective with Bob is +30.0
+        self::assertEqualsWithDelta(30.0, $service->getContactCumulativeBalance($alice, $bob), 0.001);
     }
 }

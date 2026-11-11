@@ -42,25 +42,27 @@ final class NotificationController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        $unreadProjects = $activityRepository->findUnreadProjectsForUser($user);
-        $now = new \DateTimeImmutable();
+        if ($this->isCsrfTokenValid('mark_all_read', $request->getPayload()->getString('_token'))) {
+            $unreadProjects = $activityRepository->findUnreadProjectsForUser($user);
+            $now = new \DateTimeImmutable();
 
-        foreach ($unreadProjects as $data) {
-            $project = $data['project'];
-            $readStatus = $entityManager
-                ->getRepository(ProjectReadStatus::class)
-                ->findOneBy(['user' => $user, 'project' => $project]);
+            foreach ($unreadProjects as $data) {
+                $project = $data['project'];
+                $readStatus = $entityManager
+                    ->getRepository(ProjectReadStatus::class)
+                    ->findOneBy(['user' => $user, 'project' => $project]);
 
-            if (!$readStatus) {
-                $readStatus = new ProjectReadStatus();
-                $readStatus->setUser($user);
-                $readStatus->setProject($project);
-                $entityManager->persist($readStatus);
+                if (!$readStatus) {
+                    $readStatus = new ProjectReadStatus();
+                    $readStatus->setUser($user);
+                    $readStatus->setProject($project);
+                    $entityManager->persist($readStatus);
+                }
+                $readStatus->setLastReadAt($now);
             }
-            $readStatus->setLastReadAt($now);
-        }
 
-        $entityManager->flush();
+            $entityManager->flush();
+        }
 
         if ($request->headers->get('HX-Request')) {
             return new Response(null, 204, [

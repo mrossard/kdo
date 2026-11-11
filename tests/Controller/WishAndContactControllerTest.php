@@ -143,6 +143,7 @@ final class WishAndContactControllerTest extends WebTestCase
     public function testWishCrudNewShowEditDelete(): void
     {
         $alice = $this->createUser('alice@example.com', 'Alice');
+        $bob = $this->createUser('bob@example.com', 'Bob');
         $this->em->flush();
 
         $this->client->loginUser($alice);
@@ -162,6 +163,17 @@ final class WishAndContactControllerTest extends WebTestCase
         /** @var Wish $wish */
         $wish = $this->em->getRepository(Wish::class)->findOneBy(['name' => 'Machine à café']);
         self::assertNotNull($wish);
+
+        // 1b. Another user (Bob) cannot view, edit, or delete Alice's wish
+        $this->client->loginUser($bob);
+        $this->client->request('GET', '/wish/' . $wish->getId());
+        self::assertResponseStatusCodeSame(403);
+        $this->client->request('GET', '/wish/' . $wish->getId() . '/edit');
+        self::assertResponseStatusCodeSame(403);
+        $this->client->request('POST', '/wish/' . $wish->getId(), ['_token' => 'any']);
+        self::assertResponseStatusCodeSame(403);
+
+        $this->client->loginUser($alice);
 
         // 2. Show wish
         $this->client->request('GET', '/wish/' . $wish->getId());

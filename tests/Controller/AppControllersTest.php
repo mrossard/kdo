@@ -105,10 +105,11 @@ final class AppControllersTest extends WebTestCase
 
         // 4. Notifications index & mark-all-read for Bob
         $this->client->loginUser($bob);
-        $this->client->request('GET', '/notifications/');
+        $notifCrawler = $this->client->request('GET', '/notifications/');
         self::assertResponseIsSuccessful();
+        $markAllReadToken = $notifCrawler->filter('form[action$="/mark-all-read"] input[name="_token"]')->attr('value');
 
-        $this->client->request('POST', '/notifications/mark-all-read', [], [], ['HTTP_HX-Request' => 'true']);
+        $this->client->request('POST', '/notifications/mark-all-read', ['_token' => $markAllReadToken], [], ['HTTP_HX-Request' => 'true']);
         self::assertResponseStatusCodeSame(204);
 
         // 5. Theme toggle (light -> dark -> light)

@@ -12,27 +12,6 @@
             </ul>
         </nav>
 
-        {% for message in app.flashes('success') %}
-            <div class="notification is-success">
-                {{ message }}
-            </div>
-        {% endfor %}
-        {% for message in app.flashes('warning') %}
-            <div class="notification is-warning">
-                {{ message }}
-            </div>
-        {% endfor %}
-        {% for message in app.flashes('danger') %}
-            <div class="notification is-danger">
-                {{ message }}
-            </div>
-        {% endfor %}
-        {% for message in app.flashes('info') %}
-            <div class="notification is-info">
-                {{ message }}
-            </div>
-        {% endfor %}
-
         {% set current_tab = app.request.query.get('tab', 'details') %}
 
         <div class="tabs is-boxed is-medium">

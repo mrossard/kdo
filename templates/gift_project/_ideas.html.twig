@@ -52,6 +52,7 @@
                     {% set width = (idea.voteCount / max_votes * 100)|round %}
                     <div class="mb-1" style="cursor:pointer"
                          hx-post="{{ path('app_gift_idea_vote', {'id': idea.id}) }}"
+                         hx-vals="{{ {'_token': csrf_token('vote_idea' ~ idea.id)}|json_encode }}"
                          hx-target="#project-content"
                          hx-swap="innerHTML">
                         <div class="level is-mobile mb-0">

@@ -97,7 +97,13 @@
                             {% endif %}
                         </td>
                         <td>{{ wish.description }}</td>
-                        <td><a href="{{ wish.url }}" target="_blank">{{ wish.url }}</a></td>
+                        <td>
+                            {% if wish.url %}
+                                <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer">{{ wish.url }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                         <td>
                             {% if delivered_at_info %}
                                 <span class="tag is-success">Remis le {{ delivered_at_info|date('d/m/Y') }}</span>

@@ -20,7 +20,13 @@
                     </tr>
                     <tr>
                         <th>Url</th>
-                        <td><a href="{{ wish.url }}" target="_blank">{{ wish.url }}</a></td>
+                        <td>
+                            {% if wish.url %}
+                                <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer">{{ wish.url }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
                     </tr>
                 </tbody>
             </table>

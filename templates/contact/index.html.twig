@@ -7,27 +7,6 @@
     <div class="container">
         <h1 class="title">Mes Contacts</h1>
 
-        {% for message in app.flashes('success') %}
-            <div class="notification is-success">
-                {{ message }}
-            </div>
-        {% endfor %}
-        {% for message in app.flashes('warning') %}
-            <div class="notification is-warning">
-                {{ message }}
-            </div>
-        {% endfor %}
-        {% for message in app.flashes('danger') %}
-            <div class="notification is-danger">
-                {{ message }}
-            </div>
-        {% endfor %}
-        {% for message in app.flashes('info') %}
-            <div class="notification is-info">
-                {{ message }}
-            </div>
-        {% endfor %}
-
         <div class="columns">
             {# Contacts mutuels #}
             <div class="column">

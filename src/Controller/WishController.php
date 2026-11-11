@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Entity\Wish;
 use App\Form\WishType;
 use App\Repository\WishRepository;
@@ -13,7 +14,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Security\Http\Attribute\Security;
 
 #[Route('/wish')]
 #[IsGranted('ROLE_USER')]
@@ -22,11 +22,11 @@ final class WishController extends AbstractController
     #[Route(name: 'app_wish_index', methods: ['GET'])]
     public function index(WishRepository $wishRepository, Request $request): Response
     {
-        /** @var \App\Entity\User $user */
+        /** @var User $user */
         $user = $this->getUser();
-        $showDelivered = $request->query->getBoolean('showDelivered', false); // Default to false
-        $sort = $request->query->get('sort', 'name');
-        $direction = $request->query->get('direction', 'ASC');
+        $showDelivered = $request->query->getBoolean('showDelivered', false);
+        $sort = $request->query->getString('sort', 'name');
+        $direction = $request->query->getString('direction', 'ASC');
 
         return $this->render('wish/index.html.twig', [
             'wishes' => $wishRepository->findUserWishesWithGiftIdeaDetails($user, $showDelivered, $sort, $direction),
@@ -39,12 +39,15 @@ final class WishController extends AbstractController
     #[Route('/new', name: 'app_wish_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
+        /** @var User $user */
+        $user = $this->getUser();
+
         $wish = new Wish();
         $form = $this->createForm(WishType::class, $wish);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $wish->setUser($this->getUser());
+            $wish->setUser($user);
             $entityManager->persist($wish);
             $entityManager->flush();
 
@@ -58,18 +61,20 @@ final class WishController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_wish_show', methods: ['GET'])]
-    #[Security("is_granted('ROLE_USER') and wish.getUser() == user")]
     public function show(Wish $wish): Response
     {
+        $this->denyAccessUnlessOwner($wish);
+
         return $this->render('wish/show.html.twig', [
             'wish' => $wish,
         ]);
     }
 
     #[Route('/{id}/edit', name: 'app_wish_edit', methods: ['GET', 'POST'])]
-    #[Security("is_granted('ROLE_USER') and wish.getUser() == user")]
     public function edit(Request $request, Wish $wish, EntityManagerInterface $entityManager): Response
     {
+        $this->denyAccessUnlessOwner($wish);
+
         $form = $this->createForm(WishType::class, $wish);
         $form->handleRequest($request);
 
@@ -86,14 +91,22 @@ final class WishController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_wish_delete', methods: ['POST'])]
-    #[Security("is_granted('ROLE_USER') and wish.getUser() == user")]
     public function delete(Request $request, Wish $wish, EntityManagerInterface $entityManager): Response
     {
+        $this->denyAccessUnlessOwner($wish);
+
         if ($this->isCsrfTokenValid('delete' . $wish->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($wish);
             $entityManager->flush();
         }
 
         return $this->redirectToRoute('app_wish_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+    private function denyAccessUnlessOwner(Wish $wish): void
+    {
+        if ($wish->getUser() !== $this->getUser()) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas accéder à ce souhait.');
+        }
     }
 }

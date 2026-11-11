@@ -63,6 +63,9 @@ class WishRepository extends ServiceEntityRepository
             default => 'w.name',
         };
 
-        return $qb->orderBy($sortField, $direction)->getQuery()->getResult();
+        $safeDirection = strtoupper((string) $direction) === 'DESC' ? 'DESC' : 'ASC';
+
+        /** @var list<Wish> */
+        return $qb->orderBy($sortField, $safeDirection)->getQuery()->getResult();
     }
 }

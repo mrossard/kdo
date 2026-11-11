@@ -95,15 +95,23 @@ final class GiftProjectControllerTest extends WebTestCase
             ->setPrice('150.00')
             ->setGiftProject($project)
             ->setProposer($owner);
+        $project->addGiftIdea($idea);
         $this->em->persist($idea);
         $this->em->flush();
 
         $this->client->loginUser($participant);
-        $this->client->request('GET', '/project/' . $project->getId());
+        $crawler = $this->client->request('GET', '/project/' . $project->getId() . '?tab=ideas');
         self::assertResponseIsSuccessful();
 
+        $voteVals = json_decode(
+            $crawler->filter('[hx-post$="/vote"]')->attr('hx-vals') ?? '{}',
+            true,
+        );
+
         // Toggle vote on idea
-        $this->client->request('POST', '/project/idea/' . $idea->getId() . '/vote', [], [], [
+        $this->client->request('POST', '/project/idea/' . $idea->getId() . '/vote', [
+            '_token' => $voteVals['_token'] ?? '',
+        ], [], [
             'HTTP_HX-Request' => 'true',
         ]);
         self::assertResponseIsSuccessful();
@@ -345,7 +353,9 @@ final class GiftProjectControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(204);
 
         // 11. Mark project as read & delivered
-        $this->client->request('POST', "/project/{$projectId}/mark-read", [], [], ['HTTP_HX-Request' => 'true']);
+        $activityCrawler = $this->client->request('GET', "/project/{$projectId}?tab=activite", [], [], ['HTTP_HX-Request' => 'true']);
+        $markReadToken = $activityCrawler->filter("form[action$='/mark-read'] input[name='_token']")->attr('value');
+        $this->client->request('POST', "/project/{$projectId}/mark-read", ['_token' => $markReadToken], [], ['HTTP_HX-Request' => 'true']);
         self::assertResponseStatusCodeSame(204);
 
         $detailsCrawler = $this->client->request('GET', "/project/{$projectId}?tab=details", [], [], ['HTTP_HX-Request' => 'true']);

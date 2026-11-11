@@ -185,15 +185,20 @@ class FinancialService
         $projects = $this->giftProjectRepository->findProjectsInvolvingUsers($currentUser, $contact);
 
         foreach ($projects as $project) {
-            $financials = $this->calculate($project); // Use existing calculation logic
+            $financials = $this->calculate($project);
 
-            foreach ($financials['summary'] as $participantSummary) {
-                if ($participantSummary['user']->getId() !== $contact->getId()) {
-                    continue;
+            foreach ($financials['transfers'] as $transfer) {
+                if (
+                    $transfer['from']->getId() === $contact->getId()
+                    && $transfer['to']->getId() === $currentUser->getId()
+                ) {
+                    $cumulativeBalance -= (float) $transfer['amount'];
+                } elseif (
+                    $transfer['from']->getId() === $currentUser->getId()
+                    && $transfer['to']->getId() === $contact->getId()
+                ) {
+                    $cumulativeBalance += (float) $transfer['amount'];
                 }
-
-                $cumulativeBalance += $participantSummary['balance'];
-                break;
             }
         }
 

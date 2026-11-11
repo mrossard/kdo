@@ -18,6 +18,7 @@ use App\Form\GiftIdeaType;
 use App\Form\GiftProjectType;
 use App\Repository\GiftProjectRepository;
 use App\Repository\UserRepository;
+use App\Repository\WishlistShareRepository;
 use App\Service\ActivityLogger;
 use App\Service\FinancialService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -612,20 +613,22 @@ final class GiftProjectController extends AbstractController
 
         $price = $request->getPayload()->getString('price');
 
-        if ($price === '') {
-            $this->addFlash('warning', 'Le prix est obligatoire pour marquer un achat.');
+        if ($price === '' || !is_numeric($price) || (float) $price <= 0) {
+            $this->addFlash('warning', 'Le prix est obligatoire et doit être supérieur à 0.');
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
         }
+
+        $formattedPrice = number_format((float) $price, 2, '.', '');
 
         if (
             $this->isCsrfTokenValid('mark_purchased' . $giftIdea->getId(), $request->getPayload()->getString('_token'))
         ) {
             $giftIdea->setPurchasedBy($user);
-            $giftIdea->setPurchasePrice($price);
+            $giftIdea->setPurchasePrice($formattedPrice);
             $giftIdea->setPurchasedAt(new \DateTimeImmutable());
             $this->activityLogger->log($project, Activity::TYPE_IDEA_PURCHASED, $user, [
                 'idea_name' => $giftIdea->getName(),
-                'price' => $price,
+                'price' => $formattedPrice,
             ]);
             $entityManager->flush();
             $this->addFlash('success', 'Cadeau marqué comme acheté !');
@@ -732,16 +735,13 @@ final class GiftProjectController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
+        $project = $comment->getGiftIdea()->getGiftProject();
 
-        // Check access rights (reuse logic if possible, or simple check)
-        if ($comment->getAuthor() !== $user && $comment->getGiftIdea()->getGiftProject()->getOwner() !== $user) {
-            // At least allow if participant? For simply viewing, usually yes if participant.
-            // But this route is mainly used for cancelling edit (re-fetching view).
-            // Let's strict check: must be participant or owner of project
-            $project = $comment->getGiftIdea()->getGiftProject();
-            if ($project->getOwner() !== $user && !$project->getParticipants()->contains($user)) {
-                throw $this->createAccessDeniedException();
-            }
+        if (
+            $project->getRecipient() === $user
+            || $project->getOwner() !== $user && !$project->getParticipants()->contains($user)
+        ) {
+            throw $this->createAccessDeniedException();
         }
 
         return $this->render('gift_project/_comment.html.twig', [
@@ -1011,15 +1011,22 @@ final class GiftProjectController extends AbstractController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
         }
 
+        if ($amount === '' || !is_numeric($amount) || (float) $amount <= 0) {
+            $this->addFlash('danger', 'Montant de remboursement invalide.');
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
+        }
+
+        $formattedAmount = number_format((float) $amount, 2, '.', '');
+
         if ($this->isCsrfTokenValid('reimburse_' . $project->getId(), $request->getPayload()->getString('_token'))) {
             $reimbursement = new \App\Entity\Reimbursement();
             $reimbursement->setProject($project);
             $reimbursement->setFromUser($debtor); // Debtor pays
             $reimbursement->setToUser($currentUser); // Current user receives
-            $reimbursement->setAmount($amount);
+            $reimbursement->setAmount($formattedAmount);
 
             $this->activityLogger->log($project, Activity::TYPE_REIMBURSEMENT_CREATED, $currentUser, [
-                'amount' => $amount,
+                'amount' => $formattedAmount,
             ]);
 
             $entityManager->persist($reimbursement);
@@ -1231,6 +1238,7 @@ final class GiftProjectController extends AbstractController
         #[MapEntity(id: 'wishId')]
         Wish $wish,
         EntityManagerInterface $entityManager,
+        WishlistShareRepository $wishlistShareRepository,
         Request $request,
     ): Response {
         /** @var User $user */
@@ -1242,8 +1250,13 @@ final class GiftProjectController extends AbstractController
         }
 
         // Security check: Ensure the current user has access to this contact's wishlist
-        // This is implicitly handled by the ContactController::viewContactListeDeSouhaits's security
-        // But good to double check, or trust the previous route guards.
+        $share = $wishlistShareRepository->findOneBy([
+            'owner' => $recipient,
+            'recipient' => $user,
+        ]);
+        if ($recipient === $user || !$share) {
+            throw $this->createAccessDeniedException("Vous n'avez pas accès à la liste de souhaits de ce contact.");
+        }
 
         if (
             $this->isCsrfTokenValid(
@@ -1299,18 +1312,27 @@ final class GiftProjectController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        $readStatus = $entityManager
-            ->getRepository(ProjectReadStatus::class)
-            ->findOneBy(['user' => $user, 'project' => $project]);
-
-        if (!$readStatus) {
-            $readStatus = new ProjectReadStatus();
-            $readStatus->setUser($user);
-            $readStatus->setProject($project);
-            $entityManager->persist($readStatus);
+        if (
+            $project->getRecipient() === $user
+            || $project->getOwner() !== $user && !$project->getParticipants()->contains($user)
+        ) {
+            throw $this->createAccessDeniedException();
         }
-        $readStatus->setLastReadAt(new \DateTimeImmutable());
-        $entityManager->flush();
+
+        if ($this->isCsrfTokenValid('mark_read' . $project->getId(), $request->getPayload()->getString('_token'))) {
+            $readStatus = $entityManager
+                ->getRepository(ProjectReadStatus::class)
+                ->findOneBy(['user' => $user, 'project' => $project]);
+
+            if (!$readStatus) {
+                $readStatus = new ProjectReadStatus();
+                $readStatus->setUser($user);
+                $readStatus->setProject($project);
+                $entityManager->persist($readStatus);
+            }
+            $readStatus->setLastReadAt(new \DateTimeImmutable());
+            $entityManager->flush();
+        }
 
         if ($request->headers->get('HX-Request')) {
             return new Response(null, 204, [
@@ -1330,8 +1352,9 @@ final class GiftProjectController extends AbstractController
 
         $isOwner = $project->getOwner() === $user;
         $isParticipant = $project->getParticipants()->contains($user);
+        $isRecipient = $project->getRecipient() === $user;
 
-        if (!$isOwner && !$isParticipant) {
+        if ($isRecipient || !$isOwner && !$isParticipant) {
             throw $this->createAccessDeniedException();
         }
 
@@ -1339,20 +1362,22 @@ final class GiftProjectController extends AbstractController
             return new Response(null, 204);
         }
 
-        $existingVote = $entityManager
-            ->getRepository(Vote::class)
-            ->findOneBy(['giftIdea' => $giftIdea, 'user' => $user]);
+        if ($this->isCsrfTokenValid('vote_idea' . $giftIdea->getId(), $request->getPayload()->getString('_token'))) {
+            $existingVote = $entityManager
+                ->getRepository(Vote::class)
+                ->findOneBy(['giftIdea' => $giftIdea, 'user' => $user]);
 
-        if ($existingVote) {
-            $entityManager->remove($existingVote);
-        } else {
-            $vote = new Vote();
-            $vote->setGiftIdea($giftIdea);
-            $vote->setUser($user);
-            $entityManager->persist($vote);
+            if ($existingVote) {
+                $entityManager->remove($existingVote);
+            } else {
+                $vote = new Vote();
+                $vote->setGiftIdea($giftIdea);
+                $vote->setUser($user);
+                $entityManager->persist($vote);
+            }
+
+            $entityManager->flush();
         }
-
-        $entityManager->flush();
 
         if ($request->headers->get('HX-Request')) {
             $sort = $request->query->get('sort', 'status');
