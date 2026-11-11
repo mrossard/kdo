@@ -15,6 +15,15 @@
                     </a>
                 </p>
                 <p class="control">
+                    <a class="button is-small {{ current_sort == 'priority_desc' ? 'is-active is-primary' : '' }}"
+                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'priority_desc'}) }}"
+                       hx-target="#project-content"
+                       hx-push-url="true">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:favorite') }}</span>
+                        <span>Priorité</span>
+                    </a>
+                </p>
+                <p class="control">
                     <a class="button is-small {{ current_sort == 'price_asc' ? 'is-active is-primary' : '' }}"
                        hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'price_asc'}) }}"
                        hx-target="#project-content"

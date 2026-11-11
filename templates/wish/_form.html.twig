@@ -1,11 +1,70 @@
-{{ form_start(form) }}
-    {{ form_widget(form) }}
-    <div class="field mt-5">
-        <div class="control">
-            <button class="button is-primary is-fullwidth">
-                <span class="icon">{{ ux_icon('material-symbols:save') }}</span>
-                <span>{{ button_label|default('Enregistrer') }}</span>
-            </button>
+{% set current_action = form_action|default(app.request.pathInfo) %}
+{% set current_button_label = button_label|default('Enregistrer') %}
+
+<div id="wish-form-wrapper">
+    {% if autofill_message is defined and autofill_message %}
+        <div class="notification is-{{ autofill_status|default('info') }} is-light p-3 mb-4">
+            <button type="button" class="delete" aria-label="delete"></button>
+            {{ autofill_message }}
         </div>
-    </div>
-{{ form_end(form) }}
+    {% endif %}
+
+    {{ form_start(form, {'action': current_action}) }}
+        <div class="field">
+            {{ form_label(form.url, null, {'label_attr': {'class': 'label'}}) }}
+            <div class="field has-addons mb-0">
+                <div class="control is-expanded">
+                    {{ form_widget(form.url, {'attr': {'class': 'input', 'placeholder': 'https://...'}}) }}
+                </div>
+                <div class="control">
+                    <button type="button"
+                            class="button is-info is-light"
+                            hx-post="{{ path('app_wish_autofill', {'form_action': current_action, 'button_label': current_button_label}) }}"
+                            hx-target="#wish-form-wrapper"
+                            hx-swap="outerHTML"
+                            title="Récupérer le titre, la description, l'image et le prix depuis le lien">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:auto-fix-high') }}</span>
+                        <span>Pré-remplir</span>
+                    </button>
+                </div>
+            </div>
+            {{ form_errors(form.url) }}
+        </div>
+
+        <div class="columns">
+            <div class="column is-6">
+                {{ form_row(form.name) }}
+            </div>
+            <div class="column is-3">
+                {{ form_row(form.price) }}
+            </div>
+            <div class="column is-3">
+                {{ form_row(form.priority) }}
+            </div>
+        </div>
+
+        <div class="columns is-vcentered">
+            <div class="column">
+                {{ form_row(form.imageUrl) }}
+            </div>
+            {% if form.vars.value and form.vars.value.imageUrl %}
+                <div class="column is-narrow">
+                    <figure class="image is-64x64">
+                        <img src="{{ form.vars.value.imageUrl }}" alt="Aperçu" style="object-fit: cover; width: 64px; height: 64px; border-radius: 6px;">
+                    </figure>
+                </div>
+            {% endif %}
+        </div>
+
+        {{ form_row(form.description) }}
+
+        <div class="field mt-5">
+            <div class="control">
+                <button class="button is-primary is-fullwidth">
+                    <span class="icon">{{ ux_icon('material-symbols:save') }}</span>
+                    <span>{{ current_button_label }}</span>
+                </button>
+            </div>
+        </div>
+    {{ form_end(form) }}
+</div>

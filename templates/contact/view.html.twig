@@ -13,10 +13,49 @@
 
         <div class="columns is-multiline">
         {% for wish in wishes %}
+            {% set activeProject = wish.activeProject %}
             <div class="column is-one-third">
                 <div class="card h-100">
                     <div class="card-content">
-                        <p class="title is-4">{{ wish.name }}</p>
+                        <div class="media">
+                            {% if wish.imageUrl %}
+                                <div class="media-left">
+                                    <figure class="image is-64x64">
+                                        <img src="{{ wish.imageUrl }}" alt="{{ wish.name }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 6px;">
+                                    </figure>
+                                </div>
+                            {% endif %}
+                            <div class="media-content">
+                                <p class="title is-4 mb-2">{{ wish.name }}</p>
+                                <div class="tags">
+                                    <span class="tag {{ wish.priorityEnum.badgeClass }}">
+                                        <span class="icon is-small mr-1">{{ ux_icon(wish.priorityEnum.icon) }}</span>
+                                        <span>{{ wish.priorityEnum.label }}</span>
+                                    </span>
+                                    {% if wish.price %}
+                                        <span class="tag is-light">{{ wish.price }} €</span>
+                                    {% endif %}
+                                    {% if activeProject is not null %}
+                                        <span class="tag is-info is-light">
+                                            <span class="icon is-small mr-1">{{ ux_icon('material-symbols:group') }}</span>
+                                            <span>Dans un projet ({{ activeProject.owner.displayName }})</span>
+                                        </span>
+                                    {% elseif wish.reservedBy is not null %}
+                                        {% if wish.reservedBy == app.user %}
+                                            <span class="tag is-success is-light">
+                                                <span class="icon is-small mr-1">{{ ux_icon('material-symbols:bookmark-check') }}</span>
+                                                <span>Réservé par vous</span>
+                                            </span>
+                                        {% else %}
+                                            <span class="tag is-warning is-light">
+                                                <span class="icon is-small mr-1">{{ ux_icon('material-symbols:lock') }}</span>
+                                                <span>Réservé par {{ wish.reservedBy.displayName }}</span>
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                         {% if wish.url %}
                             <p class="subtitle is-6">
                                 <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer">
@@ -30,16 +69,66 @@
                         </div>
                     </div>
                     <footer class="card-footer">
-                        <form class="card-footer-item" method="post" action="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
-                              hx-post="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
-                              hx-confirm="Voulez-vous créer un projet cadeau avec ce souhait ?"
-                              hx-target="body">
-                            <input type="hidden" name="_token" value="{{ csrf_token('create_project_from_wish' ~ wish.id) }}">
-                            <button type="submit" class="button is-primary is-small is-fullwidth">
-                                <span class="icon is-small">{{ ux_icon('material-symbols:redeem') }}</span>
-                                <span>Offrir</span>
-                            </button>
-                        </form>
+                        {% if activeProject is not null %}
+                            {% if app.user == activeProject.owner or app.user in activeProject.participants %}
+                                <a href="{{ path('app_project_show', {'id': activeProject.id}) }}" class="card-footer-item has-text-link">
+                                    <span class="icon is-small mr-1">{{ ux_icon('material-symbols:visibility') }}</span>
+                                    <span>Voir le projet</span>
+                                </a>
+                            {% else %}
+                                <span class="card-footer-item has-text-grey is-size-7">
+                                    <span class="icon is-small mr-1">{{ ux_icon('material-symbols:lock') }}</span>
+                                    <span>Pris dans un projet ({{ activeProject.owner.displayName }})</span>
+                                </span>
+                            {% endif %}
+                        {% elseif wish.reservedBy is not null %}
+                            {% if wish.reservedBy == app.user %}
+                                <form class="card-footer-item" method="post" action="{{ path('app_contact_wish_toggle_reserve', {'id': wish.id}) }}"
+                                      hx-post="{{ path('app_contact_wish_toggle_reserve', {'id': wish.id}) }}"
+                                      hx-target="body">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle_reserve_wish' ~ wish.id) }}">
+                                    <button type="submit" class="button is-warning is-light is-small is-fullwidth">
+                                        <span class="icon is-small">{{ ux_icon('material-symbols:bookmark-remove') }}</span>
+                                        <span>Libérer</span>
+                                    </button>
+                                </form>
+                                <form class="card-footer-item" method="post" action="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
+                                      hx-post="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
+                                      hx-confirm="Voulez-vous convertir votre réservation en projet cadeau groupé ?"
+                                      hx-target="body">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('create_project_from_wish' ~ wish.id) }}">
+                                    <button type="submit" class="button is-primary is-small is-fullwidth">
+                                        <span class="icon is-small">{{ ux_icon('material-symbols:group-add') }}</span>
+                                        <span>Projet groupé</span>
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="card-footer-item has-text-grey is-size-7">
+                                    <span class="icon is-small mr-1">{{ ux_icon('material-symbols:lock') }}</span>
+                                    <span>Réservé par {{ wish.reservedBy.displayName }}</span>
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            <form class="card-footer-item" method="post" action="{{ path('app_contact_wish_toggle_reserve', {'id': wish.id}) }}"
+                                  hx-post="{{ path('app_contact_wish_toggle_reserve', {'id': wish.id}) }}"
+                                  hx-target="body">
+                                <input type="hidden" name="_token" value="{{ csrf_token('toggle_reserve_wish' ~ wish.id) }}">
+                                <button type="submit" class="button is-success is-light is-small is-fullwidth">
+                                    <span class="icon is-small">{{ ux_icon('material-symbols:bookmark-add') }}</span>
+                                    <span>Réserver (solo)</span>
+                                </button>
+                            </form>
+                            <form class="card-footer-item" method="post" action="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
+                                  hx-post="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
+                                  hx-confirm="Voulez-vous créer un projet cadeau avec ce souhait ?"
+                                  hx-target="body">
+                                <input type="hidden" name="_token" value="{{ csrf_token('create_project_from_wish' ~ wish.id) }}">
+                                <button type="submit" class="button is-primary is-small is-fullwidth">
+                                    <span class="icon is-small">{{ ux_icon('material-symbols:redeem') }}</span>
+                                    <span>Projet groupé</span>
+                                </button>
+                            </form>
+                        {% endif %}
                     </footer>
                 </div>
             </div>

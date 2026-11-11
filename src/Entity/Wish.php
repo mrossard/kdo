@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\WishPriority;
 use App\Repository\WishRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
+// @mago-expect lint:too-many-properties
 #[ORM\Entity(repositoryClass: WishRepository::class)]
 class Wish
 {
@@ -30,9 +32,22 @@ class Wish
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
     private ?string $price = null;
 
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $imageUrl = null;
+
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => WishPriority::NORMAL->value])]
+    private int $priority = WishPriority::NORMAL->value;
+
     #[ORM\ManyToOne(inversedBy: 'wishes')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?User $reservedBy = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $reservedAt = null;
 
     /**
      * @var Collection<int, GiftIdea>
@@ -98,6 +113,35 @@ class Wish
         return $this;
     }
 
+    public function getImageUrl(): ?string
+    {
+        return $this->imageUrl;
+    }
+
+    public function setImageUrl(?string $imageUrl): static
+    {
+        $this->imageUrl = $imageUrl;
+
+        return $this;
+    }
+
+    public function getPriority(): int
+    {
+        return $this->priority;
+    }
+
+    public function setPriority(int $priority): static
+    {
+        $this->priority = (WishPriority::tryFrom($priority) ?? WishPriority::NORMAL)->value;
+
+        return $this;
+    }
+
+    public function getPriorityEnum(): WishPriority
+    {
+        return WishPriority::tryFrom($this->priority) ?? WishPriority::NORMAL;
+    }
+
     public function getUser(): ?User
     {
         return $this->user;
@@ -108,6 +152,45 @@ class Wish
         $this->user = $user;
 
         return $this;
+    }
+
+    public function getReservedBy(): ?User
+    {
+        return $this->reservedBy;
+    }
+
+    public function setReservedBy(?User $reservedBy): static
+    {
+        $this->reservedBy = $reservedBy;
+
+        return $this;
+    }
+
+    public function getReservedAt(): ?\DateTimeImmutable
+    {
+        return $this->reservedAt;
+    }
+
+    public function setReservedAt(?\DateTimeImmutable $reservedAt): static
+    {
+        $this->reservedAt = $reservedAt;
+
+        return $this;
+    }
+
+    public function getActiveProject(): ?GiftProject
+    {
+        foreach ($this->giftIdeasUsedFor as $idea) {
+            if ($idea->getStatus() === GiftIdea::STATUS_DISCARDED) {
+                continue;
+            }
+            $project = $idea->getGiftProject();
+            if ($project !== null && !$project->isArchived()) {
+                return $project;
+            }
+        }
+
+        return null;
     }
 
     /**

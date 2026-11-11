@@ -74,6 +74,9 @@ abstract class AbstractProjectController extends AbstractController
             if ($sort === 'price_desc') {
                 return self::parseIdeaPrice($b) <=> self::parseIdeaPrice($a);
             }
+            if ($sort === 'priority_desc') {
+                return $b->getPriority() <=> $a->getPriority();
+            }
 
             return self::compareIdeaByStatus($a, $b);
         });

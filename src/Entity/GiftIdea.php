@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Enum\GiftIdeaStatus;
+use App\Enum\WishPriority;
 use App\Repository\GiftIdeaRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -31,6 +32,12 @@ class GiftIdea
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
     private ?string $price = null; // Stored as string to avoid float precision issues
+
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $imageUrl = null;
+
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => WishPriority::NORMAL->value])]
+    private int $priority = WishPriority::NORMAL->value;
 
     #[ORM\ManyToOne(inversedBy: 'giftIdeas')]
     #[ORM\JoinColumn(nullable: false)]
@@ -191,6 +198,35 @@ class GiftIdea
         $this->price = $price;
 
         return $this;
+    }
+
+    public function getImageUrl(): ?string
+    {
+        return $this->imageUrl;
+    }
+
+    public function setImageUrl(?string $imageUrl): static
+    {
+        $this->imageUrl = $imageUrl;
+
+        return $this;
+    }
+
+    public function getPriority(): int
+    {
+        return $this->priority;
+    }
+
+    public function setPriority(int $priority): static
+    {
+        $this->priority = (WishPriority::tryFrom($priority) ?? WishPriority::NORMAL)->value;
+
+        return $this;
+    }
+
+    public function getPriorityEnum(): WishPriority
+    {
+        return WishPriority::tryFrom($this->priority) ?? WishPriority::NORMAL;
     }
 
     public function getGiftProject(): ?GiftProject

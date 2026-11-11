@@ -271,8 +271,13 @@ final class GiftProjectControllerTest extends WebTestCase
         $this->client->request('GET', "/project/{$projectId}?tab=ideas&sort=price_desc", [], [], ['HTTP_HX-Request' => 'true']);
         self::assertResponseIsSuccessful();
 
-        // 5. Get new idea form via HTMX and submit new idea via show
+        // 5. Get new idea form via HTMX, test autofill, and submit new idea via show
         $this->client->request('GET', "/project/{$projectId}/new-idea-form");
+        self::assertResponseIsSuccessful();
+
+        $this->client->request('POST', "/project/{$projectId}/idea-autofill", [
+            'gift_idea' => ['url' => 'http://localhost/blocked'],
+        ]);
         self::assertResponseIsSuccessful();
 
         // Copy wish to idea

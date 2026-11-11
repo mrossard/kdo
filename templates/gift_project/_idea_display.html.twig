@@ -19,9 +19,20 @@ Expected variables:
 <div class="card {{ card_class }}" id="gift-idea-{{ idea.id }}"> {# Add an ID for HTMX targeting #}
     <div class="card-content">
         <div class="level is-mobile mb-2">
-            <div class="media-content">
-                <p class="title is-4">{{ idea.name }}</p>
-                <p class="subtitle is-6">{{ idea.price ? idea.price|format_currency('EUR') : 'Prix non défini' }}</p>
+            <div class="level-left">
+                {% if idea.imageUrl %}
+                    <figure class="image is-64x64 mr-3 is-flex-shrink-0">
+                        <img src="{{ idea.imageUrl }}" alt="{{ idea.name }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 6px;">
+                    </figure>
+                {% endif %}
+                <div class="media-content">
+                    <p class="title is-4 mb-1">{{ idea.name }}</p>
+                    <p class="subtitle is-6 mb-1">{{ idea.price ? idea.price|format_currency('EUR') : 'Prix non défini' }}</p>
+                    <span class="tag is-small {{ idea.priorityEnum.badgeClass }}">
+                        <span class="icon is-small mr-1">{{ ux_icon(idea.priorityEnum.icon) }}</span>
+                        <span>{{ idea.priorityEnum.label }}</span>
+                    </span>
+                </div>
             </div>
             <div class="level-right">
                 {% if idea.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED') %}

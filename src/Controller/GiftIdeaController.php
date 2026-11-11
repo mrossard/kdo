@@ -16,6 +16,7 @@ use App\Repository\WishlistShareRepository;
 use App\Security\Voter\GiftIdeaVoter;
 use App\Security\Voter\GiftProjectVoter;
 use App\Service\ActivityLogger;
+use App\Service\UrlMetadataFetcher;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,7 +24,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-// @mago-expect lint:cyclomatic-complexity,kan-defect
+// @mago-expect lint:cyclomatic-complexity,kan-defect,too-many-methods
 #[Route('/project')]
 #[IsGranted('ROLE_USER')]
 final class GiftIdeaController extends AbstractProjectController
@@ -51,6 +52,36 @@ final class GiftIdeaController extends AbstractProjectController
         return $this->render('gift_project/_gift_idea_form.html.twig', [
             'project' => $project,
             'gift_idea_form' => $giftIdeaForm,
+        ]);
+    }
+
+    #[Route('/{id}/idea-autofill', name: 'app_gift_idea_autofill', methods: ['POST'])]
+    public function autofillIdeaForm(
+        GiftProject $project,
+        Request $request,
+        UrlMetadataFetcher $metadataFetcher,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+        $this->denyUnlessCanViewProject($project, $user);
+
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        $allParams = $request->request->all();
+        /** @var array<string, string|null> $ideaData */
+        $ideaData = is_array($allParams['gift_idea'] ?? null) ? $allParams['gift_idea'] : [];
+        $giftIdea = new GiftIdea();
+        $result = $metadataFetcher->populateFromFormData($giftIdea, $ideaData);
+        $giftIdeaForm = $this->createForm(GiftIdeaType::class, $giftIdea);
+
+        return $this->render('gift_project/_gift_idea_form.html.twig', [
+            'project' => $project,
+            'gift_idea_form' => $giftIdeaForm,
+            'autofill_message' => $result['message'],
+            'autofill_status' => $result['status'],
         ]);
     }
 
@@ -92,15 +123,31 @@ final class GiftIdeaController extends AbstractProjectController
             ]);
         }
 
+        $reservedBy = $wish->getReservedBy();
+        if ($reservedBy !== null && $reservedBy !== $user) {
+            $this->addFlash('warning', 'Ce souhait est déjà réservé par ' . $reservedBy->getDisplayName() . '.');
+
+            return $this->redirectToRoute('app_project_show', [
+                'id' => $project->getId(),
+                'tab' => 'liste_souhaits',
+            ]);
+        }
+
         if ($this->isCsrfTokenValid(
             'copy_wish' . (string) $wish->getId(),
             $request->getPayload()->getString('_token'),
         )) {
+            if ($reservedBy === $user) {
+                $wish->setReservedBy(null);
+                $wish->setReservedAt(null);
+            }
             $giftIdea = new GiftIdea();
             $giftIdea->setName((string) $wish->getName());
             $giftIdea->setDescription($wish->getDescription());
             $giftIdea->setUrl($wish->getUrl());
+            $giftIdea->setImageUrl($wish->getImageUrl());
             $giftIdea->setPrice($wish->getPrice());
+            $giftIdea->setPriority($wish->getPriority());
             $giftIdea->setGiftProject($project);
             $giftIdea->setProposer($user);
             $giftIdea->setStatus(GiftIdea::STATUS_PROPOSED);
@@ -373,10 +420,21 @@ final class GiftIdeaController extends AbstractProjectController
             throw $this->createAccessDeniedException("Vous n'avez pas accès à la liste de souhaits de ce contact.");
         }
 
+        $reservedBy = $wish->getReservedBy();
+        if ($reservedBy !== null && $reservedBy !== $user || $wish->getActiveProject() !== null) {
+            $this->addFlash('warning', 'Ce souhait est déjà réservé ou pris en charge dans un projet.');
+
+            return $this->redirectToRoute('app_contact_view', ['id' => $recipient->getId()]);
+        }
+
         if ($this->isCsrfTokenValid(
             'create_project_from_wish' . (string) $wish->getId(),
             $request->getPayload()->getString('_token'),
         )) {
+            if ($reservedBy === $user) {
+                $wish->setReservedBy(null);
+                $wish->setReservedAt(null);
+            }
             $project = new GiftProject();
             $project->setOwner($user);
             $project->setRecipient($recipient);
@@ -390,7 +448,9 @@ final class GiftIdeaController extends AbstractProjectController
             $giftIdea->setName((string) $wish->getName());
             $giftIdea->setDescription($wish->getDescription());
             $giftIdea->setUrl($wish->getUrl());
+            $giftIdea->setImageUrl($wish->getImageUrl());
             $giftIdea->setPrice($wish->getPrice());
+            $giftIdea->setPriority($wish->getPriority());
             $giftIdea->setGiftProject($project);
             $giftIdea->setProposer($user);
             $giftIdea->setStatus(GiftIdea::STATUS_PROPOSED);

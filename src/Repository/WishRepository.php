@@ -74,6 +74,7 @@ class WishRepository extends ServiceEntityRepository
     ): \Doctrine\ORM\QueryBuilder {
         $sortField = match ($sort) {
             'price' => 'w.price',
+            'priority' => 'w.priority',
             default => 'w.name',
         };
         $safeDirection = strtoupper((string) $direction) === 'DESC' ? 'DESC' : 'ASC';

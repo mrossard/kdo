@@ -87,6 +87,26 @@
                             {% endif %}
                         </a>
                     </th>
+                    <th>
+                        {% set priority_sort_url = path('app_wish_index', {
+                            'sort': 'priority',
+                            'direction': (current_sort == 'priority' and current_direction == 'DESC') ? 'ASC' : 'DESC',
+                            'showDelivered': show_delivered
+                        }) %}
+                        <a href="{{ priority_sort_url }}"
+                           hx-get="{{ priority_sort_url }}"
+                           hx-target="#wish-list-container"
+                           hx-select="#wish-list-container"
+                           hx-swap="outerHTML"
+                           hx-push-url="true">
+                            Priorité
+                            {% if current_sort == 'priority' %}
+                                <span class="icon is-small">
+                                    {{ ux_icon(current_direction == 'ASC' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') }}
+                                </span>
+                            {% endif %}
+                        </a>
+                    </th>
                     <th>Description</th>
                     <th>Url</th>
                     <th>État</th>
@@ -112,13 +132,28 @@
                     {% endfor %}
 
                     <tr>
-                        <td>{{ wish.name }}</td>
+                        <td>
+                            <div class="is-flex is-align-items-center">
+                                {% if wish.imageUrl %}
+                                    <figure class="image is-48x48 mr-3 is-flex-shrink-0">
+                                        <img src="{{ wish.imageUrl }}" alt="{{ wish.name }}" style="object-fit: cover; width: 48px; height: 48px; border-radius: 6px;">
+                                    </figure>
+                                {% endif %}
+                                <strong>{{ wish.name }}</strong>
+                            </div>
+                        </td>
                         <td>
                             {% if wish.price %}
                                 {{ wish.price }} €
                             {% else %}
                                 -
                             {% endif %}
+                        </td>
+                        <td>
+                            <span class="tag {{ wish.priorityEnum.badgeClass }}">
+                                <span class="icon is-small mr-1">{{ ux_icon(wish.priorityEnum.icon) }}</span>
+                                <span>{{ wish.priorityEnum.label }}</span>
+                            </span>
                         </td>
                         <td>{{ wish.description }}</td>
                         <td>
@@ -168,7 +203,7 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="6" class="has-text-centered">Votre liste de souhaits est vide. Ajoutez votre
+                        <td colspan="7" class="has-text-centered">Votre liste de souhaits est vide. Ajoutez votre
                             premier souhait !
                         </td>
                     </tr>

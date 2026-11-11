@@ -1,6 +1,35 @@
-<div class="box">
+<div class="box" id="gift-idea-form-box">
     <h4 class="title is-5">Proposer une idée de cadeau</h4>
-    {{ form_start(gift_idea_form) }}
+
+    {% if autofill_message is defined and autofill_message %}
+        <div class="notification is-{{ autofill_status|default('info') }} is-light p-3 mb-4">
+            <button type="button" class="delete" aria-label="delete"></button>
+            {{ autofill_message }}
+        </div>
+    {% endif %}
+
+    {{ form_start(gift_idea_form, {'action': path('app_project_show', {'id': project.id, 'tab': 'ideas'})}) }}
+        <div class="field">
+            {{ form_label(gift_idea_form.url, null, {'label_attr': {'class': 'label'}}) }}
+            <div class="field has-addons mb-0">
+                <div class="control is-expanded">
+                    {{ form_widget(gift_idea_form.url, {'attr': {'class': 'input'}}) }}
+                </div>
+                <div class="control">
+                    <button type="button"
+                            class="button is-info is-light"
+                            hx-post="{{ path('app_gift_idea_autofill', {'id': project.id}) }}"
+                            hx-target="#gift-idea-form-box"
+                            hx-swap="outerHTML"
+                            title="Récupérer le titre, la description, l'image et le prix depuis le lien">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:auto-fix-high') }}</span>
+                        <span>Pré-remplir</span>
+                    </button>
+                </div>
+            </div>
+            {{ form_errors(gift_idea_form.url) }}
+        </div>
+
         <div class="columns">
             <div class="column is-6">
                 <div class="field">
@@ -20,22 +49,44 @@
                     {{ form_errors(gift_idea_form.price) }}
                 </div>
             </div>
+            <div class="column is-3">
+                <div class="field">
+                    {{ form_label(gift_idea_form.priority, null, {'label_attr': {'class': 'label'}}) }}
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            {{ form_widget(gift_idea_form.priority) }}
+                        </div>
+                    </div>
+                    {{ form_errors(gift_idea_form.priority) }}
+                </div>
+            </div>
         </div>
-        
+
+        <div class="columns is-vcentered">
+            <div class="column">
+                <div class="field">
+                    {{ form_label(gift_idea_form.imageUrl, null, {'label_attr': {'class': 'label'}}) }}
+                    <div class="control">
+                        {{ form_widget(gift_idea_form.imageUrl, {'attr': {'class': 'input'}}) }}
+                    </div>
+                    {{ form_errors(gift_idea_form.imageUrl) }}
+                </div>
+            </div>
+            {% if gift_idea_form.vars.value and gift_idea_form.vars.value.imageUrl %}
+                <div class="column is-narrow">
+                    <figure class="image is-64x64">
+                        <img src="{{ gift_idea_form.vars.value.imageUrl }}" alt="Aperçu" style="object-fit: cover; width: 64px; height: 64px; border-radius: 6px;">
+                    </figure>
+                </div>
+            {% endif %}
+        </div>
+
         <div class="field">
             {{ form_label(gift_idea_form.description, null, {'label_attr': {'class': 'label'}}) }}
             <div class="control">
                 {{ form_widget(gift_idea_form.description, {'attr': {'class': 'textarea', 'rows': 3}}) }}
             </div>
             {{ form_errors(gift_idea_form.description) }}
-        </div>
-        
-        <div class="field">
-            {{ form_label(gift_idea_form.url, null, {'label_attr': {'class': 'label'}}) }}
-            <div class="control">
-                {{ form_widget(gift_idea_form.url, {'attr': {'class': 'input'}}) }}
-            </div>
-            {{ form_errors(gift_idea_form.url) }}
         </div>
         
         <div class="field is-grouped">

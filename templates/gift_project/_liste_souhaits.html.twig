@@ -8,7 +8,22 @@
                 <div class="column is-6">
                     <div class="card">
                         <div class="card-content">
-                            <p class="title is-5">{{ wish.name }}</p>
+                            <div class="media mb-3">
+                                {% if wish.imageUrl %}
+                                    <div class="media-left">
+                                        <figure class="image is-64x64">
+                                            <img src="{{ wish.imageUrl }}" alt="{{ wish.name }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 6px;">
+                                        </figure>
+                                    </div>
+                                {% endif %}
+                                <div class="media-content">
+                                    <p class="title is-5 mb-2">{{ wish.name }}</p>
+                                    <span class="tag {{ wish.priorityEnum.badgeClass }}">
+                                        <span class="icon is-small mr-1">{{ ux_icon(wish.priorityEnum.icon) }}</span>
+                                        <span>{{ wish.priorityEnum.label }}</span>
+                                    </span>
+                                </div>
+                            </div>
 
                             {% if wish.description %}
                                 <div class="content">{{ wish.description|nl2br }}</div>
@@ -34,6 +49,11 @@
                                     <button class="button is-light is-small is-fullwidth" disabled>
                                         <span class="icon is-small">{{ ux_icon('material-symbols:check') }}</span>
                                         <span>Déjà copié</span>
+                                    </button>
+                                {% elseif wish.reservedBy is not null and wish.reservedBy != app.user %}
+                                    <button class="button is-warning is-light is-small is-fullwidth" disabled>
+                                        <span class="icon is-small">{{ ux_icon('material-symbols:lock') }}</span>
+                                        <span>Réservé par {{ wish.reservedBy.displayName }}</span>
                                     </button>
                                 {% elseif not project.locked and project.deliveredAt is null %}
                                     <form method="post" action="{{ path('app_project_copy_wish', {'id': project.id, 'wish_id': wish.id}) }}"

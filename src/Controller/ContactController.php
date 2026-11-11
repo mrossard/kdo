@@ -6,11 +6,13 @@ namespace App\Controller;
 
 use App\Entity\ContactRequest;
 use App\Entity\User;
+use App\Entity\Wish;
 use App\Entity\WishlistShare;
 use App\Form\AddContactFormType;
 use App\Repository\ContactRequestRepository;
 use App\Repository\UserRepository;
 use App\Repository\WishlistShareRepository;
+use App\Repository\WishRepository;
 use App\Service\ActivityLogger;
 use App\Service\FinancialService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -245,7 +247,7 @@ final class ContactController extends AbstractController
     }
 
     #[Route('/view/{id}', name: 'app_contact_view', methods: ['GET'])]
-    public function viewContactListeDeSouhaits(User $owner): Response
+    public function viewContactListeDeSouhaits(User $owner, WishRepository $wishRepository): Response
     {
         /** @var User $me */
         $me = $this->getUser();
@@ -261,8 +263,66 @@ final class ContactController extends AbstractController
 
         return $this->render('contact/view.html.twig', [
             'owner' => $owner,
-            'wishes' => $owner->getWishes(),
+            'wishes' => $wishRepository->findUndeliveredUserWishesWithGiftIdeaDetails($owner),
         ]);
+    }
+
+    #[Route('/wish/{id}/toggle-reserve', name: 'app_contact_wish_toggle_reserve', methods: ['POST'])]
+    public function toggleReserveWish(Wish $wish, Request $request): Response
+    {
+        /** @var User $me */
+        $me = $this->getUser();
+        $owner = $wish->getUser();
+
+        if ($owner === null || $owner === $me) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas réserver votre propre souhait.');
+        }
+
+        $share = $this->wishlistShareRepository->findOneBy([
+            'owner' => $owner,
+            'recipient' => $me,
+        ]);
+        if ($share === null) {
+            throw $this->createAccessDeniedException("Vous n'avez pas accès à la liste de souhaits de ce contact.");
+        }
+
+        if ($this->isCsrfTokenValid(
+            'toggle_reserve_wish' . (string) $wish->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            if ($wish->getActiveProject() !== null) {
+                $this->addFlash('warning', 'Ce souhait fait déjà partie d\'un projet cadeau en cours.');
+            }
+            if ($wish->getActiveProject() === null) {
+                $currentReserver = $wish->getReservedBy();
+                if ($currentReserver !== null && $currentReserver !== $me) {
+                    $this->addFlash(
+                        'warning',
+                        'Ce souhait est déjà réservé par ' . $currentReserver->getDisplayName() . '.',
+                    );
+                }
+                if ($currentReserver === $me) {
+                    $wish->setReservedBy(null);
+                    $wish->setReservedAt(null);
+                    $this->entityManager->flush();
+                    $this->addFlash('info', "Réservation annulée pour « {$wish->getName()} ».");
+                }
+                if ($currentReserver === null) {
+                    $wish->setReservedBy($me);
+                    $wish->setReservedAt(new \DateTimeImmutable());
+                    $this->entityManager->flush();
+                    $this->addFlash('success', "Vous avez réservé « {$wish->getName()} » !");
+                }
+            }
+        }
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response(null, 204, [
+                'HX-Redirect' => $this->generateUrl('app_contact_view', ['id' => $owner->getId()]),
+            ]);
+        }
+
+        return $this->redirectToRoute('app_contact_view', ['id' => $owner->getId()]);
     }
 
     private function handleAddContactSubmission(

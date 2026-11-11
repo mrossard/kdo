@@ -148,21 +148,34 @@ final class WishAndContactControllerTest extends WebTestCase
 
         $this->client->loginUser($alice);
 
-        // 1. New wish
+        // 1. New wish + autofill route test
+        $this->client->request('POST', '/wish/autofill', [
+            'wish' => ['url' => ''],
+        ]);
+        self::assertResponseIsSuccessful();
+
         $crawler = $this->client->request('GET', '/wish/new');
         self::assertResponseIsSuccessful();
         $form = $crawler->selectButton('Créer')->form([
             'wish[name]' => 'Machine à café',
             'wish[description]' => 'Expresso broyeur',
             'wish[url]' => 'https://example.com/cafe',
+            'wish[imageUrl]' => 'https://example.com/cafe.jpg',
+            'wish[priority]' => '3',
             'wish[price]' => '350.00',
         ]);
         $this->client->submit($form);
         self::assertResponseRedirects('/wish');
 
+        // Sort wish index by priority
+        $this->client->request('GET', '/wish?sort=priority&direction=DESC');
+        self::assertResponseIsSuccessful();
+
         /** @var Wish $wish */
         $wish = $this->em->getRepository(Wish::class)->findOneBy(['name' => 'Machine à café']);
         self::assertNotNull($wish);
+        self::assertSame(3, $wish->getPriority());
+        self::assertSame('https://example.com/cafe.jpg', $wish->getImageUrl());
 
         // 1b. Another user (Bob) cannot view, edit, or delete Alice's wish
         $this->client->loginUser($bob);
@@ -270,5 +283,84 @@ final class WishAndContactControllerTest extends WebTestCase
         $removeToken = $removeForm->filter('input[name="_token"]')->attr('value');
         $this->client->request('POST', '/contact/remove/' . $bob->getId(), ['_token' => $removeToken]);
         self::assertResponseRedirects('/contact/');
+    }
+
+    public function testDirectWishReservationAndDuplicateProtection(): void
+    {
+        $owner = $this->createUser('owner@example.com', 'Owner');
+        $alice = $this->createUser('alice@example.com', 'Alice');
+        $bob = $this->createUser('bob@example.com', 'Bob');
+
+        $this->em->persist(new WishlistShare()->setOwner($owner)->setRecipient($alice));
+        $this->em->persist(new WishlistShare()->setOwner($owner)->setRecipient($bob));
+
+        $wish = new Wish()
+            ->setUser($owner)
+            ->setName('Appareil Photo')
+            ->setPrice('450.00');
+        $this->em->persist($wish);
+        $this->em->flush();
+
+        // 1. Alice reserves the wish in 1 click
+        $this->client->loginUser($alice);
+        $crawler = $this->client->request('GET', '/contact/view/' . $owner->getId());
+        self::assertResponseIsSuccessful();
+        $reserveForm = $crawler->filter('form[action$="/toggle-reserve"]');
+        $reserveToken = $reserveForm->filter('input[name="_token"]')->attr('value');
+
+        $this->client->request('POST', '/contact/wish/' . $wish->getId() . '/toggle-reserve', [
+            '_token' => $reserveToken,
+        ]);
+        self::assertResponseRedirects('/contact/view/' . $owner->getId());
+
+        $this->em->clear();
+        /** @var Wish $updatedWish */
+        $updatedWish = $this->em->getRepository(Wish::class)->find($wish->getId());
+        self::assertSame($alice->getId(), $updatedWish->getReservedBy()?->getId());
+        self::assertNotNull($updatedWish->getReservedAt());
+
+        // 2. Zero spoiler: Owner sees their wishlist without any mention of reservation
+        $this->client->loginUser($owner);
+        $this->client->request('GET', '/wish');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextNotContains('body', 'Réservé par');
+
+        // 3. Bob sees that Alice reserved the wish and cannot reserve or create a project from it
+        $this->client->loginUser($bob);
+        $bobCrawler = $this->client->request('GET', '/contact/view/' . $owner->getId());
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Réservé par Alice');
+
+        // Even if Bob crafts a POST to createProjectFromWish, it is rejected
+        $this->client->request(
+            'POST',
+            '/project/create-from-wish/' . $owner->getId() . '/' . $wish->getId(),
+            ['_token' => 'invalid_or_any'],
+        );
+        self::assertResponseRedirects('/contact/view/' . $owner->getId());
+        $this->em->clear();
+        /** @var Wish $updatedWishAfterBob */
+        $updatedWishAfterBob = $this->em->getRepository(Wish::class)->find($wish->getId());
+        self::assertNull($updatedWishAfterBob->getActiveProject());
+
+        // 4. Alice converts her reserved wish into a group project -> clears solo reservation & links project
+        $this->client->loginUser($alice);
+        $aliceCrawler = $this->client->request('GET', '/contact/view/' . $owner->getId());
+        $projectForm = $aliceCrawler->filter('form[action*="/project/create-from-wish/"]');
+        $projectToken = $projectForm->filter('input[name="_token"]')->attr('value');
+
+        $this->client->request(
+            'POST',
+            '/project/create-from-wish/' . $owner->getId() . '/' . $wish->getId(),
+            ['_token' => $projectToken],
+        );
+        self::assertResponseRedirects('/contact/view/' . $owner->getId());
+
+        $this->em->clear();
+        /** @var Wish $wishInProject */
+        $wishInProject = $this->em->getRepository(Wish::class)->find($wish->getId());
+        self::assertNull($wishInProject->getReservedBy());
+        self::assertNotNull($wishInProject->getActiveProject());
+        self::assertSame($alice->getId(), $wishInProject->getActiveProject()->getOwner()?->getId());
     }
 }

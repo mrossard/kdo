@@ -8,6 +8,7 @@ use App\Entity\User;
 use App\Entity\Wish;
 use App\Form\WishType;
 use App\Repository\WishRepository;
+use App\Service\UrlMetadataFetcher;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -61,6 +62,28 @@ final class WishController extends AbstractController
         return $this->render('wish/new.html.twig', [
             'wish' => $wish,
             'form' => $form,
+        ]);
+    }
+
+    #[Route('/autofill', name: 'app_wish_autofill', methods: ['POST'])]
+    public function autofill(Request $request, UrlMetadataFetcher $metadataFetcher): Response
+    {
+        $allParams = $request->request->all();
+        /** @var array<string, string|null> $wishData */
+        $wishData = is_array($allParams['wish'] ?? null) ? $allParams['wish'] : [];
+        $wish = new Wish();
+        $result = $metadataFetcher->populateFromFormData($wish, $wishData);
+
+        $formAction = $request->query->getString('form_action', $this->generateUrl('app_wish_new'));
+        $buttonLabel = $request->query->getString('button_label', 'Enregistrer');
+        $form = $this->createForm(WishType::class, $wish);
+
+        return $this->render('wish/_form.html.twig', [
+            'form' => $form,
+            'form_action' => $formAction,
+            'button_label' => $buttonLabel,
+            'autofill_message' => $result['message'],
+            'autofill_status' => $result['status'],
         ]);
     }
 
