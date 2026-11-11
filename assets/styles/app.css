@@ -1,94 +1,260 @@
-/* Custom app styles */
+/* ==========================================================================
+   KDO — Modern Bulma 1.0 Theme (Shadcn / Linear inspired)
+   Uses Bulma 1.0 native CSS custom properties (--bulma-*)
+   ========================================================================== */
 
-/* Global CSS Variables for Theming */
 :root {
-    /* Base Colors */
-    --kdo-text-color: #363636;
-    --kdo-background-color: #f5f5f5; /* Bulma's default background */
-    --kdo-body-background-color: #ffffff; /* Actual body background */
-    --kdo-border-color: #dbdbdb;
+    /* Typography */
+    --bulma-family-primary: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --bulma-family-secondary: var(--bulma-family-primary);
+    --bulma-body-size: 0.95rem;
+    --bulma-body-line-height: 1.6;
 
-    /* Component Specific */
-    --kdo-navbar-background: #ffffff;
-    --kdo-navbar-text: #4a4a4a;
-    --kdo-box-background: #ffffff;
-    --kdo-card-background: #ffffff;
-    --kdo-hr-color: #dbdbdb;
+    /* Cool Slate base scheme */
+    --bulma-scheme-h: 222;
+    --bulma-scheme-s: 20%;
 
-    /* Notification/Tag colors - adjusted for better contrast if needed */
-    --kdo-notification-success-bg: #ebfffc;
-    --kdo-notification-success-text: #00947e;
-    --kdo-notification-warning-bg: #fff8eb;
-    --kdo-notification-warning-text: #946c00;
-    --kdo-notification-danger-bg: #feecf0;
-    --kdo-notification-danger-text: #cc0f35;
-    --kdo-notification-info-bg: #eef6fc;
-    --kdo-notification-info-text: #005c94;
+    /* Light mode surfaces: subtle slate-50 page background, pure white cards/boxes */
+    --bulma-scheme-main-l: 100%;
+    --bulma-scheme-main-bis-l: 98%;
+    --bulma-scheme-main-ter-l: 96%;
+    --bulma-background-l: 95%;
+    --bulma-border-weak-l: 91%;
+    --bulma-border-l: 86%;
+    --bulma-text-weak-l: 46%;
+    --bulma-text-l: 24%;
+    --bulma-text-strong-l: 11%;
 
-    /* Input/Form */
-    --kdo-input-background: #ffffff;
-    --kdo-input-border: #dbdbdb;
-    --kdo-input-text: #363636;
-    --kdo-input-placeholder: #dbdbdb;
+    /* Brand Palette:
+       Primary = Indigo (#6366f1)
+       Link    = Indigo/Violet (#4f46e5)
+       Info    = Sky (#0ea5e9)
+       Success = Emerald (#10b981)
+       Warning = Amber (#f59e0b)
+       Danger  = Rose (#f43f5e) */
+    --bulma-primary-h: 239deg;
+    --bulma-primary-s: 84%;
+    --bulma-primary-l: 60%;
+    --bulma-primary-invert-l: 100%;
+
+    --bulma-link-h: 243deg;
+    --bulma-link-s: 75%;
+    --bulma-link-l: 59%;
+    --bulma-link-invert-l: 100%;
+
+    --bulma-info-h: 199deg;
+    --bulma-info-s: 89%;
+    --bulma-info-l: 48%;
+    --bulma-info-invert-l: 100%;
+
+    --bulma-success-h: 160deg;
+    --bulma-success-s: 84%;
+    --bulma-success-l: 39%;
+    --bulma-success-invert-l: 100%;
+
+    --bulma-warning-h: 38deg;
+    --bulma-warning-s: 92%;
+    --bulma-warning-l: 50%;
+    --bulma-warning-invert-l: 12%;
+
+    --bulma-danger-h: 350deg;
+    --bulma-danger-s: 89%;
+    --bulma-danger-l: 60%;
+    --bulma-danger-invert-l: 100%;
+
+    /* Softer, modern border radii */
+    --bulma-radius-small: 0.375rem;
+    --bulma-radius: 0.5rem;
+    --bulma-radius-medium: 0.625rem;
+    --bulma-radius-large: 0.875rem;
+    --bulma-control-radius: var(--bulma-radius);
+
+    /* Subtle layered elevation with crisp hairline border */
+    --bulma-shadow:
+        0 1px 3px 0 rgba(15, 23, 42, 0.04),
+        0 1px 2px -1px rgba(15, 23, 42, 0.04),
+        0 0 0 1px var(--bulma-border-weak);
+
+    /* Custom app tokens */
+    --kdo-page-bg: hsl(220, 33%, 98%);
+    --kdo-navbar-bg: rgba(255, 255, 255, 0.85);
+    --kdo-surface-subtle: hsl(220, 25%, 96%);
+    --kdo-surface-selected: hsla(160, 84%, 39%, 0.08);
+    --kdo-surface-selected-border: hsla(160, 84%, 39%, 0.35);
+    --kdo-surface-discarded: hsl(220, 16%, 94%);
 }
 
-/* Dark Theme Overrides */
+/* ==========================================================================
+   Dark Theme Overrides (Bulma 1.0 native [data-theme="dark"] + refinements)
+   ========================================================================== */
+
 html[data-theme="dark"] {
-    /* Base Colors */
-    --kdo-text-color: #c9d1d9; /* Light gray for text */
-    --kdo-background-color: #161b22; /* Dark background */
-    --kdo-body-background-color: #0d1117; /* Even darker for body */
-    --kdo-border-color: #30363d;
+    --bulma-scheme-h: 222;
+    --bulma-scheme-s: 22%;
 
-    /* Component Specific */
-    --kdo-navbar-background: #161b22;
-    --kdo-navbar-text: #c9d1d9;
-    --kdo-box-background: #0d1117;
-    --kdo-card-background: #0d1117;
-    --kdo-hr-color: #30363d;
+    /* Elevated surfaces (cards/boxes) vs page background */
+    --bulma-scheme-main-l: 12%;
+    --bulma-scheme-main-bis-l: 14%;
+    --bulma-scheme-main-ter-l: 16%;
+    --bulma-background-l: 18%;
+    --bulma-border-weak-l: 20%;
+    --bulma-border-l: 25%;
+    --bulma-text-weak-l: 60%;
+    --bulma-text-l: 82%;
+    --bulma-text-strong-l: 96%;
 
-    /* Notification/Tag colors - darker versions */
-    --kdo-notification-success-bg: #1c3621;
-    --kdo-notification-success-text: #85e89d;
-    --kdo-notification-warning-bg: #603d15;
-    --kdo-notification-warning-text: #e3b341;
-    --kdo-notification-danger-bg: #6b242e;
-    --kdo-notification-danger-text: #f85149;
-    --kdo-notification-info-bg: #1f3a5f;
-    --kdo-notification-info-text: #79c0ff;
+    /* Keep white text on solid primary/success/danger/info buttons in dark mode */
+    --bulma-primary-invert-l: 100%;
+    --bulma-link-invert-l: 100%;
+    --bulma-info-invert-l: 100%;
+    --bulma-success-invert-l: 100%;
+    --bulma-danger-invert-l: 100%;
 
-    /* Input/Form */
-    --kdo-input-background: #0d1117;
-    --kdo-input-border: #30363d;
-    --kdo-input-text: #c9d1d9;
-    --kdo-input-placeholder: #6e7681;
+    /* Replace Bulma 1.0's default white glow shadow in dark mode with dark depth + hairline border */
+    --bulma-shadow:
+        0 4px 12px -2px rgba(0, 0, 0, 0.45),
+        0 0 0 1px var(--bulma-border-weak);
+
+    --kdo-page-bg: hsl(222, 26%, 8%);
+    --kdo-navbar-bg: rgba(15, 20, 30, 0.82);
+    --kdo-surface-subtle: hsl(222, 20%, 15%);
+    --kdo-surface-selected: hsla(160, 84%, 39%, 0.14);
+    --kdo-surface-selected-border: hsla(160, 84%, 39%, 0.4);
+    --kdo-surface-discarded: hsl(222, 16%, 10%);
 }
 
-/* Apply variables to HTML elements and Bulma components */
-html {
-    background-color: var(--kdo-background-color);
-}
+/* ==========================================================================
+   Global Layout & Typography
+   ========================================================================== */
 
+html,
 body {
-    background-color: var(--kdo-body-background-color);
-    color: var(--kdo-text-color);
+    background-color: var(--kdo-page-bg);
+    color: var(--bulma-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
 }
 
-/* Navbar */
+.title,
+.subtitle {
+    letter-spacing: -0.02em;
+}
+
+.title {
+    font-weight: 700;
+}
+
+.subtitle {
+    color: var(--bulma-text-weak);
+    font-weight: 400;
+}
+
+.heading {
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    color: var(--bulma-text-weak);
+}
+
+hr {
+    background-color: var(--bulma-border-weak);
+    height: 1px;
+    margin: 1.25rem 0;
+}
+
+/* Equal height helper used in dashboard & contact grids */
+.h-100 {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.rounded {
+    border-radius: var(--bulma-radius-large);
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   Navbar (Glassmorphism + Pill Navigation)
+   ========================================================================== */
+
 .navbar {
-    background-color: var(--kdo-navbar-background);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background-color: var(--kdo-navbar-bg) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--bulma-border-weak);
+    padding: 0.35rem 1rem;
+    box-shadow: none !important;
+}
+
+.navbar-brand .navbar-item strong {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--bulma-primary), hsl(280, 80%, 60%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.navbar-item,
+.navbar-link {
+    border-radius: var(--bulma-radius);
+    margin: 0.15rem 0.15rem;
+    padding: 0.45rem 0.75rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--bulma-text) !important;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.navbar-item:hover,
+.navbar-link:hover {
+    background-color: var(--bulma-background) !important;
+    color: var(--bulma-text-strong) !important;
+}
+
+.navbar-item.is-active,
+.navbar-link.is-active {
+    background-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.12) !important;
+    color: var(--bulma-primary) !important;
+    font-weight: 600;
+}
+
+html[data-theme="dark"] .navbar-item.is-active,
+html[data-theme="dark"] .navbar-link.is-active {
+    background-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.22) !important;
+    color: hsl(var(--bulma-primary-h), var(--bulma-primary-s), 76%) !important;
+}
+
+.navbar-dropdown {
+    background-color: var(--bulma-scheme-main) !important;
+    border: 1px solid var(--bulma-border-weak) !important;
+    border-radius: var(--bulma-radius-medium) !important;
+    box-shadow: var(--bulma-shadow) !important;
+    padding: 0.4rem !important;
+}
+
+.navbar-divider {
+    background-color: var(--bulma-border-weak);
+    margin: 0.35rem 0;
 }
 
 @media screen and (max-width: 1023px) {
     .navbar-menu {
-        background-color: var(--kdo-navbar-background);
+        background-color: var(--bulma-scheme-main);
+        border-bottom: 1px solid var(--bulma-border-weak);
         position: fixed;
         width: 100%;
         left: 0;
-        top: 3.25rem; /* Standard Bulma navbar height */
+        top: 3.25rem;
         height: calc(100vh - 3.25rem);
         z-index: 100;
         overflow-y: auto;
+        padding: 1rem;
     }
 
     html.is-clipped-mobile {
@@ -96,323 +262,352 @@ body {
     }
 }
 
-.navbar-item, .navbar-link, .navbar-burger {
-    color: var(--kdo-navbar-text) !important;
+/* ==========================================================================
+   Boxes & Cards
+   ========================================================================== */
+
+.box,
+.card {
+    background-color: var(--bulma-scheme-main);
+    border-radius: var(--bulma-radius-large);
+    box-shadow: var(--bulma-shadow);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
-.navbar-item:hover, .navbar-link:hover {
-    background-color: var(--kdo-background-color) !important; /* Use a neutral darker background for hover */
+.card {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-.navbar-item.is-active, .navbar-link.is-active {
-    background-color: #3273dc !important; /* Bulma info blue for active */
-    color: #fff !important; /* White text for contrast */
-}
-
-.navbar-dropdown {
-    background-color: var(--kdo-navbar-background) !important;
-    border-top: 1px solid var(--kdo-border-color) !important;
-}
-
-.navbar-dropdown .navbar-item {
-    color: var(--kdo-navbar-text) !important;
-}
-
-.navbar-divider {
-    background-color: var(--kdo-border-color);
-}
-
-/* Box, Card */
-.box, .card {
-    background-color: var(--kdo-box-background);
-    border-color: var(--kdo-border-color); /* Bulma boxes have border */
-    color: var(--kdo-text-color);
+.card-header {
+    box-shadow: none;
+    border-bottom: 1px solid var(--bulma-border-weak);
+    padding: 0.85rem 1.25rem;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .card-header-title {
-    color: var(--kdo-text-color);
+    padding: 0;
+    font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
-/* Titles and Subtitles */
-.title, .subtitle, h1, h2, h3, h4, h5, h6 {
-    color: var(--kdo-text-color);
+.card-header-icon {
+    padding: 0;
+    cursor: default;
 }
 
-/* Horizontal Rule */
-hr {
-    background-color: var(--kdo-hr-color);
+.card-content {
+    padding: 1.25rem;
+    flex-grow: 1;
 }
 
-/* Notifications */
-.notification.is-success {
-    background-color: var(--kdo-notification-success-bg);
-    color: var(--kdo-notification-success-text);
+.card-footer {
+    border-top: 1px solid var(--bulma-border-weak);
+    background-color: var(--bulma-scheme-main-bis);
+    padding: 0.6rem 1rem;
 }
 
-.notification.is-warning {
-    background-color: var(--kdo-notification-warning-bg);
-    color: var(--kdo-notification-warning-text);
+.card-footer-item.button {
+    border-radius: var(--bulma-radius);
+    width: 100%;
 }
 
-.notification.is-danger {
-    background-color: var(--kdo-notification-danger-bg);
-    color: var(--kdo-notification-danger-text);
+/* Gift idea status card variants */
+.card.has-background-success-light {
+    background-color: var(--kdo-surface-selected) !important;
+    box-shadow: 0 0 0 1px var(--kdo-surface-selected-border) !important;
 }
 
-.notification.is-info {
-    background-color: var(--kdo-notification-info-bg);
-    color: var(--kdo-notification-info-text);
+.card.has-background-grey-lighter {
+    background-color: var(--kdo-surface-discarded) !important;
+    opacity: 0.78;
 }
 
-/* Forms */
-.input, .textarea, .select select, .button {
-    background-color: var(--kdo-input-background);
-    border-color: var(--kdo-input-border);
-    color: var(--kdo-input-text);
+.box.has-background-light,
+.box.has-background-white-ter {
+    background-color: var(--kdo-surface-subtle) !important;
+    box-shadow: inset 0 0 0 1px var(--bulma-border-weak) !important;
 }
 
-.input::placeholder, .textarea::placeholder {
-    color: var(--kdo-input-placeholder);
+/* ==========================================================================
+   Buttons & Tags
+   ========================================================================== */
+
+.button {
+    font-weight: 500;
+    border-radius: var(--bulma-radius);
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
-.input:focus, .textarea:focus, .select select:focus {
-    border-color: #3273dc; /* Bulma blue default */
-    box-shadow: 0 0 0 0.125em rgba(50, 115, 220, 0.25);
+.button:hover:not(:disabled) {
+    transform: translateY(-1px);
 }
 
-/* Bulma specific components adjustments */
-.tag:not(body) { /* Target tags not on body (to avoid overriding global text color) */
-    background-color: var(--kdo-box-background); /* Default tag background to match general components */
-    color: var(--kdo-text-color);
+.button:active:not(:disabled) {
+    transform: translateY(0);
 }
 
-.tag.is-success {
-    background-color: var(--kdo-notification-success-bg);
-    color: var(--kdo-notification-success-text);
-}
-
-.tag.is-danger.is-light {
-    background-color: var(--kdo-notification-danger-bg);
-    color: var(--kdo-notification-danger-text);
-}
-
-.tag.is-info.is-light {
-    background-color: var(--kdo-notification-info-bg);
-    color: var(--kdo-notification-info-text);
-}
-
-.button.is-ghost {
-    color: var(--kdo-text-color) !important;
-}
-
-.button.is-ghost.has-text-danger {
-    color: var(--kdo-notification-danger-text) !important;
-}
-
-/* Ensure links in dark mode are visible */
-a {
-    color: var(--kdo-text-color); /* Default link color */
-}
-
-a:hover {
-    color: #4a8ee1; /* A consistent hover color */
-}
-
-.button.is-link, a.button.is-link { /* Override Bulma's hardcoded colors */
-    background-color: #3273dc;
-    border-color: transparent;
-    color: #fff !important;
-}
-
-html[data-theme="dark"] .button.is-link, html[data-theme="dark"] a.button.is-link {
-    background-color: #3273dc;
-    color: #fff !important;
-}
-
-.button.is-primary, a.button.is-primary {
-    background-color: #00d1b2;
-    border-color: transparent;
-    color: #fff !important;
-}
-
-html[data-theme="dark"] .button.is-primary, html[data-theme="dark"] a.button.is-primary {
-    background-color: #00d1b2;
-    color: #fff !important;
-}
-
-.button.is-warning.is-light, a.button.is-warning.is-light {
-    background-color: var(--kdo-notification-warning-bg);
-    color: var(--kdo-notification-warning-text) !important;
-}
-
-html[data-theme="dark"] .button.is-warning.is-light, html[data-theme="dark"] a.button.is-warning.is-light {
-    background-color: var(--kdo-notification-warning-bg);
-    color: var(--kdo-notification-warning-text) !important;
-}
-
-.button.is-danger.is-outlined, a.button.is-danger.is-outlined {
-    border-color: var(--kdo-notification-danger-text);
-    color: var(--kdo-notification-danger-text) !important;
-}
-
-html[data-theme="dark"] .button.is-danger.is-outlined, html[data-theme="dark"] a.button.is-danger.is-outlined {
-    border-color: var(--kdo-notification-danger-text);
-    color: var(--kdo-notification-danger-text) !important;
-}
-
-.button.is-info.is-outlined, a.button.is-info.is-outlined {
-    border-color: var(--kdo-notification-info-text);
-    color: var(--kdo-notification-info-text) !important;
-}
-
-html[data-theme="dark"] .button.is-info.is-outlined, html[data-theme="dark"] a.button.is-info.is-outlined {
-    border-color: var(--kdo-notification-info-text);
-    color: var(--kdo-notification-info-text) !important;
-}
-
-.button.is-success.is-outlined, a.button.is-success.is-outlined {
-    border-color: var(--kdo-notification-success-text);
-    color: var(--kdo-notification-success-text) !important;
-}
-
-html[data-theme="dark"] .button.is-success.is-outlined, html[data-theme="dark"] a.button.is-success.is-outlined {
-    border-color: var(--kdo-notification-success-text);
-    color: var(--kdo-notification-success-text) !important;
-}
-
-/* Specific to form elements like select */
-.select:not(.is-multiple):not(.is-loading)::after {
-    border-color: var(--kdo-input-text);
-}
-
-html[data-theme="dark"] .select:not(.is-multiple):not(.is-loading)::after {
-    border-color: var(--kdo-input-text);
-}
-
-/* For icons if they also need color adjustment */
-.icon {
-    color: var(--kdo-text-color);
-}
-
-/* Ensure icons inside buttons inherit the button's text color */
 .button .icon {
     color: inherit !important;
 }
 
-.icon.has-text-danger {
-    color: var(--kdo-notification-danger-text) !important;
+.button.is-ghost {
+    box-shadow: none;
 }
 
-/* Add custom button color overrides for warning, info, and dark */
-.button.is-warning, a.button.is-warning {
-    background-color: #ffdd57; /* Bulma default warning color */
-    border-color: transparent;
-    color: rgba(0, 0, 0, 0.7) !important; /* Dark text for contrast on yellow */
+.button.is-ghost:hover {
+    background-color: var(--bulma-background);
+    text-decoration: none;
 }
 
-html[data-theme="dark"] .button.is-warning, html[data-theme="dark"] a.button.is-warning {
-    background-color: #ffdd57; /* Use same for dark theme or define a darker yellow */
-    color: rgba(0, 0, 0, 0.7) !important;
+.tag:not(body) {
+    font-weight: 500;
+    border-radius: var(--bulma-radius-small);
+    letter-spacing: 0.01em;
 }
 
-.button.is-info, a.button.is-info {
-    background-color: #3273dc; /* Bulma default info color */
-    border-color: transparent;
-    color: #fff !important;
+.tag.is-rounded {
+    border-radius: 9999px;
 }
 
-html[data-theme="dark"] .button.is-info, html[data-theme="dark"] a.button.is-info {
-    background-color: #3273dc;
-    color: #fff !important;
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+
+.table {
+    background-color: var(--bulma-scheme-main);
+    border-radius: var(--bulma-radius-large);
+    overflow: hidden;
+    box-shadow: var(--bulma-shadow);
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
-.button.is-dark, a.button.is-dark {
-    background-color: #363636; /* Bulma default dark color */
-    border-color: transparent;
-    color: #fff !important;
+.table.is-bordered td,
+.table.is-bordered th {
+    border-width: 0 0 1px 0;
+    border-color: var(--bulma-border-weak);
 }
 
-html[data-theme="dark"] .button.is-dark, html[data-theme="dark"] a.button.is-dark {
-    background-color: #363636;
-    color: #fff !important;
+.table thead th {
+    background-color: var(--bulma-scheme-main-bis);
+    color: var(--bulma-text-weak);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--bulma-border-weak) !important;
 }
 
-/* Fix for icon color inside is-dark button */
-.button.is-dark .icon {
-    color: #fff !important;
+.table thead th a {
+    color: var(--bulma-text-weak);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
 }
 
-/* Explicit fix for .button.is-danger to ensure red background */
-.button.is-danger, a.button.is-danger {
-    background-color: #f14668; /* Bulma default danger color */
-    border-color: transparent;
-    color: #fff !important;
+.table thead th a:hover {
+    color: var(--bulma-text-strong);
 }
 
-html[data-theme="dark"] .button.is-danger, html[data-theme="dark"] a.button.is-danger {
-    background-color: #f14668;
-    color: #fff !important;
+.table tbody td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--bulma-border-weak);
 }
 
-.button.is-danger .icon, a.button.is-danger .icon {
-    color: #fff !important;
+.table tbody tr:last-child td {
+    border-bottom: none;
 }
 
-/* Explicit fix for .button.is-success to ensure green background */
-.button.is-success, a.button.is-success {
-    background-color: #48c78e; /* Bulma default success color */
-    border-color: transparent;
-    color: #fff !important;
+.table.is-striped tbody tr:not(.is-selected):nth-child(even) {
+    background-color: var(--bulma-scheme-main-bis);
 }
 
-html[data-theme="dark"] .button.is-success, html[data-theme="dark"] a.button.is-success {
-    background-color: #48c78e;
-    color: #fff !important;
+.table tbody tr:hover {
+    background-color: var(--bulma-scheme-main-ter) !important;
 }
 
-.button.is-success .icon, a.button.is-success .icon {
-    color: #fff !important;
+/* ==========================================================================
+   Forms & Inputs
+   ========================================================================== */
+
+.input,
+.textarea,
+.select select {
+    background-color: var(--bulma-scheme-main);
+    border-color: var(--bulma-border);
+    border-radius: var(--bulma-radius);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Dark theme specific override for has-background-grey-lighter */
-html[data-theme="dark"] .has-background-grey-lighter {
-    background-color: #2e3642 !important; /* A slightly lighter dark grey for contrast */
-    color: var(--kdo-text-color) !important; /* Ensure light text */
+.input:hover,
+.textarea:hover,
+.select select:hover {
+    border-color: var(--bulma-border-hover);
 }
 
-/* Dark theme specific override for has-background-success-light */
-html[data-theme="dark"] .has-background-success-light {
-    background-color: var(--kdo-notification-success-bg) !important;
-    color: var(--kdo-notification-success-text) !important;
+.input:focus,
+.textarea:focus,
+.select select:focus {
+    border-color: var(--bulma-primary);
+    box-shadow: 0 0 0 3px hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.18);
 }
 
-/* Fix for navbar shadow in dark mode */
-html[data-theme="dark"] .navbar {
-    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+.label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--bulma-text-strong);
+    margin-bottom: 0.35rem;
 }
 
-/* Notification badge */
+/* ==========================================================================
+   Tabs (Modern Segmented Bar)
+   ========================================================================== */
+
+.tabs.is-boxed ul {
+    border-bottom: none;
+    background-color: var(--kdo-surface-subtle);
+    padding: 0.3rem;
+    border-radius: var(--bulma-radius-medium);
+    gap: 0.25rem;
+    display: inline-flex;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.tabs.is-boxed a {
+    border: none !important;
+    border-radius: var(--bulma-radius) !important;
+    color: var(--bulma-text-weak);
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 0.55rem 1rem;
+    transition: all 0.15s ease;
+}
+
+.tabs.is-boxed a:hover {
+    background-color: transparent;
+    color: var(--bulma-text-strong);
+}
+
+.tabs.is-boxed li.is-active a {
+    background-color: var(--bulma-scheme-main) !important;
+    color: var(--bulma-text-strong) !important;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--bulma-border-weak);
+}
+
+/* ==========================================================================
+   Notifications & Flash Banners
+   ========================================================================== */
+
+.notification {
+    border-radius: var(--bulma-radius-medium);
+    border: 1px solid hsla(0, 0%, 0%, 0.06);
+}
+
+body > .notification {
+    max-width: 1152px;
+    margin: 1rem auto 0;
+    box-shadow: var(--bulma-shadow);
+}
+
+/* Notification bell badge */
 .notification-badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: -2px;
+    right: -2px;
     font-size: 0.65rem;
     min-width: 1.2rem;
     height: 1.2rem;
     padding: 0 0.3rem;
+    font-weight: 700;
 }
 
 .has-badge-danger {
     position: relative;
 }
 
-/* Notification box hover */
-.notification-box:hover {
-    border-color: var(--kdo-primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+.notification-box {
+    display: block;
+    border: 1px solid transparent;
 }
 
-/* Timeline fixes */
+.notification-box:hover {
+    border-color: var(--bulma-primary);
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Hero Welcome Banner
+   ========================================================================== */
+
+.hero.is-primary.is-bold {
+    background: linear-gradient(135deg, hsl(239, 84%, 58%) 0%, hsl(262, 83%, 55%) 50%, hsl(290, 70%, 50%) 100%);
+    box-shadow: 0 12px 32px -8px hsla(239, 84%, 40%, 0.35);
+}
+
+/* ==========================================================================
+   Activity Timeline (Project Activity Tab)
+   ========================================================================== */
+
+.timeline {
+    position: relative;
+    padding-left: 1.75rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.55rem;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 2px;
+    background-color: var(--bulma-border-weak);
+}
+
+.timeline-header {
+    position: relative;
+    margin: 1.25rem 0 0.75rem -0.75rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 0.75rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -1.5rem;
+    top: 1.25rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    background-color: var(--bulma-info);
+    box-shadow: 0 0 0 3px var(--kdo-page-bg);
+}
+
+.timeline-marker.is-success {
+    background-color: var(--bulma-success);
+}
+
+.timeline-marker.is-danger {
+    background-color: var(--bulma-danger);
+}
+
+.timeline-marker.is-info {
+    background-color: var(--bulma-info);
+}
+
 .timeline-content .box {
     margin-bottom: 0.5rem;
+    padding: 0.85rem 1.1rem;
 }

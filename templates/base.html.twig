@@ -13,7 +13,7 @@
     <body>
         {% set currentRoute = app.request.attributes.get('_route') %}
         {% if app.user or currentRoute != 'app_home' %}
-        <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <nav class="navbar" role="navigation" aria-label="main navigation">
             <div class="navbar-brand">
                 <a class="navbar-item {% if currentRoute == 'app_home' %}is-active{% endif %}" href="{{ path('app_home') }}">
                     <strong>KDO</strong>
