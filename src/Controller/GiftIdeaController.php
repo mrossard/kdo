@@ -200,7 +200,8 @@ final class GiftIdeaController extends AbstractProjectController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
         }
 
-        if ($giftIdea->getPurchasedBy() !== null) {
+        $existingBuyer = $giftIdea->getPurchasedBy();
+        if ($existingBuyer !== null && $existingBuyer !== $user && $project->getOwner() !== $user) {
             $this->addFlash('warning', 'Ce cadeau a déjà été acheté.');
 
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
@@ -219,15 +220,60 @@ final class GiftIdeaController extends AbstractProjectController
             'mark_purchased' . (string) $giftIdea->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $giftIdea->setPurchasedBy($user);
+            if ($existingBuyer === null) {
+                $giftIdea->setPurchasedBy($user);
+                $giftIdea->setPurchasedAt(new \DateTimeImmutable());
+            }
             $giftIdea->setPurchasePrice($formattedPrice);
-            $giftIdea->setPurchasedAt(new \DateTimeImmutable());
             $this->activityLogger->log($project, Activity::TYPE_IDEA_PURCHASED, $user, [
                 'idea_name' => $giftIdea->getName(),
                 'price' => $formattedPrice,
             ]);
             $this->entityManager->flush();
-            $this->addFlash('success', 'Cadeau marqué comme acheté !');
+            $this->addFlash(
+                'success',
+                $existingBuyer === null ? 'Cadeau marqué comme acheté !' : 'Prix d\'achat mis à jour.',
+            );
+
+            if ($request->headers->get('HX-Request')) {
+                return new Response(null, 204, [
+                    'HX-Redirect' => $this->generateUrl('app_project_show', [
+                        'id' => $project->getId(),
+                        'tab' => 'ideas',
+                    ]),
+                ]);
+            }
+        }
+
+        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+    }
+
+    #[Route('/idea/{id}/unmark-purchased', name: 'app_gift_idea_unmark_purchased', methods: ['POST'])]
+    public function unmarkIdeaPurchased(Request $request, GiftIdea $giftIdea): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $project = $this->requireIdeaProject($giftIdea);
+        $this->denyUnlessCanViewProject($project, $user);
+
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        if ($giftIdea->getPurchasedBy() !== $user && $project->getOwner() !== $user) {
+            throw $this->createAccessDeniedException('Seul l\'acheteur ou l\'organisateur peut annuler cet achat.');
+        }
+
+        if ($this->isCsrfTokenValid(
+            'unmark_purchased' . (string) $giftIdea->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            $giftIdea->setPurchasedBy(null);
+            $giftIdea->setPurchasePrice(null);
+            $giftIdea->setPurchasedAt(null);
+            $this->entityManager->flush();
+            $this->addFlash('info', 'Achat annulé.');
 
             if ($request->headers->get('HX-Request')) {
                 return new Response(null, 204, [

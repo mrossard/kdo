@@ -10,7 +10,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-// @mago-expect lint:too-many-properties
+// @mago-expect lint:too-many-properties,too-many-methods,cyclomatic-complexity
 #[ORM\Entity(repositoryClass: GiftProjectRepository::class)]
 class GiftProject
 {
@@ -53,6 +53,12 @@ class GiftProject
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $recipientName = null;
+
+    /**
+     * @var array<int|string, float|int>
+     */
+    #[ORM\Column(type: Types::JSON, options: ['default' => '{}'])]
+    private array $participantShares = [];
 
     /**
      * @var Collection<int, User>
@@ -341,6 +347,46 @@ class GiftProject
             if ($activity->getProject() === $this) {
                 $activity->setProject(null);
             }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return array<int|string, float|int>
+     */
+    public function getParticipantShares(): array
+    {
+        return $this->participantShares;
+    }
+
+    /**
+     * @param array<int|string, float|int> $participantShares
+     */
+    public function setParticipantShares(array $participantShares): static
+    {
+        $this->participantShares = $participantShares;
+
+        return $this;
+    }
+
+    public function getParticipantShare(User $user): float
+    {
+        $userId = $user->getId();
+        if ($userId === null) {
+            return 1.0;
+        }
+
+        $share = $this->participantShares[$userId] ?? $this->participantShares[(string) $userId] ?? 1.0;
+
+        return max(0.0, (float) $share);
+    }
+
+    public function setParticipantShare(User $user, float $share): static
+    {
+        $userId = $user->getId();
+        if ($userId !== null) {
+            $this->participantShares[(string) $userId] = max(0.0, $share);
         }
 
         return $this;

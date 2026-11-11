@@ -24,7 +24,10 @@ use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 // @mago-expect lint:cyclomatic-complexity,kan-defect,too-many-methods
@@ -37,6 +40,7 @@ final class GiftProjectController extends AbstractProjectController
         private readonly EntityManagerInterface $entityManager,
         private readonly FinancialService $financialService,
         private readonly ActivityRepository $activityRepository,
+        private readonly MailerInterface $mailer,
     ) {}
 
     #[Route('/', name: 'app_project_index', methods: ['GET'])]
@@ -591,6 +595,72 @@ final class GiftProjectController extends AbstractProjectController
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
     }
 
+    #[Route('/{id}/shares', name: 'app_project_update_shares', methods: ['POST'])]
+    public function updateParticipantShares(GiftProject $project, Request $request): Response
+    {
+        if (!$this->isGranted(GiftProjectVoter::MANAGE, $project)) {
+            throw $this->createAccessDeniedException("Seul l'organisateur peut modifier la répartition des parts.");
+        }
+
+        $denied = $this->denyWhenDelivered($project, $request, 'financial');
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        if ($this->isCsrfTokenValid(
+            'update_shares_' . (string) $project->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            $allParams = $request->request->all();
+            /** @var array<int|string, string|int|float> $sharesInput */
+            $sharesInput = is_array($allParams['shares'] ?? null) ? $allParams['shares'] : [];
+
+            $participants = array_values($project->getParticipants()->toArray());
+            $owner = $project->getOwner();
+            if ($owner !== null && !$project->getParticipants()->contains($owner)) {
+                $participants[] = $owner;
+            }
+
+            /** @var array<int, float> $newShares */
+            $newShares = [];
+            $totalShares = 0.0;
+            foreach ($participants as $participant) {
+                $pid = $participant->getId();
+                if ($pid === null) {
+                    continue;
+                }
+                $rawShare = $sharesInput[(string) $pid] ?? $sharesInput[$pid] ?? '1';
+                $share = is_numeric($rawShare) ? max(0.0, (float) $rawShare) : 1.0;
+                $newShares[$pid] = $share;
+                $totalShares += $share;
+            }
+
+            if ($totalShares <= 0.0) {
+                $this->addFlash('warning', 'La somme des parts doit être supérieure à 0.');
+            }
+            if ($totalShares > 0.0) {
+                foreach ($participants as $participant) {
+                    $pid = $participant->getId();
+                    if ($pid !== null && array_key_exists($pid, $newShares)) {
+                        $project->setParticipantShare($participant, $newShares[$pid]);
+                    }
+                }
+                $this->entityManager->flush();
+                $this->addFlash('success', 'Répartition des parts mise à jour.');
+            }
+        }
+
+        if ($request->headers->get('HX-Request')) {
+            $financials = $this->financialService->calculate($project);
+
+            return $this->render('gift_project/_financial.html.twig', array_merge([
+                'project' => $project,
+            ], $financials));
+        }
+
+        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
+    }
+
     private function markProjectRead(GiftProject $project, User $user): void
     {
         $readStatus = $this->entityManager
@@ -625,6 +695,28 @@ final class GiftProjectController extends AbstractProjectController
         $project->addParticipant($newParticipant);
         $this->activityLogger->log($project, Activity::TYPE_PARTICIPANT_ADDED, $user);
         $this->entityManager->flush();
+
+        $emailAddress = $newParticipant->getEmail();
+        if ($emailAddress !== null && $emailAddress !== '') {
+            $projectUrl = $this->generateUrl(
+                'app_project_show',
+                ['id' => $project->getId()],
+                UrlGeneratorInterface::ABSOLUTE_URL,
+            );
+            $targetDate = $project->getTargetDate();
+            $targetDateInfo = $targetDate !== null ? "\nDate de l'événement : " . $targetDate->format('d/m/Y') : '';
+
+            $emailMessage = new Email()
+                ->to($emailAddress)
+                ->subject("Invitation au projet cadeau « {$project->getName()} » sur KDO")
+                ->text(
+                    "Bonjour {$newParticipant->getDisplayName()},\n\n"
+                    . "{$user->getDisplayName()} vous a ajouté(e) au projet cadeau « {$project->getName()} » pour {$project->getRecipientDisplayName()}.{$targetDateInfo}\n\n"
+                    . "Accédez au projet pour proposer ou voter sur les idées cadeaux :\n{$projectUrl}",
+                );
+            $this->mailer->send($emailMessage);
+        }
+
         $this->addFlash('success', 'Invitation envoyée à ' . $newParticipant->getDisplayName());
     }
 

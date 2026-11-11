@@ -249,4 +249,40 @@ final class FinancialServiceTest extends TestCase
         // Alice owes Bob 30 € -> balance from Alice's perspective with Bob is +30.0
         self::assertEqualsWithDelta(30.0, $service->getContactCumulativeBalance($alice, $bob), 0.001);
     }
+
+    public function testCalculateWithCustomParticipantShares(): void
+    {
+        $repo = $this->createStub(GiftProjectRepository::class);
+        $service = new FinancialService($repo);
+
+        $alice = $this->createUserWithId(1, 'Alice');
+        $bob = $this->createUserWithId(2, 'Bob');
+
+        $project = new GiftProject();
+        $project->setOwner($alice);
+        $project->addParticipant($bob);
+
+        // Alice participates as a couple (2 shares), Bob alone (1 share) -> 3 shares total
+        $project->setParticipantShare($alice, 2.0);
+        $project->setParticipantShare($bob, 1.0);
+
+        // Alice pays 90 € -> cost per share = 30 € -> Alice's target is 60 €, Bob's target is 30 €
+        $idea = new GiftIdea();
+        $idea
+            ->setName('Table')
+            ->setStatus(GiftIdea::STATUS_SELECTED)
+            ->setPurchasedBy($alice)
+            ->setPurchasePrice('90.00');
+        $project->addGiftIdea($idea);
+
+        $result = $service->calculate($project);
+
+        self::assertSame(90.0, $result['total_cost']);
+        self::assertSame(3.0, $result['total_shares']);
+        self::assertSame(30.0, $result['cost_per_share']);
+        self::assertCount(1, $result['transfers']);
+        self::assertSame($bob, $result['transfers'][0]['from']);
+        self::assertSame($alice, $result['transfers'][0]['to']);
+        self::assertEqualsWithDelta(30.0, $result['transfers'][0]['amount'], 0.001);
+    }
 }

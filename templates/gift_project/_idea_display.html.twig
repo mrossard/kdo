@@ -65,10 +65,43 @@ Expected variables:
             <hr class="is-small">
             {% if idea.purchasedBy %}
                 <div class="notification is-success is-light p-3">
-                    <span class="icon">{{ ux_icon('material-symbols:shopping-bag') }}</span>
-                    <strong>Acheté par {{ idea.purchasedBy.displayName }}</strong>
-                    {% if idea.purchasePrice %}
-                        pour {{ idea.purchasePrice }} €
+                    <div class="mb-2">
+                        <span class="icon">{{ ux_icon('material-symbols:shopping-bag') }}</span>
+                        <strong>Acheté par {{ idea.purchasedBy.displayName }}</strong>
+                        {% if idea.purchasePrice %}
+                            pour {{ idea.purchasePrice }} €
+                        {% endif %}
+                    </div>
+                    {% if project.deliveredAt is null and (app.user == idea.purchasedBy or app.user == project.owner) %}
+                        <div class="is-flex is-flex-wrap-wrap is-align-items-center mt-2" style="gap: 0.5rem;">
+                            <form method="post" action="{{ path('app_gift_idea_mark_purchased', {'id': idea.id}) }}"
+                                  hx-post="{{ path('app_gift_idea_mark_purchased', {'id': idea.id}) }}"
+                                  hx-target="body">
+                                <input type="hidden" name="_token" value="{{ csrf_token('mark_purchased' ~ idea.id) }}">
+                                <div class="field has-addons mb-0">
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="price" step="0.01"
+                                               value="{{ idea.purchasePrice }}" placeholder="Prix réel (€)" required style="width: 110px;">
+                                    </div>
+                                    <div class="control">
+                                        <button type="submit" class="button is-small is-link is-light">
+                                            <span class="icon is-small">{{ ux_icon('material-symbols:edit') }}</span>
+                                            <span>Modifier le prix</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                            <form method="post" action="{{ path('app_gift_idea_unmark_purchased', {'id': idea.id}) }}"
+                                  hx-post="{{ path('app_gift_idea_unmark_purchased', {'id': idea.id}) }}"
+                                  hx-confirm="Voulez-vous annuler cet achat ?"
+                                  hx-target="body">
+                                <input type="hidden" name="_token" value="{{ csrf_token('unmark_purchased' ~ idea.id) }}">
+                                <button type="submit" class="button is-small is-danger is-light">
+                                    <span class="icon is-small">{{ ux_icon('material-symbols:undo') }}</span>
+                                    <span>Annuler l'achat</span>
+                                </button>
+                            </form>
+                        </div>
                     {% endif %}
                 </div>
             {% elseif project.deliveredAt is null %}

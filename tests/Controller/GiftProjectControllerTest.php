@@ -367,7 +367,7 @@ final class GiftProjectControllerTest extends WebTestCase
         $this->client->request('POST', "/project/{$projectId}/lock", ['_token' => $lockToken]);
         self::assertResponseRedirects("/project/{$projectId}?tab=ideas");
 
-        // 10. Mark idea as purchased
+        // 10. Mark idea as purchased, update price, cancel purchase, then re-purchase and update custom shares
         $ideasCrawler = $this->client->request('GET', "/project/{$projectId}?tab=ideas", [], [], ['HTTP_HX-Request' => 'true']);
         $purchaseToken = $ideasCrawler->filter("form[action$='/mark-purchased'] input[name='_token']")->attr('value');
         $this->client->request('POST', "/project/idea/{$ideaId}/mark-purchased", [
@@ -375,6 +375,40 @@ final class GiftProjectControllerTest extends WebTestCase
             'price' => '58.50',
         ], [], ['HTTP_HX-Request' => 'true']);
         self::assertResponseStatusCodeSame(204);
+
+        // Update purchase price to 60.00 €
+        $this->client->request('POST', "/project/idea/{$ideaId}/mark-purchased", [
+            '_token' => $purchaseToken,
+            'price' => '60.00',
+        ], [], ['HTTP_HX-Request' => 'true']);
+        self::assertResponseStatusCodeSame(204);
+
+        // Unmark purchase, then mark purchased again for 60.00 €
+        $ideasAfterPurchaseCrawler = $this->client->request('GET', "/project/{$projectId}?tab=ideas", [], [], ['HTTP_HX-Request' => 'true']);
+        $unmarkToken = $ideasAfterPurchaseCrawler->filter("form[action$='/unmark-purchased'] input[name='_token']")->attr('value');
+        $this->client->request('POST', "/project/idea/{$ideaId}/unmark-purchased", [
+            '_token' => $unmarkToken,
+        ], [], ['HTTP_HX-Request' => 'true']);
+        self::assertResponseStatusCodeSame(204);
+
+        $this->client->request('POST', "/project/idea/{$ideaId}/mark-purchased", [
+            '_token' => $purchaseToken,
+            'price' => '60.00',
+        ], [], ['HTTP_HX-Request' => 'true']);
+        self::assertResponseStatusCodeSame(204);
+
+        // Update custom participant shares in financial tab (owner: 2 shares, participant: 1 share -> 20 € / share)
+        $financialCrawler = $this->client->request('GET', "/project/{$projectId}?tab=financial", [], [], ['HTTP_HX-Request' => 'true']);
+        $sharesToken = $financialCrawler->filter("form[action$='/shares'] input[name='_token']")->attr('value');
+        $updatedFinancialCrawler = $this->client->request('POST', "/project/{$projectId}/shares", [
+            '_token' => $sharesToken,
+            'shares' => [
+                (string) $owner->getId() => '2',
+                (string) $participant->getId() => '1',
+            ],
+        ], [], ['HTTP_HX-Request' => 'true']);
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('20,00 €', $updatedFinancialCrawler->text());
 
         // 11. Mark project as read & delivered
         $activityCrawler = $this->client->request('GET', "/project/{$projectId}?tab=activite", [], [], ['HTTP_HX-Request' => 'true']);

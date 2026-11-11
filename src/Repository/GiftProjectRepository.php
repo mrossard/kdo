@@ -57,4 +57,20 @@ class GiftProjectRepository extends ServiceEntityRepository
         /** @var list<GiftProject> */
         return $qb->getQuery()->getResult();
     }
+
+    /**
+     * @return list<GiftProject>
+     */
+    public function findProjectsWithTargetDateOn(\DateTimeImmutable $date): array
+    {
+        /** @var list<GiftProject> */
+        return $this
+            ->createQueryBuilder('g')
+            ->where('g.isArchived = false')
+            ->andWhere('g.deliveredAt IS NULL')
+            ->andWhere('g.targetDate = :date')
+            ->setParameter('date', $date->format('Y-m-d'))
+            ->getQuery()
+            ->getResult();
+    }
 }

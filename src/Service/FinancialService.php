@@ -60,10 +60,12 @@ class FinancialService
 
     /**
      * @return array{
-     *     summary: list<array{user: User, paid: float, balance: float}>,
+     *     summary: list<array{user: User, paid: float, share: float, target: float, balance: float}>,
      *     transfers: list<array{from: User, to: User, amount: float}>,
      *     total_cost: float,
      *     average_cost: float,
+     *     total_shares: float,
+     *     cost_per_share: float,
      *     reimbursements: Collection<int, Reimbursement>
      * }
      */
@@ -72,8 +74,11 @@ class FinancialService
         $participants = $this->getProjectParticipants($project);
         /** @var array<int, float> $paidBy */
         $paidBy = [];
+        /** @var array<int, float> $sharesBy */
+        $sharesBy = [];
         /** @var array<int, User> $userMap */
         $userMap = [];
+        $totalShares = 0.0;
 
         foreach ($participants as $p) {
             $pid = $p->getId();
@@ -81,28 +86,45 @@ class FinancialService
                 continue;
             }
             $paidBy[$pid] = 0.0;
+            $share = $project->getParticipantShare($p);
+            $sharesBy[$pid] = $share;
+            $totalShares += $share;
             $userMap[$pid] = $p;
+        }
+
+        if ($totalShares <= 0.0 && count($sharesBy) > 0) {
+            foreach (array_keys($sharesBy) as $pid) {
+                $sharesBy[$pid] = 1.0;
+            }
+            $totalShares = (float) count($sharesBy);
         }
 
         $totalCost = $this->accumulatePaidIdeas($project, $paidBy);
         $count = count($participants);
         $averageCost = $count > 0 ? $totalCost / $count : 0.0;
+        $costPerShare = $totalShares > 0.0 ? $totalCost / $totalShares : 0.0;
 
+        /** @var array<int, float> $targets */
+        $targets = [];
         /** @var array<int, float> $balances */
         $balances = [];
         foreach ($paidBy as $uid => $amount) {
-            $balances[$uid] = $amount - $averageCost;
+            $target = $costPerShare * $sharesBy[$uid];
+            $targets[$uid] = $target;
+            $balances[$uid] = $amount - $target;
         }
 
         $reimbursements = $project->getReimbursements();
         $this->applyReimbursements($reimbursements, $balances);
 
-        /** @var list<array{user: User, paid: float, balance: float}> $summary */
+        /** @var list<array{user: User, paid: float, share: float, target: float, balance: float}> $summary */
         $summary = [];
         foreach ($paidBy as $uid => $amount) {
             $summary[] = [
                 'user' => $userMap[$uid],
                 'paid' => $amount,
+                'share' => $sharesBy[$uid],
+                'target' => $targets[$uid],
                 'balance' => $balances[$uid],
             ];
         }
@@ -112,6 +134,8 @@ class FinancialService
             'transfers' => $this->computeTransfers($balances, $userMap),
             'total_cost' => $totalCost,
             'average_cost' => $averageCost,
+            'total_shares' => $totalShares,
+            'cost_per_share' => $costPerShare,
             'reimbursements' => $reimbursements,
         ];
     }
