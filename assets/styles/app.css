@@ -611,3 +611,323 @@ body > .notification {
     margin-bottom: 0.5rem;
     padding: 0.85rem 1.1rem;
 }
+
+/* ==========================================================================
+   Modern Components: KPI Cards, Soft Icons, Avatars, View Transitions
+   ========================================================================== */
+
+@view-transition {
+    navigation: auto;
+}
+
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Clickable KPI Stat Cards */
+.kpi-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-decoration: none;
+    color: var(--bulma-text);
+    border: 1px solid transparent;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    border-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.35);
+    box-shadow:
+        0 10px 20px -6px rgba(15, 23, 42, 0.08),
+        0 0 0 1px hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.35);
+}
+
+.kpi-arrow {
+    color: var(--bulma-text-weak);
+    opacity: 0.45;
+    transition: transform 0.16s ease, opacity 0.16s ease, color 0.16s ease;
+}
+
+.kpi-card:hover .kpi-arrow {
+    transform: translateX(3px);
+    opacity: 1;
+    color: var(--bulma-primary);
+}
+
+/* Soft Tinted Icon Badges */
+.kpi-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.75rem;
+    background-color: var(--kdo-surface-subtle);
+    color: var(--bulma-text-strong);
+}
+
+.kpi-icon.is-sm {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 0.55rem;
+}
+
+.kpi-icon.is-primary {
+    background-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.14);
+    color: var(--bulma-primary);
+}
+
+.kpi-icon.is-link {
+    background-color: hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 0.14);
+    color: var(--bulma-link);
+}
+
+.kpi-icon.is-info {
+    background-color: hsla(var(--bulma-info-h), var(--bulma-info-s), var(--bulma-info-l), 0.14);
+    color: var(--bulma-info);
+}
+
+.kpi-icon.is-success {
+    background-color: hsla(var(--bulma-success-h), var(--bulma-success-s), var(--bulma-success-l), 0.14);
+    color: var(--bulma-success);
+}
+
+.kpi-icon.is-warning {
+    background-color: hsla(var(--bulma-warning-h), var(--bulma-warning-s), var(--bulma-warning-l), 0.16);
+    color: hsl(var(--bulma-warning-h), var(--bulma-warning-s), 38%);
+}
+
+html[data-theme="dark"] .kpi-icon.is-warning {
+    color: hsl(var(--bulma-warning-h), var(--bulma-warning-s), 62%);
+}
+
+.kpi-icon.is-danger {
+    background-color: hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.14);
+    color: var(--bulma-danger);
+}
+
+/* Initials Avatars & Avatar Stack */
+.kdo-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+    user-select: none;
+    line-height: 1;
+}
+
+.kdo-avatar--sm {
+    width: 1.85rem;
+    height: 1.85rem;
+    font-size: 0.72rem;
+}
+
+.kdo-avatar--md {
+    width: 2.35rem;
+    height: 2.35rem;
+    font-size: 0.85rem;
+}
+
+.kdo-avatar--lg {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.05rem;
+}
+
+.kdo-avatar--tone-0 { background-color: hsla(239, 84%, 60%, 0.16); color: hsl(239, 75%, 52%); }
+.kdo-avatar--tone-1 { background-color: hsla(160, 84%, 39%, 0.16); color: hsl(160, 84%, 32%); }
+.kdo-avatar--tone-2 { background-color: hsla(350, 89%, 60%, 0.16); color: hsl(350, 80%, 50%); }
+.kdo-avatar--tone-3 { background-color: hsla(199, 89%, 48%, 0.16); color: hsl(199, 85%, 38%); }
+.kdo-avatar--tone-4 { background-color: hsla(280, 75%, 58%, 0.16); color: hsl(280, 70%, 48%); }
+.kdo-avatar--tone-5 { background-color: hsla(32, 92%, 50%, 0.18); color: hsl(28, 88%, 38%); }
+
+html[data-theme="dark"] .kdo-avatar--tone-0 { color: hsl(239, 85%, 76%); }
+html[data-theme="dark"] .kdo-avatar--tone-1 { color: hsl(160, 80%, 66%); }
+html[data-theme="dark"] .kdo-avatar--tone-2 { color: hsl(350, 88%, 74%); }
+html[data-theme="dark"] .kdo-avatar--tone-3 { color: hsl(199, 88%, 70%); }
+html[data-theme="dark"] .kdo-avatar--tone-4 { color: hsl(280, 82%, 76%); }
+html[data-theme="dark"] .kdo-avatar--tone-5 { color: hsl(36, 92%, 68%); }
+
+.kdo-avatar--more {
+    background-color: var(--kdo-surface-subtle);
+    color: var(--bulma-text-weak);
+}
+
+.avatar-stack {
+    display: inline-flex;
+    align-items: center;
+}
+
+.avatar-stack .kdo-avatar {
+    box-shadow: 0 0 0 2px var(--bulma-scheme-main);
+}
+
+.avatar-stack .kdo-avatar + .kdo-avatar {
+    margin-left: -0.45rem;
+}
+
+/* Participant list & Activity rows */
+.participant-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.participant-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.65rem;
+    border-radius: var(--bulma-radius);
+    background-color: var(--bulma-scheme-main-bis);
+}
+
+.activity-row + .activity-row {
+    border-top: 1px solid var(--bulma-border-weak);
+}
+
+/* Comment bubble */
+.comment-bubble {
+    padding: 0.55rem 0.75rem;
+    background-color: var(--bulma-scheme-main-bis);
+    border-radius: var(--bulma-radius);
+    border-top: none !important;
+}
+
+/* Wish thumbnail */
+.wish-thumb {
+    object-fit: cover;
+    width: 48px;
+    height: 48px;
+    border-radius: 0.55rem;
+    box-shadow: 0 0 0 1px var(--bulma-border-weak);
+}
+
+.mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ==========================================================================
+   Top Progress Bar, Toast Stack & Product Cards
+   ========================================================================== */
+
+#kdo-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0;
+    z-index: 9999;
+    background: linear-gradient(90deg, var(--bulma-primary), hsl(199, 89%, 48%), hsl(280, 80%, 60%));
+    opacity: 0;
+    pointer-events: none;
+    transition: width 0.25s ease, opacity 0.2s ease;
+}
+
+#kdo-progress-bar.is-active {
+    width: 85%;
+    opacity: 1;
+}
+
+/* Floating Toast Notifications */
+.kdo-toast-stack {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    max-width: 380px;
+    width: calc(100% - 2rem);
+    pointer-events: none;
+}
+
+.kdo-toast {
+    pointer-events: auto;
+    margin: 0 !important;
+    box-shadow:
+        0 12px 28px -6px rgba(15, 23, 42, 0.18),
+        0 0 0 1px rgba(15, 23, 42, 0.08);
+    animation: kdoToastIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.kdo-toast.is-hiding {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+}
+
+@keyframes kdoToastIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* E-commerce Product Cards */
+.product-card-media {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(135deg, hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.08), hsla(199, 89%, 48%, 0.08));
+    border-bottom: 1px solid var(--bulma-border-weak);
+    overflow: hidden;
+}
+
+.product-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-card-media img {
+    transform: scale(1.03);
+}
+
+.product-card-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.45);
+}
+
+.product-price-badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background-color: var(--kdo-navbar-bg);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--bulma-text-strong);
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--bulma-border-weak);
+}
+
+/* Hide modal close button when wish/new or wish/edit is rendered as a standalone page */
+body #wish-modal-content [data-modal-close] {
+    display: none;
+}
+
+#kdo-dynamic-modal #wish-modal-content [data-modal-close] {
+    display: inline-block;
+}
+
+.w-100 {
+    width: 100%;
+}

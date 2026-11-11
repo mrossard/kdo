@@ -6,62 +6,58 @@
 <section class="section">
     <div class="container">
         <div class="columns is-centered">
-            <div class="column is-half">
-                <form method="post">
-                    {% if error %}
-                        <div class="notification is-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-                    {% endif %}
-
-                    {% if app.user %}
-                        <div class="mb-3">
-                            Vous êtes connecté en tant que {{ app.user.userIdentifier }}, <a href="{{ path('app_logout') }}">Déconnexion</a>
-                        </div>
-                    {% endif %}
-
-                    <h1 class="title">Veuillez vous connecter</h1>
-
-                    <div class="field">
-                        <label class="label" for="username">E-mail</label>
-                        <div class="control">
-                            <input type="email" value="{{ last_username }}" name="email" id="username" class="input" autocomplete="email" required autofocus>
-                        </div>
+            <div class="column is-5-tablet is-4-desktop">
+                <div class="box p-5">
+                    <div class="has-text-centered mb-5">
+                        <span class="kpi-icon is-primary mx-auto mb-3">
+                            {{ ux_icon('material-symbols:redeem', {height: '1.75rem', width: '1.75rem'}) }}
+                        </span>
+                        <h1 class="title is-4 mb-1">Veuillez vous connecter</h1>
+                        <p class="subtitle is-6 mb-0">Accédez à vos listes et projets cadeaux</p>
                     </div>
 
-                    <div class="field">
-                        <label class="label" for="password">Mot de passe</label>
-                        <div class="control">
-                            <input type="password" name="password" id="password" class="input" autocomplete="current-password" required>
-                        </div>
-                        <p class="help has-text-right">
-                            <a href="{{ path('app_forgot_password_request') }}">Mot de passe oublié ?</a>
-                        </p>
-                    </div>
+                    <form method="post">
+                        {% if error %}
+                            <div class="notification is-danger is-light">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                        {% endif %}
 
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
-
-                    {#
-                        Uncomment this section and add a remember_me option below your firewall to activate remember me functionality.
-                        See https://symfony.com/doc/current/security/remember_me.html
+                        {% if app.user %}
+                            <div class="notification is-info is-light mb-4">
+                                Vous êtes connecté en tant que {{ app.user.userIdentifier }}, <a href="{{ path('app_logout') }}">Déconnexion</a>
+                            </div>
+                        {% endif %}
 
                         <div class="field">
-                            <div class="control">
-                                <label class="checkbox">
-                                    <input type="checkbox" name="_remember_me">
-                                    Se souvenir de moi
-                                </label>
+                            <label class="label" for="username">E-mail</label>
+                            <div class="control has-icons-left">
+                                <input type="email" value="{{ last_username }}" name="email" id="username" class="input" placeholder="vous@exemple.fr" autocomplete="email" required autofocus>
+                                <span class="icon is-small is-left">{{ ux_icon('material-symbols:mail') }}</span>
                             </div>
                         </div>
-                    #}
 
-                    <div class="field">
-                        <div class="control">
-                            <button class="button is-primary" type="submit">
-                                <span class="icon">{{ ux_icon('material-symbols:login') }}</span>
-                                <span>Se connecter</span>
-                            </button>
+                        <div class="field">
+                            <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                                <label class="label mb-0" for="password">Mot de passe</label>
+                                <a class="is-size-7 has-text-link" href="{{ path('app_forgot_password_request') }}">Mot de passe oublié ?</a>
+                            </div>
+                            <div class="control has-icons-left">
+                                <input type="password" name="password" id="password" class="input" placeholder="••••••••" autocomplete="current-password" required>
+                                <span class="icon is-small is-left">{{ ux_icon('material-symbols:lock') }}</span>
+                            </div>
                         </div>
-                    </div>
-                </form>
+
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                        <div class="field mt-5">
+                            <div class="control">
+                                <button class="button is-primary is-fullwidth" type="submit">
+                                    <span class="icon">{{ ux_icon('material-symbols:login') }}</span>
+                                    <span>Se connecter</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

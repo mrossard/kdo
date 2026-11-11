@@ -308,12 +308,11 @@ final class GiftIdeaController extends AbstractProjectController
         )) {
             $this->entityManager->remove($giftIdea);
             $this->entityManager->flush();
+            $this->addFlash('success', 'Idée supprimée.');
 
             if ($request->headers->get('HX-Request')) {
                 return new Response('', Response::HTTP_OK);
             }
-
-            $this->addFlash('success', 'Idée supprimée.');
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);

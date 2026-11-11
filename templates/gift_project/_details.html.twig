@@ -1,48 +1,52 @@
 <div class="columns">
     <div class="column is-8">
         <div class="box">
-            <div class="level is-mobile">
+            <div class="level is-mobile mb-4">
                 <div class="level-left">
                     <div>
-                        <h1 class="title is-3">
-                            {{ project.name }}
+                        <div class="is-flex is-align-items-center is-flex-wrap-wrap mb-1" style="gap: 0.5rem;">
+                            <h1 class="title is-3 mb-0">{{ project.name }}</h1>
                             {% if project.locked %}
-                                <span class="tag is-warning is-medium ml-2">
-                                    <span class="icon">{{ ux_icon('material-symbols:lock') }}</span>
+                                <span class="tag is-warning is-light">
+                                    <span class="icon is-small mr-1">{{ ux_icon('material-symbols:lock') }}</span>
                                     <span>Verrouillé</span>
                                 </span>
                             {% endif %}
-                        </h1>
-                        <h2 class="subtitle is-5">Pour : {{ project.recipientDisplayName }}</h2>
+                            {% if project.deliveredAt %}
+                                <span class="tag is-success is-light">
+                                    <span class="icon is-small mr-1">{{ ux_icon('material-symbols:check-circle') }}</span>
+                                    <span>Remis le {{ project.deliveredAt|date('d/m/Y') }}</span>
+                                </span>
+                            {% endif %}
+                        </div>
+                        <p class="subtitle is-6 mb-0">
+                            Destinataire : <strong class="has-text-weight-semibold">{{ project.recipientDisplayName }}</strong>
+                        </p>
                     </div>
-                </div>
-                <div class="level-right">
-                    {# Empty level-right now #}
                 </div>
             </div>
 
-            <div class="content">
-                {{ project.description|default('Aucune description.')|nl2br }}
+            <div class="box has-background-light p-4 mb-4">
+                <p class="{{ project.description ? '' : 'has-text-grey is-italic' }}">
+                    {{ project.description|default('Aucune description.')|nl2br }}
+                </p>
                 {% if project.targetDate %}
-                    <p>
+                    <div class="is-flex is-align-items-center mt-3 pt-3" style="gap: 0.5rem; border-top: 1px solid var(--bulma-border-weak);">
                         <span class="icon is-small has-text-info">{{ ux_icon('material-symbols:event') }}</span>
-                        Date cible : <strong>{{ project.targetDate|date('d/m/Y') }}</strong>
+                        <span class="is-size-7">Date cible : <strong class="tabular-nums">{{ project.targetDate|date('d/m/Y') }}</strong></span>
                         {% if project.targetDate < date() and project.deliveredAt is null %}
-                            <span class="tag is-warning is-small ml-2">
-                                <span class="icon is-small">{{ ux_icon('material-symbols:schedule') }}</span>
+                            <span class="tag is-warning is-small ml-1">
+                                <span class="icon is-small mr-1">{{ ux_icon('material-symbols:schedule') }}</span>
                                 <span>Échéance dépassée</span>
                             </span>
                         {% endif %}
-                    </p>
-                {% endif %}
-                {% if project.deliveredAt %}
-                    <p class="has-text-success">Cadeau remis le : {{ project.deliveredAt|date('d/m/Y') }}</p>
+                    </div>
                 {% endif %}
             </div>
 
             <div class="buttons is-right mt-4">
                 {% if app.user == project.owner and project.deliveredAt is null %}
-                    <a href="{{ path('app_project_edit', {'id': project.id}) }}" class="button is-link" title="Modifier le projet">
+                    <a href="{{ path('app_project_edit', {'id': project.id}) }}" class="button is-light" title="Modifier le projet">
                         <span class="icon">{{ ux_icon('material-symbols:edit') }}</span>
                         <span>Modifier</span>
                     </a>
@@ -64,8 +68,6 @@
                     </form>
                 {% endif %}
 
-                {# Verrouiller/Déverrouiller déplacé vers l'onglet "Idées Cadeaux" #}
-
                 {% if app.user == project.owner %}
                     <form method="post" action="{{ path('app_project_archive', {'id': project.id}) }}"
                           class="ml-2"
@@ -73,7 +75,7 @@
                           hx-confirm="Voulez-vous vraiment {{ project.archived ? 'désarchiver' : 'archiver' }} ce projet ?"
                           hx-target="body">
                         <input type="hidden" name="_token" value="{{ csrf_token('archive_project' ~ project.id) }}">
-                        <button type="submit" class="button {{ project.archived ? 'is-primary' : 'is-dark' }}" title="{{ project.archived ? 'Désarchiver' : 'Archiver' }}">
+                        <button type="submit" class="button {{ project.archived ? 'is-primary is-light' : 'is-light' }}" title="{{ project.archived ? 'Désarchiver' : 'Archiver' }}">
                             <span class="icon">{{ ux_icon(project.archived ? 'material-symbols:unarchive' : 'material-symbols:archive') }}</span>
                             <span>{{ project.archived ? 'Désarchiver' : 'Archiver' }}</span>
                         </button>
@@ -99,59 +101,64 @@
 
     <div class="column is-4">
         <div class="box">
-            <h3 class="title is-5">Participants</h3>
-            <div class="content">
-                <ul>
-                    <li>
-                        <span class="icon is-small">{{ ux_icon('material-symbols:crown') }}</span>
-                        <strong>{{ project.owner.displayName }}</strong> (Organisateur)
-                    </li>
-                    {% for participant in project.participants %}
-                        <li>
-                            <div class="level is-mobile mb-0">
-                                <div class="level-left">
-                                    <span class="icon is-small mr-1">{{ ux_icon('material-symbols:person') }}</span>
-                                    {{ participant.displayName }}
-                                </div>
-                                {% if app.user == project.owner and project.deliveredAt is null %}
-                                    <div class="level-right">
-                                        <form method="post" action="{{ path('app_project_remove_participant', {'id': project.id, 'participant_id': participant.id}) }}"
-                                              hx-post="{{ path('app_project_remove_participant', {'id': project.id, 'participant_id': participant.id}) }}"
-                                              hx-confirm="Voulez-vous vraiment retirer ce participant ?"
-                                              hx-target="body">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('remove_participant' ~ participant.id) }}">
-                                            <button type="submit" class="button is-small is-danger" title="Retirer du projet">
-                                                <span class="icon is-small">{{ ux_icon('material-symbols:close') }}</span>
-                                            </button>
-                                        </form>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </li>
-                    {% endfor %}
-                </ul>
+            <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+                <h3 class="title is-5 mb-0">Participants</h3>
+                <span class="tag is-rounded is-light">{{ project.participants|length + 1 }}</span>
+            </div>
+
+            <div class="participant-list">
+                <div class="participant-row">
+                    <div class="is-flex is-align-items-center" style="gap: 0.65rem;">
+                        {{ include('_components/_avatar.html.twig', {name: project.owner.displayName, size: 'sm'}) }}
+                        <div>
+                            <p class="has-text-weight-semibold is-size-6">{{ project.owner.displayName }}</p>
+                        </div>
+                    </div>
+                    <span class="tag is-primary is-light is-small">
+                        <span class="icon is-small mr-1">{{ ux_icon('material-symbols:crown') }}</span>
+                        <span>Organisateur</span>
+                    </span>
+                </div>
+
+                {% for participant in project.participants %}
+                    <div class="participant-row">
+                        <div class="is-flex is-align-items-center" style="gap: 0.65rem;">
+                            {{ include('_components/_avatar.html.twig', {name: participant.displayName, size: 'sm'}) }}
+                            <span class="is-size-6">{{ participant.displayName }}</span>
+                        </div>
+                        {% if app.user == project.owner and project.deliveredAt is null %}
+                            <form method="post" action="{{ path('app_project_remove_participant', {'id': project.id, 'participant_id': participant.id}) }}"
+                                  hx-post="{{ path('app_project_remove_participant', {'id': project.id, 'participant_id': participant.id}) }}"
+                                  hx-confirm="Voulez-vous vraiment retirer ce participant ?"
+                                  hx-target="body">
+                                <input type="hidden" name="_token" value="{{ csrf_token('remove_participant' ~ participant.id) }}">
+                                <button type="submit" class="button is-small is-ghost has-text-danger" title="Retirer du projet">
+                                    <span class="icon is-small">{{ ux_icon('material-symbols:close') }}</span>
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
             </div>
 
             {% if project.deliveredAt is null %}
                 <hr>
-                <h4 class="title is-6">Inviter quelqu'un</h4>
+                <h4 class="title is-6 mb-2">Inviter un contact</h4>
                 {{ form_start(add_participant_form) }}
-                    <div class="field">
-                        <div class="control">
+                    <div class="field has-addons">
+                        <div class="control is-expanded">
                             <div class="select is-fullwidth">
                                 {{ form_widget(add_participant_form.participant) }}
                             </div>
                         </div>
-                        {{ form_errors(add_participant_form.participant) }}
-                    </div>
-                    <div class="field">
                         <div class="control">
-                            <button type="submit" class="button is-link is-light is-small">
+                            <button type="submit" class="button is-primary">
                                 <span class="icon is-small">{{ ux_icon('material-symbols:person-add') }}</span>
                                 <span>Inviter</span>
                             </button>
                         </div>
                     </div>
+                    {{ form_errors(add_participant_form.participant) }}
                 {{ form_end(add_participant_form) }}
             {% endif %}
         </div>

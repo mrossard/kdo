@@ -6,11 +6,16 @@
         <title>{% block title %}Welcome!{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>kdo</text></svg>">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         {% block stylesheets %}
             {{ importmap('app') }}
         {% endblock %}
     </head>
     <body>
+        <div id="kdo-progress-bar" aria-hidden="true"></div>
+
         {% set currentRoute = app.request.attributes.get('_route') %}
         {% if app.user or currentRoute != 'app_home' %}
         <nav class="navbar" role="navigation" aria-label="main navigation">
@@ -79,11 +84,12 @@
                     {% endif %}
                     {% if app.user %}
                         <div class="navbar-item has-dropdown is-hoverable">
-                            <a class="navbar-link">
-                                {{ app.user.displayName }}
+                            <a class="navbar-link is-flex is-align-items-center" style="gap: 0.5rem;">
+                                {{ include('_components/_avatar.html.twig', {name: app.user.displayName, size: 'sm'}) }}
+                                <span>{{ app.user.displayName }}</span>
                             </a>
 
-                            <div class="navbar-dropdown">
+                            <div class="navbar-dropdown is-right">
                                 <a class="navbar-item" href="{{ path('app_profile') }}">
                                     <span class="icon">{{ ux_icon('material-symbols:person') }}</span>
                                     <span>Mon Profil</span>
@@ -106,31 +112,47 @@
         </nav>
         {% endif %}
 
-        {% for message in app.flashes('success') %}
-            <div class="notification is-success">
-                <button class="delete" aria-label="delete"></button>
-                {{ message }}
-            </div>
-        {% endfor %}
-        {% for message in app.flashes('warning') %}
-            <div class="notification is-warning">
-                <button class="delete" aria-label="delete"></button>
-                {{ message }}
-            </div>
-        {% endfor %}
-        {% for message in app.flashes('danger') %}
-            <div class="notification is-danger">
-                <button class="delete" aria-label="delete"></button>
-                {{ message }}
-            </div>
-        {% endfor %}
-        {% for message in app.flashes('info') %}
-            <div class="notification is-info">
-                <button class="delete" aria-label="delete"></button>
-                {{ message }}
-            </div>
-        {% endfor %}
+        <div class="kdo-toast-stack" aria-live="polite">
+            {% for type in ['success', 'warning', 'danger', 'info'] %}
+                {% for message in app.flashes(type) %}
+                    <div class="notification is-{{ type }} kdo-toast" data-auto-dismiss="4500">
+                        <button class="delete" aria-label="delete"></button>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
 
         {% block body %}{% endblock %}
+
+        {# Dynamic HTMX Modal for forms (e.g., Wish New/Edit) #}
+        <div id="kdo-dynamic-modal" class="modal" role="dialog" aria-modal="true">
+            <div class="modal-background" data-modal-close></div>
+            <div class="modal-card" style="max-width: 560px; width: 92%;">
+                <section id="kdo-dynamic-modal-body" class="modal-card-body box m-0 p-5"></section>
+            </div>
+        </div>
+
+        {# Styled HTMX Confirmation Modal #}
+        <div id="kdo-confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="kdo-confirm-title">
+            <div class="modal-background" data-confirm-cancel></div>
+            <div class="modal-card" style="max-width: 420px; width: 92%;">
+                <section class="modal-card-body box m-0 p-5">
+                    <div class="is-flex is-align-items-flex-start" style="gap: 1rem;">
+                        <span class="kpi-icon is-warning is-flex-shrink-0">
+                            {{ ux_icon('material-symbols:help', {height: '1.5rem', width: '1.5rem'}) }}
+                        </span>
+                        <div>
+                            <p id="kdo-confirm-title" class="title is-5 mb-2">Confirmation</p>
+                            <p id="kdo-confirm-message" class="has-text-grey is-size-6 mb-4"></p>
+                        </div>
+                    </div>
+                    <div class="buttons is-right mt-2 mb-0">
+                        <button type="button" class="button is-light" data-confirm-cancel>Annuler</button>
+                        <button type="button" class="button is-primary" id="kdo-confirm-ok">Confirmer</button>
+                    </div>
+                </section>
+            </div>
+        </div>
     </body>
 </html>

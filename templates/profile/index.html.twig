@@ -7,37 +7,37 @@
     <div class="container">
         <div class="columns is-centered">
             <div class="column is-6-tablet is-5-desktop">
-                <h1 class="title has-text-centered">Mon Profil</h1>
-                
-                {% for message in app.flashes('success') %}
-                    <div class="notification is-success">
-                        {{ message }}
+                <div class="box has-text-centered mb-5 p-5">
+                    <div class="mb-3">
+                        {{ include('_components/_avatar.html.twig', {name: app.user.displayName, size: 'lg'}) }}
                     </div>
-                {% endfor %}
-                {% for message in app.flashes('danger') %}
-                    <div class="notification is-danger">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+                    <h1 class="title is-4 mb-1">{{ app.user.displayName }}</h1>
+                    <span class="tag is-light is-rounded">{{ app.user.email }}</span>
+                </div>
 
                 {# Informations Personnelles #}
-                <div class="box mb-5">
-                    <h2 class="subtitle is-5 has-text-weight-bold mb-4">Informations Personnelles</h2>
+                <div class="box mb-5 p-5">
+                    <h2 class="title is-5 mb-4">Informations personnelles</h2>
                     {{ form_start(form) }}
-                        <div class="field">
-                            {{ form_label(form.firstname, null, {'label_attr': {'class': 'label'}}) }}
-                            <div class="control">
-                                {{ form_widget(form.firstname) }}
+                        <div class="columns is-variable is-2 mb-0">
+                            <div class="column">
+                                <div class="field">
+                                    {{ form_label(form.firstname, null, {'label_attr': {'class': 'label'}}) }}
+                                    <div class="control">
+                                        {{ form_widget(form.firstname) }}
+                                    </div>
+                                    {{ form_errors(form.firstname) }}
+                                </div>
                             </div>
-                            {{ form_errors(form.firstname) }}
-                        </div>
-
-                        <div class="field">
-                            {{ form_label(form.lastname, null, {'label_attr': {'class': 'label'}}) }}
-                            <div class="control">
-                                {{ form_widget(form.lastname) }}
+                            <div class="column">
+                                <div class="field">
+                                    {{ form_label(form.lastname, null, {'label_attr': {'class': 'label'}}) }}
+                                    <div class="control">
+                                        {{ form_widget(form.lastname) }}
+                                    </div>
+                                    {{ form_errors(form.lastname) }}
+                                </div>
                             </div>
-                            {{ form_errors(form.lastname) }}
                         </div>
 
                         <div class="field mt-4">
@@ -49,16 +49,11 @@
                             </div>
                         </div>
                     {{ form_end(form) }}
-                    
-                    <hr>
-                    <p class="has-text-centered is-size-7">
-                        Email du compte : <strong>{{ app.user.email }}</strong>
-                    </p>
                 </div>
 
                 {# Changement de mot de passe #}
-                <div class="box">
-                    <h2 class="subtitle is-5 has-text-weight-bold mb-4">Changer le mot de passe</h2>
+                <div class="box p-5">
+                    <h2 class="title is-5 mb-4">Sécurité & Mot de passe</h2>
                     {{ form_start(password_form) }}
                         <div class="field">
                             {{ form_label(password_form.currentPassword, null, {'label_attr': {'class': 'label'}}) }}

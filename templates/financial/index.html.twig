@@ -3,140 +3,209 @@
 {% block title %}Finances{% endblock %}
 
 {% block body %}
-<div class="container is-fluid section">
-    <h1 class="title">Mes Finances</h1>
+{% set total_debt = 0 %}
+{% for debt in debts %}
+    {% set total_debt = total_debt + debt.amount %}
+{% endfor %}
+{% set total_credit = 0 %}
+{% for credit in credits %}
+    {% set total_credit = total_credit + credit.amount %}
+{% endfor %}
+{% set net_balance = total_credit - total_debt %}
 
-    <div class="columns">
-        <div class="column is-one-half">
-            <h2 class="subtitle">Soldes en cours</h2>
-
-            <div class="box">
-                <h3 class="title is-5 has-text-danger">Ce que je dois</h3>
-                {% if debts is empty %}
-                    <p class="has-text-grey-light">Rien à signaler, vous êtes à jour !</p>
-                {% else %}
-                    <table class="table is-fullwidth is-striped">
-                        <thead>
-                            <tr>
-                                <th>À qui ?</th>
-                                <th>Projet</th>
-                                <th class="has-text-right">Montant</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for debt in debts %}
-                                <tr>
-                                    <td>{{ debt.to.displayName }}</td>
-                                    <td><a href="{{ path('app_project_show', {id: debt.project.id, tab: 'financial'}) }}">{{ debt.project.name }}</a></td>
-                                    <td class="has-text-right has-text-danger">{{ debt.amount|number_format(2, ',', ' ') }} €</td>
-                                    <td>
-                                        <a href="{{ path('app_project_show', {id: debt.project.id, tab: 'financial'}) }}" class="button is-small is-primary is-outlined">
-                                            <span class="icon">{{ ux_icon('material-symbols:payments') }}</span>
-                                            <span>Régler</span>
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
-            </div>
-
-            <div class="box">
-                <h3 class="title is-5 has-text-success">Ce qu'on me doit</h3>
-                {% if credits is empty %}
-                    <p class="has-text-grey-light">Personne ne vous doit d'argent.</p>
-                {% else %}
-                    <table class="table is-fullwidth is-striped">
-                        <thead>
-                            <tr>
-                                <th>Qui ?</th>
-                                <th>Projet</th>
-                                <th class="has-text-right">Montant</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for credit in credits %}
-                                <tr>
-                                    <td>{{ credit.from.displayName }}</td>
-                                    <td><a href="{{ path('app_project_show', {id: credit.project.id, tab: 'financial'}) }}">{{ credit.project.name }}</a></td>
-                                    <td class="has-text-right has-text-success">{{ credit.amount|number_format(2, ',', ' ') }} €</td>
-                                    <td>
-                                         <a href="{{ path('app_project_show', {id: credit.project.id, tab: 'financial'}) }}" class="button is-small is-primary is-outlined">
-                                            <span class="icon">{{ ux_icon('material-symbols:visibility') }}</span>
-                                            <span>Voir</span>
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
+<section class="section">
+    <div class="container">
+        <div class="level mb-5">
+            <div class="level-left">
+                <div>
+                    <h1 class="title is-3 mb-1">Mes Finances</h1>
+                    <p class="subtitle is-6 mb-0">Suivi de vos dépenses, remboursements et soldes entre projets.</p>
+                </div>
             </div>
         </div>
 
-        <div class="column is-one-half">
-            <h2 class="subtitle">Historique des remboursements</h2>
-            <div class="box">
-                {% if history is empty %}
-                    <p class="has-text-grey-light">Aucun historique de remboursement.</p>
-                {% else %}
-                    <table class="table is-fullwidth is-striped">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>De</th>
-                                <th>À</th>
-                                <th>Projet</th>
-                                <th class="has-text-right">Montant</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in history %}
-                                <tr>
-                                    <td>{{ item.createdAt|date('d/m/Y') }}</td>
-                                    <td>
-                                        {% if item.fromUser == app.user %}
-                                            <strong>Moi</strong>
-                                        {% else %}
-                                            {{ item.fromUser.displayName }}
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if item.toUser == app.user %}
-                                            <strong>Moi</strong>
-                                        {% else %}
-                                            {{ item.toUser.displayName }}
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if item.project %}
-                                            <a href="{{ path('app_project_show', {id: item.project.id}) }}">{{ item.project.name }}</a>
-                                        {% else %}
-                                            <span class="has-text-grey-light">Projet supprimé</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="has-text-right {% if item.toUser == app.user %}has-text-success{% else %}has-text-danger{% endif %}">
-                                        {{ item.amount|number_format(2, ',', ' ') }} €
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
+        <div class="columns is-multiline mb-5">
+            <div class="column is-4">
+                <div class="box h-100">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.75rem;">
+                        <span class="kpi-icon is-success">
+                            {{ ux_icon('material-symbols:trending-up', {height: '1.4rem', width: '1.4rem'}) }}
+                        </span>
+                        <div>
+                            <p class="heading mb-0">Ce qu'on me doit</p>
+                            <p class="title is-4 mb-0 has-text-success tabular-nums">+{{ total_credit|number_format(2, ',', ' ') }} €</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="box h-100">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.75rem;">
+                        <span class="kpi-icon is-danger">
+                            {{ ux_icon('material-symbols:trending-down', {height: '1.4rem', width: '1.4rem'}) }}
+                        </span>
+                        <div>
+                            <p class="heading mb-0">Ce que je dois</p>
+                            <p class="title is-4 mb-0 has-text-danger tabular-nums">-{{ total_debt|number_format(2, ',', ' ') }} €</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="box h-100">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.75rem;">
+                        <span class="kpi-icon {{ net_balance >= 0 ? 'is-primary' : 'is-warning' }}">
+                            {{ ux_icon('material-symbols:account-balance-wallet', {height: '1.4rem', width: '1.4rem'}) }}
+                        </span>
+                        <div>
+                            <p class="heading mb-0">Solde net</p>
+                            <p class="title is-4 mb-0 tabular-nums {{ net_balance > 0 ? 'has-text-success' : (net_balance < 0 ? 'has-text-danger' : '') }}">
+                                {{ net_balance >= 0 ? '+' : '' }}{{ net_balance|number_format(2, ',', ' ') }} €
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="section">
-        <h2 class="subtitle">Mes Achats</h2>
-        <div class="box">
+        <div class="columns is-multiline">
+            <div class="column is-6">
+                <div class="box mb-5">
+                    <h3 class="title is-5 mb-3">Ce que je dois</h3>
+                    {% if debts is empty %}
+                        <p class="has-text-grey is-italic">Rien à signaler, vous êtes à jour !</p>
+                    {% else %}
+                        <table class="table is-fullwidth">
+                            <thead>
+                                <tr>
+                                    <th>À qui ?</th>
+                                    <th>Projet</th>
+                                    <th class="has-text-right">Montant</th>
+                                    <th class="has-text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for debt in debts %}
+                                    <tr>
+                                        <td>
+                                            <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                                {{ include('_components/_avatar.html.twig', {name: debt.to.displayName, size: 'sm'}) }}
+                                                <span>{{ debt.to.displayName }}</span>
+                                            </div>
+                                        </td>
+                                        <td><a class="has-text-link" href="{{ path('app_project_show', {id: debt.project.id, tab: 'financial'}) }}">{{ debt.project.name }}</a></td>
+                                        <td class="has-text-right has-text-danger has-text-weight-semibold tabular-nums">{{ debt.amount|number_format(2, ',', ' ') }} €</td>
+                                        <td class="has-text-right">
+                                            <a href="{{ path('app_project_show', {id: debt.project.id, tab: 'financial'}) }}" class="button is-small is-primary is-light">
+                                                <span class="icon">{{ ux_icon('material-symbols:payments') }}</span>
+                                                <span>Régler</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+
+                <div class="box">
+                    <h3 class="title is-5 mb-3">Ce qu'on me doit</h3>
+                    {% if credits is empty %}
+                        <p class="has-text-grey is-italic">Personne ne vous doit d'argent.</p>
+                    {% else %}
+                        <table class="table is-fullwidth">
+                            <thead>
+                                <tr>
+                                    <th>Qui ?</th>
+                                    <th>Projet</th>
+                                    <th class="has-text-right">Montant</th>
+                                    <th class="has-text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for credit in credits %}
+                                    <tr>
+                                        <td>
+                                            <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                                {{ include('_components/_avatar.html.twig', {name: credit.from.displayName, size: 'sm'}) }}
+                                                <span>{{ credit.from.displayName }}</span>
+                                            </div>
+                                        </td>
+                                        <td><a class="has-text-link" href="{{ path('app_project_show', {id: credit.project.id, tab: 'financial'}) }}">{{ credit.project.name }}</a></td>
+                                        <td class="has-text-right has-text-success has-text-weight-semibold tabular-nums">{{ credit.amount|number_format(2, ',', ' ') }} €</td>
+                                        <td class="has-text-right">
+                                            <a href="{{ path('app_project_show', {id: credit.project.id, tab: 'financial'}) }}" class="button is-small is-light">
+                                                <span class="icon">{{ ux_icon('material-symbols:visibility') }}</span>
+                                                <span>Voir</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="column is-6">
+                <div class="box h-100">
+                    <h3 class="title is-5 mb-3">Historique des remboursements</h3>
+                    {% if history is empty %}
+                        <p class="has-text-grey is-italic">Aucun historique de remboursement.</p>
+                    {% else %}
+                        <table class="table is-fullwidth">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>De</th>
+                                    <th>À</th>
+                                    <th>Projet</th>
+                                    <th class="has-text-right">Montant</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in history %}
+                                    <tr>
+                                        <td class="tabular-nums is-size-7 has-text-grey">{{ item.createdAt|date('d/m/Y') }}</td>
+                                        <td>
+                                            {% if item.fromUser == app.user %}
+                                                <span class="tag is-light">Moi</span>
+                                            {% else %}
+                                                {{ item.fromUser.displayName }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.toUser == app.user %}
+                                                <span class="tag is-light">Moi</span>
+                                            {% else %}
+                                                {{ item.toUser.displayName }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.project %}
+                                                <a class="has-text-link" href="{{ path('app_project_show', {id: item.project.id}) }}">{{ item.project.name }}</a>
+                                            {% else %}
+                                                <span class="has-text-grey-light">Projet supprimé</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="has-text-right tabular-nums has-text-weight-semibold {% if item.toUser == app.user %}has-text-success{% else %}has-text-danger{% endif %}">
+                                            {{ item.amount|number_format(2, ',', ' ') }} €
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="box mt-5">
+            <h3 class="title is-5 mb-3">Mes Achats</h3>
             {% if purchasedItems is empty %}
-                <p class="has-text-grey-light">Vous n'avez encore rien acheté.</p>
+                <p class="has-text-grey is-italic">Vous n'avez encore rien acheté.</p>
             {% else %}
-                <table class="table is-fullwidth is-striped">
+                <table class="table is-fullwidth">
                     <thead>
                         <tr>
                             <th>Date</th>
@@ -149,14 +218,14 @@
                     <tbody>
                         {% for item in purchasedItems %}
                             <tr>
-                                <td>
+                                <td class="tabular-nums is-size-7 has-text-grey">
                                     {% if item.purchasedAt %}
                                         {{ item.purchasedAt|date('d/m/Y') }}
                                     {% else %}
-                                        <span class="has-text-grey-light">-</span>
+                                        -
                                     {% endif %}
                                 </td>
-                                <td>{{ item.name }}</td>
+                                <td class="has-text-weight-semibold">{{ item.name }}</td>
                                 <td>
                                     {% if item.giftProject %}
                                         {{ item.giftProject.recipientDisplayName }}
@@ -166,12 +235,12 @@
                                 </td>
                                 <td>
                                     {% if item.giftProject %}
-                                        <a href="{{ path('app_project_show', {id: item.giftProject.id}) }}">{{ item.giftProject.name }}</a>
+                                        <a class="has-text-link" href="{{ path('app_project_show', {id: item.giftProject.id}) }}">{{ item.giftProject.name }}</a>
                                     {% else %}
                                         <span class="has-text-grey-light">Projet supprimé</span>
                                     {% endif %}
                                 </td>
-                                <td class="has-text-right">{{ item.purchasePrice|number_format(2, ',', ' ') }} €</td>
+                                <td class="has-text-right tabular-nums has-text-weight-semibold">{{ item.purchasePrice|number_format(2, ',', ' ') }} €</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -179,5 +248,5 @@
             {% endif %}
         </div>
     </div>
-</div>
+</section>
 {% endblock %}

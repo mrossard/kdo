@@ -5,37 +5,52 @@
 {% block body %}
 <section class="section">
     <div class="container">
-        <h1 class="title">Mes Contacts</h1>
+        <div class="level mb-5">
+            <div class="level-left">
+                <div>
+                    <h1 class="title is-3 mb-1">Mes Contacts</h1>
+                    <p class="subtitle is-6 mb-0">Partagez mutuellement vos listes de souhaits et consultez vos soldes.</p>
+                </div>
+            </div>
+        </div>
 
-        <div class="columns">
+        <div class="columns is-multiline">
             {# Contacts mutuels #}
-            <div class="column">
-                <div class="box">
-                    <h2 class="subtitle">Mes contacts mutuels</h2>
-                    <table class="table is-fullwidth mt-4">
+            <div class="column is-7-desktop is-12-tablet">
+                <div class="box h-100">
+                    <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+                        <h2 class="title is-5 mb-0">Mes contacts mutuels</h2>
+                        <span class="tag is-rounded is-light">{{ my_contacts|length }}</span>
+                    </div>
+                    <table class="table is-fullwidth">
                         <thead>
                             <tr>
                                 <th>Contact</th>
                                 <th>Balance</th>
-                                <th>Actions</th>
+                                <th class="has-text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                         {% for contact in my_contacts %}
                             <tr>
-                                <td>{{ contact.displayName }}</td>
                                 <td>
+                                    <div class="is-flex is-align-items-center" style="gap: 0.65rem;">
+                                        {{ include('_components/_avatar.html.twig', {name: contact.displayName, size: 'sm'}) }}
+                                        <span class="has-text-weight-medium">{{ contact.displayName }}</span>
+                                    </div>
+                                </td>
+                                <td class="tabular-nums">
                                     {% set balance = contact_balances[contact.id] %}
                                     {% if balance > 0 %}
-                                        <span class="has-text-success">{{ balance|format_currency('EUR', locale='fr') }}</span>
+                                        <span class="tag is-success is-light">+{{ balance|format_currency('EUR', locale='fr') }}</span>
                                     {% elseif balance < 0 %}
-                                        <span class="has-text-danger">{{ balance|format_currency('EUR', locale='fr') }}</span>
+                                        <span class="tag is-danger is-light">{{ balance|format_currency('EUR', locale='fr') }}</span>
                                     {% else %}
-                                        <span class="has-text-grey">0.00 €</span>
+                                        <span class="tag is-light">0,00 €</span>
                                     {% endif %}
                                 </td>
-                                <td>
-                                    <div class="buttons are-small">
+                                <td class="has-text-right">
+                                    <div class="buttons are-small is-right">
                                         {% if contact_balances[contact.id] < 0 %}
                                             <form method="post"
                                                   action="{{ path('app_contact_settle_debt', {'id': contact.id}) }}"
@@ -48,8 +63,9 @@
                                                 </button>
                                             </form>
                                         {% endif %}
-                                        <a href="{{ path('app_contact_view', {'id': contact.id}) }}" class="button is-info" title="Voir la liste de souhaits">
+                                        <a href="{{ path('app_contact_view', {'id': contact.id}) }}" class="button is-info is-light" title="Voir la liste de souhaits">
                                             <span class="icon">{{ ux_icon('material-symbols:list') }}</span>
+                                            <span>Sa liste</span>
                                         </a>
                                         <form method="post"
                                               action="{{ path('app_contact_remove', {'id': contact.id}) }}"
@@ -57,7 +73,7 @@
                                               hx-confirm="Êtes-vous sûr de vouloir supprimer ce contact ?"
                                               hx-target="body">
                                             <input type="hidden" name="_token" value="{{ csrf_token('remove_contact' ~ contact.id) }}">
-                                            <button class="button is-small is-danger" title="Supprimer ce contact">
+                                            <button class="button is-small is-danger is-light" title="Supprimer ce contact">
                                                 <span class="icon">{{ ux_icon('material-symbols:delete') }}</span>
                                             </button>
                                         </form>
@@ -66,7 +82,7 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="3" class="has-text-grey-light is-italic">Vous n'avez pas de contacts mutuels.</td>
+                                <td colspan="3" class="has-text-grey is-italic has-text-centered py-5">Vous n'avez pas encore de contacts mutuels.</td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -74,10 +90,10 @@
                 </div>
             </div>
 
-            {# Envoyer une demande de contact #}
-            <div class="column">
-                <div class="box">
-                    <h2 class="subtitle">Envoyer une demande de contact</h2>
+            {# Demandes reçues & envoyées #}
+            <div class="column is-5-desktop is-12-tablet">
+                <div class="box mb-5">
+                    <h2 class="title is-5 mb-3">Inviter un proche</h2>
                     {{ form_start(add_contact_form) }}
                         <div class="field has-addons">
                             <div class="control is-expanded">
@@ -93,19 +109,24 @@
                         {{ form_errors(add_contact_form.email) }}
                     {{ form_end(add_contact_form) }}
 
-                    <h3 class="subtitle is-6 mt-5">Demandes envoyées (en attente)</h3>
+                    <h3 class="heading mt-5 mb-2">Demandes envoyées</h3>
                     <table class="table is-fullwidth">
                         <thead>
                             <tr>
                                 <th>Destinataire</th>
-                                <th>Statut</th>
+                                <th class="has-text-right">Statut</th>
                             </tr>
                         </thead>
                         <tbody>
                         {% for request in sent_requests %}
                             <tr>
-                                <td>{{ request.recipientDisplayName }}</td>
                                 <td>
+                                    <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                        {{ include('_components/_avatar.html.twig', {name: request.recipientDisplayName, size: 'sm'}) }}
+                                        <span>{{ request.recipientDisplayName }}</span>
+                                    </div>
+                                </td>
+                                <td class="has-text-right">
                                     {% if request.recipient is null %}
                                         <span class="tag is-info is-light">Invitation envoyée</span>
                                     {% else %}
@@ -115,31 +136,38 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="2" class="has-text-grey-light is-italic">Aucune demande envoyée.</td>
+                                <td colspan="2" class="has-text-grey is-italic">Aucune demande envoyée.</td>
                             </tr>
                         {% endfor %}
                         </tbody>
                     </table>
                 </div>
-            </div>
 
-            {# Demandes reçues #}
-            <div class="column">
-                 <div class="box">
-                    <h2 class="subtitle">Demandes de contact reçues</h2>
+                <div class="box">
+                    <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+                        <h2 class="title is-5 mb-0">Demandes reçues</h2>
+                        {% if received_requests is not empty %}
+                            <span class="tag is-warning is-rounded">{{ received_requests|length }}</span>
+                        {% endif %}
+                    </div>
                     <table class="table is-fullwidth">
                         <thead>
                             <tr>
                                 <th>Expéditeur</th>
-                                <th>Actions</th>
+                                <th class="has-text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                         {% for request in received_requests %}
                             <tr>
-                                <td>{{ request.sender.displayName }}</td>
                                 <td>
-                                    <div class="buttons are-small">
+                                    <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                        {{ include('_components/_avatar.html.twig', {name: request.sender.displayName, size: 'sm'}) }}
+                                        <span class="has-text-weight-medium">{{ request.sender.displayName }}</span>
+                                    </div>
+                                </td>
+                                <td class="has-text-right">
+                                    <div class="buttons are-small is-right">
                                         <form method="post"
                                               action="{{ path('app_contact_request_accept', {'id': request.id}) }}"
                                               hx-post="{{ path('app_contact_request_accept', {'id': request.id}) }}"
@@ -157,7 +185,7 @@
                                               hx-confirm="Refuser la demande de {{ request.sender.displayName }} ?"
                                               hx-target="body">
                                             <input type="hidden" name="_token" value="{{ csrf_token('decline_request' ~ request.id) }}">
-                                            <button class="button is-danger">
+                                            <button class="button is-danger is-light">
                                                 <span class="icon">{{ ux_icon('material-symbols:close') }}</span>
                                                 <span>Refuser</span>
                                             </button>
@@ -166,21 +194,14 @@
                                 </td>
                             </tr>
                         {% else %}
-                             <tr>
-                                <td colspan="2" class="has-text-grey-light is-italic">Aucune demande reçue.</td>
+                            <tr>
+                                <td colspan="2" class="has-text-grey is-italic">Aucune demande reçue.</td>
                             </tr>
                         {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
-        
-        <div class="mt-5">
-             <a href="{{ path('app_wish_index') }}" class="button">
-                <span class="icon">{{ ux_icon('material-symbols:arrow-back') }}</span>
-                <span>Retour à ma liste</span>
-             </a>
         </div>
     </div>
 </section>

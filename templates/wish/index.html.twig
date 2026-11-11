@@ -5,38 +5,44 @@
 {% block body %}
     <section class="section">
         <div class="container" id="wish-list-container">
-            <div class="level">
+            <div class="level mb-5">
                 <div class="level-left">
-                    <h1 class="title">Ma Liste de souhaits</h1>
+                    <div>
+                        <h1 class="title is-3 mb-1">Ma Liste de souhaits</h1>
+                        <p class="subtitle is-6 mb-0">Vos envies partagées avec vos contacts (sans spoiler sur ce qui est réservé).</p>
+                    </div>
                 </div>
                 <div class="level-right">
                     <div class="buttons">
-                        <div class="level-item">
-                            {% if show_delivered %}
-                                <a href="{{ path('app_wish_index') }}"
-                                   hx-get="{{ path('app_wish_index') }}"
-                                   hx-target="#wish-list-container"
-                                   hx-select="#wish-list-container"
-                                   hx-swap="outerHTML"
-                                   hx-push-url="true"
-                                   class="button is-info is-light">
-                                    <span class="icon">{{ ux_icon('material-symbols:visibility-off') }}</span>
-                                    <span>Non reçus uniquement</span>
-                                </a>
-                            {% else %}
-                                <a href="{{ path('app_wish_index', {'showDelivered': true}) }}"
-                                   hx-get="{{ path('app_wish_index', {'showDelivered': true}) }}"
-                                   hx-target="#wish-list-container"
-                                   hx-select="#wish-list-container"
-                                   hx-swap="outerHTML"
-                                   hx-push-url="true"
-                                   class="button is-info">
-                                    <span class="icon">{{ ux_icon('material-symbols:visibility') }}</span>
-                                    <span>Inclure les cadeaux reçus</span>
-                                </a>
-                            {% endif %}
-                        </div>
-                        <a href="{{ path('app_wish_new') }}" class="button is-primary">
+                        {% if show_delivered %}
+                            <a href="{{ path('app_wish_index') }}"
+                               hx-get="{{ path('app_wish_index') }}"
+                               hx-target="#wish-list-container"
+                               hx-select="#wish-list-container"
+                               hx-swap="outerHTML"
+                               hx-push-url="true"
+                               class="button is-light">
+                                <span class="icon">{{ ux_icon('material-symbols:visibility-off') }}</span>
+                                <span>Non reçus uniquement</span>
+                            </a>
+                        {% else %}
+                            <a href="{{ path('app_wish_index', {'showDelivered': true}) }}"
+                               hx-get="{{ path('app_wish_index', {'showDelivered': true}) }}"
+                               hx-target="#wish-list-container"
+                               hx-select="#wish-list-container"
+                               hx-swap="outerHTML"
+                               hx-push-url="true"
+                               class="button is-light">
+                                <span class="icon">{{ ux_icon('material-symbols:visibility') }}</span>
+                                <span>Inclure les cadeaux reçus</span>
+                            </a>
+                        {% endif %}
+                        <a href="{{ path('app_wish_new') }}"
+                           hx-get="{{ path('app_wish_new') }}"
+                           hx-target="#kdo-dynamic-modal-body"
+                           hx-select="#wish-modal-content"
+                           hx-swap="innerHTML"
+                           class="button is-primary">
                             <span class="icon">{{ ux_icon('material-symbols:add') }}</span>
                             <span>Ajouter un souhait</span>
                         </a>
@@ -44,172 +50,189 @@
                 </div>
             </div>
 
-            <table class="table is-bordered is-striped is-fullwidth">
-                <thead>
-                <tr>
-                    <th>
-                        {% set name_sort_url = path('app_wish_index', {
-                            'sort': 'name',
-                            'direction': (current_sort == 'name' and current_direction == 'ASC') ? 'DESC' : 'ASC',
-                            'showDelivered': show_delivered
-                        }) %}
-                        <a href="{{ name_sort_url }}"
-                           hx-get="{{ name_sort_url }}"
-                           hx-target="#wish-list-container"
-                           hx-select="#wish-list-container"
-                           hx-swap="outerHTML"
-                           hx-push-url="true">
-                            Nom
-                            {% if current_sort == 'name' %}
-                                <span class="icon is-small">
-                                    {{ ux_icon(current_direction == 'ASC' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') }}
-                                </span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>
-                        {% set price_sort_url = path('app_wish_index', {
-                            'sort': 'price',
-                            'direction': (current_sort == 'price' and current_direction == 'ASC') ? 'DESC' : 'ASC',
-                            'showDelivered': show_delivered
-                        }) %}
-                        <a href="{{ price_sort_url }}"
-                           hx-get="{{ price_sort_url }}"
-                           hx-target="#wish-list-container"
-                           hx-select="#wish-list-container"
-                           hx-swap="outerHTML"
-                           hx-push-url="true">
-                            Prix
-                            {% if current_sort == 'price' %}
-                                <span class="icon is-small">
-                                    {{ ux_icon(current_direction == 'ASC' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') }}
-                                </span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>
-                        {% set priority_sort_url = path('app_wish_index', {
-                            'sort': 'priority',
-                            'direction': (current_sort == 'priority' and current_direction == 'DESC') ? 'ASC' : 'DESC',
-                            'showDelivered': show_delivered
-                        }) %}
-                        <a href="{{ priority_sort_url }}"
-                           hx-get="{{ priority_sort_url }}"
-                           hx-target="#wish-list-container"
-                           hx-select="#wish-list-container"
-                           hx-swap="outerHTML"
-                           hx-push-url="true">
-                            Priorité
-                            {% if current_sort == 'priority' %}
-                                <span class="icon is-small">
-                                    {{ ux_icon(current_direction == 'ASC' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') }}
-                                </span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>Description</th>
-                    <th>Url</th>
-                    <th>État</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for wish in wishes %}
-                    {% set delivered_at_info = null %}
-                    {% set is_selected = false %} {# This flag will now only be true if delivered #}
-                    {% set project_name = null %}
+            {% if wishes is not empty %}
+                <table class="table is-fullwidth">
+                    <thead>
+                    <tr>
+                        <th>
+                            {% set name_sort_url = path('app_wish_index', {
+                                'sort': 'name',
+                                'direction': (current_sort == 'name' and current_direction == 'ASC') ? 'DESC' : 'ASC',
+                                'showDelivered': show_delivered
+                            }) %}
+                            <a href="{{ name_sort_url }}"
+                               hx-get="{{ name_sort_url }}"
+                               hx-target="#wish-list-container"
+                               hx-select="#wish-list-container"
+                               hx-swap="outerHTML"
+                               hx-push-url="true">
+                                Souhait
+                                {% if current_sort == 'name' %}
+                                    <span class="icon is-small">
+                                        {{ ux_icon(current_direction == 'ASC' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') }}
+                                    </span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            {% set price_sort_url = path('app_wish_index', {
+                                'sort': 'price',
+                                'direction': (current_sort == 'price' and current_direction == 'ASC') ? 'DESC' : 'ASC',
+                                'showDelivered': show_delivered
+                            }) %}
+                            <a href="{{ price_sort_url }}"
+                               hx-get="{{ price_sort_url }}"
+                               hx-target="#wish-list-container"
+                               hx-select="#wish-list-container"
+                               hx-swap="outerHTML"
+                               hx-push-url="true">
+                                Prix indicatif
+                                {% if current_sort == 'price' %}
+                                    <span class="icon is-small">
+                                        {{ ux_icon(current_direction == 'ASC' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') }}
+                                    </span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            {% set priority_sort_url = path('app_wish_index', {
+                                'sort': 'priority',
+                                'direction': (current_sort == 'priority' and current_direction == 'DESC') ? 'ASC' : 'DESC',
+                                'showDelivered': show_delivered
+                            }) %}
+                            <a href="{{ priority_sort_url }}"
+                               hx-get="{{ priority_sort_url }}"
+                               hx-target="#wish-list-container"
+                               hx-select="#wish-list-container"
+                               hx-swap="outerHTML"
+                               hx-push-url="true">
+                                Priorité
+                                {% if current_sort == 'priority' %}
+                                    <span class="icon is-small">
+                                        {{ ux_icon(current_direction == 'ASC' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') }}
+                                    </span>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>Lien & Statut</th>
+                        <th class="has-text-right">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for wish in wishes %}
+                        {% set delivered_at_info = null %}
+                        {% set is_selected = false %}
+                        {% set project_name = null %}
 
-                    {% for giftIdea in wish.giftIdeasUsedFor %}
-                        {# Only consider selected ideas for delivery status and if the project is delivered #}
-                        {% if giftIdea.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED') and giftIdea.giftProject.deliveredAt is not null %}
-                            {% set is_selected = true %}
-                            {% set project_name = giftIdea.giftProject.name %}
-                            {# Set delivered_at_info only if not already set by an earlier delivered idea #}
-                            {% if delivered_at_info is null %} {# No need for giftIdea.giftProject.deliveredAt is not null here again #}
-                                {% set delivered_at_info = giftIdea.giftProject.deliveredAt %}
+                        {% for giftIdea in wish.giftIdeasUsedFor %}
+                            {% if giftIdea.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED') and giftIdea.giftProject.deliveredAt is not null %}
+                                {% set is_selected = true %}
+                                {% set project_name = giftIdea.giftProject.name %}
+                                {% if delivered_at_info is null %}
+                                    {% set delivered_at_info = giftIdea.giftProject.deliveredAt %}
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
+                        {% endfor %}
+
+                        <tr>
+                            <td>
+                                <div class="is-flex is-align-items-center" style="gap: 0.85rem;">
+                                    {% if wish.imageUrl %}
+                                        <figure class="image is-48x48 is-flex-shrink-0">
+                                            <img src="{{ wish.imageUrl }}" alt="{{ wish.name }}" class="wish-thumb">
+                                        </figure>
+                                    {% else %}
+                                        <span class="kpi-icon is-light is-flex-shrink-0">
+                                            {{ ux_icon('material-symbols:redeem') }}
+                                        </span>
+                                    {% endif %}
+                                    <div>
+                                        <p class="has-text-weight-semibold">{{ wish.name }}</p>
+                                        {% if wish.description %}
+                                            <p class="is-size-7 has-text-grey">{{ wish.description }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="tabular-nums">
+                                {% if wish.price %}
+                                    <span class="has-text-weight-semibold">{{ wish.price }} €</span>
+                                {% else %}
+                                    <span class="has-text-grey-light">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="tag {{ wish.priorityEnum.badgeClass }}">
+                                    <span class="icon is-small mr-1">{{ ux_icon(wish.priorityEnum.icon) }}</span>
+                                    <span>{{ wish.priorityEnum.label }}</span>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="is-flex is-align-items-center is-flex-wrap-wrap" style="gap: 0.4rem;">
+                                    {% if wish.url %}
+                                        <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer" class="button is-small is-link is-light">
+                                            <span class="icon is-small">{{ ux_icon('material-symbols:open-in-new') }}</span>
+                                            <span>Voir le lien</span>
+                                        </a>
+                                    {% endif %}
+                                    {% if delivered_at_info %}
+                                        <span class="tag is-success is-light">
+                                            Remis le {{ delivered_at_info|date('d/m/Y') }}
+                                            {% if project_name %} · {{ project_name }}{% endif %}
+                                        </span>
+                                    {% elseif is_selected %}
+                                        <span class="tag is-info is-light">Sélectionné dans projet</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="has-text-right">
+                                <div class="buttons are-small is-right">
+                                    <a href="{{ path('app_wish_edit', {'id': wish.id}) }}"
+                                       hx-get="{{ path('app_wish_edit', {'id': wish.id}) }}"
+                                       hx-target="#kdo-dynamic-modal-body"
+                                       hx-select="#wish-modal-content"
+                                       hx-swap="innerHTML"
+                                       class="button is-light"
+                                       title="Modifier">
+                                        <span class="icon">{{ ux_icon('material-symbols:edit') }}</span>
+                                        <span>Modifier</span>
+                                    </a>
+                                    <form method="post"
+                                          action="{{ path('app_wish_delete', {'id': wish.id}) }}"
+                                          hx-post="{{ path('app_wish_delete', {'id': wish.id}) }}"
+                                          hx-confirm="Êtes-vous sûr de vouloir supprimer ce souhait ?"
+                                          hx-target="closest tr"
+                                          hx-swap="outerHTML">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ wish.id) }}">
+                                        <button class="button is-danger is-light is-small" title="Supprimer">
+                                            <span class="icon">{{ ux_icon('material-symbols:delete') }}</span>
+                                            <span>Supprimer</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
                     {% endfor %}
-
-                    <tr>
-                        <td>
-                            <div class="is-flex is-align-items-center">
-                                {% if wish.imageUrl %}
-                                    <figure class="image is-48x48 mr-3 is-flex-shrink-0">
-                                        <img src="{{ wish.imageUrl }}" alt="{{ wish.name }}" style="object-fit: cover; width: 48px; height: 48px; border-radius: 6px;">
-                                    </figure>
-                                {% endif %}
-                                <strong>{{ wish.name }}</strong>
-                            </div>
-                        </td>
-                        <td>
-                            {% if wish.price %}
-                                {{ wish.price }} €
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="tag {{ wish.priorityEnum.badgeClass }}">
-                                <span class="icon is-small mr-1">{{ ux_icon(wish.priorityEnum.icon) }}</span>
-                                <span>{{ wish.priorityEnum.label }}</span>
-                            </span>
-                        </td>
-                        <td>{{ wish.description }}</td>
-                        <td>
-                            {% if wish.url %}
-                                <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer">{{ wish.url }}</a>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if delivered_at_info %}
-                                <span class="tag is-success">Remis le {{ delivered_at_info|date('d/m/Y') }}</span>
-                                {% if project_name %}
-                                    <p class="is-size-7 has-text-grey-light">({{ project_name }})</p>
-                                {% endif %}
-                            {% elseif is_selected %}
-                                <span class="tag is-info is-light">Sélectionné dans projet</span>
-                                {% if project_name %}
-                                    <p class="is-size-7 has-text-grey-light">({{ project_name }})</p>
-                                {% endif %}
-                            {% else %}
-                                <span class="tag is-dark is-light">En attente</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="buttons are-small">
-                                {#                                <a href="{{ path('app_wish_show', {'id': wish.id}) }}" class="button is-link is-light">Voir</a> #}
-                                <a href="{{ path('app_wish_edit', {'id': wish.id}) }}"
-                                   class="button is-warning is-light">
-                                    <span class="icon">{{ ux_icon('material-symbols:edit') }}</span>
-                                    <span>Modifier</span>
-                                </a>
-                                <form method="post"
-                                      action="{{ path('app_wish_delete', {'id': wish.id}) }}"
-                                      hx-post="{{ path('app_wish_delete', {'id': wish.id}) }}"
-                                      hx-confirm="Êtes-vous sûr de vouloir supprimer ce souhait ?"
-                                      hx-target="closest tr"
-                                      hx-swap="outerHTML">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ wish.id) }}">
-                                    <button class="button is-danger is-light is-small">
-                                        <span class="icon">{{ ux_icon('material-symbols:delete') }}</span>
-                                        <span>Supprimer</span>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="7" class="has-text-centered">Votre liste de souhaits est vide. Ajoutez votre
-                            premier souhait !
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="box empty-state has-text-centered py-6">
+                    <span class="kpi-icon is-primary mx-auto mb-3">
+                        {{ ux_icon('material-symbols:redeem', {height: '1.75rem', width: '1.75rem'}) }}
+                    </span>
+                    <p class="title is-5 mb-2">Votre liste de souhaits est vide</p>
+                    <p class="subtitle is-6 mb-4">Ajoutez votre premier souhait pour guider vos proches !</p>
+                    <a href="{{ path('app_wish_new') }}"
+                       hx-get="{{ path('app_wish_new') }}"
+                       hx-target="#kdo-dynamic-modal-body"
+                       hx-select="#wish-modal-content"
+                       hx-swap="innerHTML"
+                       class="button is-primary">
+                        <span class="icon">{{ ux_icon('material-symbols:add') }}</span>
+                        <span>Ajouter un souhait</span>
+                    </a>
+                </div>
+            {% endif %}
         </div>
     </section>
 {% endblock %}

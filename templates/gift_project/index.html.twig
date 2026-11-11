@@ -5,15 +5,18 @@
 {% block body %}
 <section class="section">
     <div class="container">
-        <div class="level">
+        <div class="level mb-5">
             <div class="level-left">
-                <h1 class="title">
-                    {% if show_archived %}
-                        Archives
-                    {% else %}
-                        Projets de Cadeaux
-                    {% endif %}
-                </h1>
+                <div>
+                    <h1 class="title is-3 mb-1">
+                        {% if show_archived %}
+                            Projets archivés
+                        {% else %}
+                            Projets de Cadeaux
+                        {% endif %}
+                    </h1>
+                    <p class="subtitle is-6 mb-0">Organisez vos idées et répartissez les dépenses entre participants.</p>
+                </div>
             </div>
             <div class="level-right">
                 <div class="buttons">
@@ -37,12 +40,12 @@
         <div class="columns is-multiline">
         {% for project in projects %}
             <div class="column is-half">
-                <div class="card">
+                <div class="card h-100">
                     <header class="card-header">
-                        <p class="card-header-title is-size-4">
-                            {{ project.name }}
+                        <div class="card-header-title is-size-5 is-flex is-align-items-center is-flex-wrap-wrap" style="gap: 0.4rem;">
+                            <span>{{ project.name }}</span>
                             {% if project.locked %}
-                                <span class="tag is-warning is-small ml-2">
+                                <span class="tag is-warning is-light is-small">
                                     <span class="icon is-small">{{ ux_icon('material-symbols:lock') }}</span>
                                     <span>Verrouillé</span>
                                 </span>
@@ -50,49 +53,65 @@
 
                             {% set unread = unread_counts[project.id]|default(0) %}
                             {% if unread > 0 %}
-                                <span class="tag is-danger is-small ml-2">
-                                    <span class="icon is-small">{{ ux_icon('material-symbols:mark-email-unread') }}</span>
+                                <span class="tag is-danger is-rounded is-small">
                                     <span>{{ unread }} nouveaut{{ unread > 1 ? 'és' : 'é' }}</span>
                                 </span>
                             {% endif %}
-                        </p>
-                        <span class="card-header-icon">
-                            <span class="tag is-info is-light">Pour : {{ project.recipientDisplayName }}</span>
+                        </div>
+                        <span class="card-header-icon is-flex is-align-items-center" style="gap: 0.4rem;">
+                            <span class="tag is-primary is-light">
+                                <span class="icon is-small mr-1">{{ ux_icon('material-symbols:redeem') }}</span>
+                                <span>Pour : {{ project.recipientDisplayName }}</span>
+                            </span>
                             {% if project.targetDate %}
-                                <span class="tag is-light ml-2 {{ project.targetDate < date() and project.deliveredAt is null ? 'is-warning' : '' }}">
-                                    <span class="icon is-small">{{ ux_icon('material-symbols:event') }}</span>
-                                    <span>{{ project.targetDate|date('d/m/Y') }}</span>
+                                <span class="tag is-light {{ project.targetDate < date() and project.deliveredAt is null ? 'is-warning' : '' }}">
+                                    <span class="icon is-small mr-1">{{ ux_icon('material-symbols:event') }}</span>
+                                    <span class="tabular-nums">{{ project.targetDate|date('d/m/Y') }}</span>
                                 </span>
                             {% endif %}
-                            <span class="tag is-light ml-2">
-                                <span class="icon is-small">{{ ux_icon('material-symbols:group') }}</span>
-                                <span>{{ project.participants|length + 1 }}</span>
-                            </span>
                         </span>
                     </header>
                     <div class="card-content">
-                        <div class="content">
-                            {{ project.description|default('Pas de description')|nl2br }}
-                            <br>
-                            <small class="has-text-grey">Créé le {{ project.createdAt|date('d/m/Y') }} par {{ project.owner.email }}</small>
+                        <p class="mb-4 {{ project.description ? '' : 'has-text-grey is-italic' }}">
+                            {{ project.description|default('Aucune description renseignée.')|nl2br }}
+                        </p>
+                        <div class="is-flex is-justify-content-space-between is-align-items-center mt-auto pt-2">
+                            <div class="avatar-stack" title="Participants">
+                                {{ include('_components/_avatar.html.twig', {name: project.owner.displayName, size: 'sm'}) }}
+                                {% for participant in project.participants|slice(0, 4) %}
+                                    {{ include('_components/_avatar.html.twig', {name: participant.displayName, size: 'sm'}) }}
+                                {% endfor %}
+                                {% if project.participants|length > 4 %}
+                                    <span class="kdo-avatar kdo-avatar--sm kdo-avatar--more">+{{ project.participants|length - 4 }}</span>
+                                {% endif %}
+                                <span class="is-size-7 has-text-grey ml-2">{{ project.participants|length + 1 }} participant{{ project.participants|length > 0 ? 's' : '' }}</span>
+                            </div>
+                            <small class="has-text-grey is-size-7">Créé le {{ project.createdAt|date('d/m/Y') }}</small>
                         </div>
                     </div>
                     <footer class="card-footer">
-                        <a href="{{ path('app_project_show', {'id': project.id}) }}" class="card-footer-item button is-link">Ouvrir le projet</a>
+                        <a href="{{ path('app_project_show', {'id': project.id}) }}" class="card-footer-item button is-link is-light">
+                            <span>Ouvrir le projet</span>
+                            <span class="icon is-small ml-1">{{ ux_icon('material-symbols:arrow-forward') }}</span>
+                        </a>
                     </footer>
                 </div>
             </div>
         {% else %}
             <div class="column is-full">
-                <div class="notification is-warning">
-                    Vous ne participez à aucun projet de cadeau pour le moment.
+                <div class="box empty-state has-text-centered py-6">
+                    <span class="kpi-icon is-primary mx-auto mb-3">
+                        {{ ux_icon('material-symbols:redeem', {height: '1.75rem', width: '1.75rem'}) }}
+                    </span>
+                    <p class="title is-5 mb-2">Aucun projet de cadeau</p>
+                    <p class="subtitle is-6 mb-4">Vous ne participez à aucun projet de cadeau pour le moment.</p>
+                    <a href="{{ path('app_project_new') }}" class="button is-primary">
+                        <span class="icon">{{ ux_icon('material-symbols:add') }}</span>
+                        <span>Créer un premier projet</span>
+                    </a>
                 </div>
             </div>
         {% endfor %}
-        </div>
-
-        <div class="mt-5">
-             <a href="{{ path('app_wish_index') }}" class="button is-light">Retour à ma liste</a>
         </div>
     </div>
 </section>

@@ -5,69 +5,84 @@
 {% block body %}
 <section class="section">
     <div class="container">
-        <h1 class="title">Lancer un projet de cadeau</h1>
-
-        <div class="box">
-            {{ form_start(form) }}
-                <div class="field">
-                    {{ form_label(form.name, 'Nom du projet', {'label_attr': {'class': 'label'}}) }}
-                    <div class="control">
-                        {{ form_widget(form.name, {'attr': {'class': 'input'}}) }}
+        <div class="columns is-centered">
+            <div class="column is-8-desktop is-10-tablet">
+                <div class="box p-5">
+                    <div class="is-flex is-align-items-center mb-5" style="gap: 0.85rem;">
+                        <span class="kpi-icon is-primary">
+                            {{ ux_icon('material-symbols:redeem', {height: '1.5rem', width: '1.5rem'}) }}
+                        </span>
+                        <div>
+                            <h1 class="title is-4 mb-1">Lancer un projet de cadeau</h1>
+                            <p class="subtitle is-6 mb-0">Rassemblez des idées, votez et partagez les frais entre participants.</p>
+                        </div>
                     </div>
-                    {{ form_errors(form.name) }}
-                </div>
 
-                <div class="columns">
-                    <div class="column is-half">
+                    {{ form_start(form) }}
                         <div class="field">
-                            {{ form_label(form.recipient, null, {'label_attr': {'class': 'label'}}) }}
+                            {{ form_label(form.name, 'Nom du projet', {'label_attr': {'class': 'label'}}) }}
                             <div class="control">
-                                <div class="select is-fullwidth">
-                                     {{ form_widget(form.recipient) }}
+                                {{ form_widget(form.name, {'attr': {'class': 'input', 'placeholder': 'Ex : Anniversaire 30 ans de Julie'}}) }}
+                            </div>
+                            {{ form_errors(form.name) }}
+                        </div>
+
+                        <div class="box has-background-light p-4 my-4">
+                            <p class="heading mb-3">À qui est destiné ce cadeau ?</p>
+                            <div class="columns mb-0">
+                                <div class="column is-half">
+                                    <div class="field">
+                                        {{ form_label(form.recipient, null, {'label_attr': {'class': 'label'}}) }}
+                                        <div class="control">
+                                            <div class="select is-fullwidth">
+                                                {{ form_widget(form.recipient) }}
+                                            </div>
+                                        </div>
+                                        <p class="help">{{ form.recipient.vars.help }}</p>
+                                        {{ form_errors(form.recipient) }}
+                                    </div>
+                                </div>
+                                <div class="column is-half">
+                                    <div class="field">
+                                        {{ form_label(form.recipientName, null, {'label_attr': {'class': 'label'}}) }}
+                                        <div class="control">
+                                            {{ form_widget(form.recipientName, {'attr': {'class': 'input'}}) }}
+                                        </div>
+                                        <p class="help">{{ form.recipientName.vars.help }}</p>
+                                        {{ form_errors(form.recipientName) }}
+                                    </div>
                                 </div>
                             </div>
-                            <p class="help">{{ form.recipient.vars.help }}</p>
-                            {{ form_errors(form.recipient) }}
                         </div>
-                    </div>
-                    <div class="column is-half">
+
                         <div class="field">
-                            {{ form_label(form.recipientName, null, {'label_attr': {'class': 'label'}}) }}
+                            {{ form_label(form.description, 'Description', {'label_attr': {'class': 'label'}}) }}
                             <div class="control">
-                                {{ form_widget(form.recipientName, {'attr': {'class': 'input'}}) }}
+                                {{ form_widget(form.description, {'attr': {'class': 'textarea', 'rows': 3}}) }}
                             </div>
-                            <p class="help">{{ form.recipientName.vars.help }}</p>
-                            {{ form_errors(form.recipientName) }}
+                            {{ form_errors(form.description) }}
                         </div>
-                    </div>
-                </div>
 
-                <div class="field">
-                    {{ form_label(form.description, 'Description', {'label_attr': {'class': 'label'}}) }}
-                    <div class="control">
-                        {{ form_widget(form.description, {'attr': {'class': 'textarea'}}) }}
-                    </div>
-                    {{ form_errors(form.description) }}
-                </div>
+                        <div class="field">
+                            {{ form_label(form.targetDate, null, {'label_attr': {'class': 'label'}}) }}
+                            <div class="control">
+                                {{ form_widget(form.targetDate, {'attr': {'class': 'input'}}) }}
+                            </div>
+                            <p class="help">{{ form.targetDate.vars.help }}</p>
+                            {{ form_errors(form.targetDate) }}
+                        </div>
 
-                <div class="field">
-                    {{ form_label(form.targetDate, null, {'label_attr': {'class': 'label'}}) }}
-                    <div class="control">
-                        {{ form_widget(form.targetDate, {'attr': {'class': 'input'}}) }}
-                    </div>
-                    <p class="help">{{ form.targetDate.vars.help }}</p>
-                    {{ form_errors(form.targetDate) }}
+                        <div class="field is-grouped is-grouped-right mt-5">
+                            <div class="control">
+                                <a href="{{ path('app_project_index') }}" class="button is-light">Annuler</a>
+                            </div>
+                            <div class="control">
+                                <button class="button is-primary">Créer le projet</button>
+                            </div>
+                        </div>
+                    {{ form_end(form) }}
                 </div>
-
-                <div class="field is-grouped">
-                    <div class="control">
-                        <button class="button is-primary">Créer le projet</button>
-                    </div>
-                    <div class="control">
-                        <a href="{{ path('app_project_index') }}" class="button is-light">Annuler</a>
-                    </div>
-                </div>
-            {{ form_end(form) }}
+            </div>
         </div>
     </div>
 </section>

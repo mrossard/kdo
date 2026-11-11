@@ -6,60 +6,72 @@
     <section class="section">
         <div class="container">
             <div class="columns is-centered">
-                <div class="column is-half">
-                    <h1 class="title">Inscription</h1>
-
-                    {{ form_start(registrationForm) }}
-                        <div class="field">
-                            {{ form_label(registrationForm.firstname, 'Prénom', {'label_attr': {'class': 'label'}}) }}
-                            <div class="control">
-                                {{ form_widget(registrationForm.firstname, {'attr': {'class': 'input'}}) }}
-                            </div>
-                            <p class="help is-danger">{{ form_errors(registrationForm.firstname) }}</p>
+                <div class="column is-6-tablet is-5-desktop">
+                    <div class="box p-5">
+                        <div class="has-text-centered mb-5">
+                            <span class="kpi-icon is-primary mx-auto mb-3">
+                                {{ ux_icon('material-symbols:person-add', {height: '1.75rem', width: '1.75rem'}) }}
+                            </span>
+                            <h1 class="title is-4 mb-1">Inscription</h1>
+                            <p class="subtitle is-6 mb-0">Rejoignez vos proches sur KDO</p>
                         </div>
 
-                        <div class="field">
-                            {{ form_label(registrationForm.lastname, 'Nom', {'label_attr': {'class': 'label'}}) }}
-                            <div class="control">
-                                {{ form_widget(registrationForm.lastname, {'attr': {'class': 'input'}}) }}
+                        {{ form_start(registrationForm) }}
+                            <div class="columns is-variable is-2 mb-0">
+                                <div class="column">
+                                    <div class="field">
+                                        {{ form_label(registrationForm.firstname, 'Prénom', {'label_attr': {'class': 'label'}}) }}
+                                        <div class="control">
+                                            {{ form_widget(registrationForm.firstname, {'attr': {'class': 'input'}}) }}
+                                        </div>
+                                        <p class="help is-danger">{{ form_errors(registrationForm.firstname) }}</p>
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <div class="field">
+                                        {{ form_label(registrationForm.lastname, 'Nom', {'label_attr': {'class': 'label'}}) }}
+                                        <div class="control">
+                                            {{ form_widget(registrationForm.lastname, {'attr': {'class': 'input'}}) }}
+                                        </div>
+                                        <p class="help is-danger">{{ form_errors(registrationForm.lastname) }}</p>
+                                    </div>
+                                </div>
                             </div>
-                            <p class="help is-danger">{{ form_errors(registrationForm.lastname) }}</p>
-                        </div>
-                        <div class="field">
-                            {{ form_label(registrationForm.email, 'Adresse e-mail', {'label_attr': {'class': 'label'}}) }}
-                            <div class="control">
-                                {{ form_widget(registrationForm.email, {'attr': {'class': 'input'}}) }}
-                            </div>
-                            <p class="help is-danger">{{ form_errors(registrationForm.email) }}</p>
-                        </div>
 
-                        <div class="field">
-                            {{ form_label(registrationForm.plainPassword.first, 'Mot de passe', {'label_attr': {'class': 'label'}}) }}
-                            <div class="control">
-                                {{ form_widget(registrationForm.plainPassword.first, {'attr': {'class': 'input'}}) }}
+                            <div class="field">
+                                {{ form_label(registrationForm.email, 'Adresse e-mail', {'label_attr': {'class': 'label'}}) }}
+                                <div class="control">
+                                    {{ form_widget(registrationForm.email, {'attr': {'class': 'input'}}) }}
+                                </div>
+                                <p class="help is-danger">{{ form_errors(registrationForm.email) }}</p>
                             </div>
-                            <p class="help is-danger">{{ form_errors(registrationForm.plainPassword.first) }}</p>
-                        </div>
 
-                        <div class="field">
-                            {{ form_label(registrationForm.plainPassword.second, 'Confirmer le mot de passe', {'label_attr': {'class': 'label'}}) }}
-                            <div class="control">
-                                {{ form_widget(registrationForm.plainPassword.second, {'attr': {'class': 'input'}}) }}
+                            <div class="field">
+                                {{ form_label(registrationForm.plainPassword.first, 'Mot de passe', {'label_attr': {'class': 'label'}}) }}
+                                <div class="control">
+                                    {{ form_widget(registrationForm.plainPassword.first, {'attr': {'class': 'input'}}) }}
+                                </div>
+                                <p class="help is-danger">{{ form_errors(registrationForm.plainPassword.first) }}</p>
                             </div>
-                            <p class="help is-danger">{{ form_errors(registrationForm.plainPassword.second) }}</p>
-                        </div>
 
-                        {# Case à cocher des conditions retirée selon la demande #}
-
-                        <div class="field">
-                            <div class="control">
-                                <button class="button is-primary">
-                                    <span class="icon">{{ ux_icon('material-symbols:person-add') }}</span>
-                                    <span>S’inscrire</span>
-                                </button>
+                            <div class="field">
+                                {{ form_label(registrationForm.plainPassword.second, 'Confirmer le mot de passe', {'label_attr': {'class': 'label'}}) }}
+                                <div class="control">
+                                    {{ form_widget(registrationForm.plainPassword.second, {'attr': {'class': 'input'}}) }}
+                                </div>
+                                <p class="help is-danger">{{ form_errors(registrationForm.plainPassword.second) }}</p>
                             </div>
-                        </div>
-                    {{ form_end(registrationForm) }}
+
+                            <div class="field mt-5">
+                                <div class="control">
+                                    <button class="button is-primary is-fullwidth">
+                                        <span class="icon">{{ ux_icon('material-symbols:person-add') }}</span>
+                                        <span>S’inscrire</span>
+                                    </button>
+                                </div>
+                            </div>
+                        {{ form_end(registrationForm) }}
+                    </div>
                 </div>
             </div>
         </div>

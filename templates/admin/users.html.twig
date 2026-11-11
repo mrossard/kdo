@@ -5,36 +5,50 @@
 {% block body %}
     <section class="section">
         <div class="container">
-            <h1 class="title">Administration des utilisateurs</h1>
+            <div class="level mb-5">
+                <div class="level-left">
+                    <div>
+                        <h1 class="title is-3 mb-1">Administration des utilisateurs</h1>
+                        <p class="subtitle is-6 mb-0">{{ users|length }} compte{{ users|length > 1 ? 's' : '' }} enregistré{{ users|length > 1 ? 's' : '' }}</p>
+                    </div>
+                </div>
+            </div>
 
             <div class="table-container">
-                <table class="table is-fullwidth is-striped is-hoverable">
+                <table class="table is-fullwidth">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>Utilisateur</th>
                             <th>Email</th>
-                            <th>Nom complet</th>
                             <th>Rôles</th>
                             {% if app.environment == 'dev' %}
-                                <th>Actions</th>
+                                <th class="has-text-right">Actions</th>
                             {% endif %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for user in users %}
                             <tr>
-                                <td>{{ user.id }}</td>
+                                <td>
+                                    <div class="is-flex is-align-items-center" style="gap: 0.65rem;">
+                                        {{ include('_components/_avatar.html.twig', {name: user.displayName, size: 'sm'}) }}
+                                        <div>
+                                            <p class="has-text-weight-semibold">{{ user.displayName }}</p>
+                                            <p class="is-size-7 has-text-grey tabular-nums">#{{ user.id }}</p>
+                                        </div>
+                                    </div>
+                                </td>
                                 <td>{{ user.email }}</td>
-                                <td>{{ user.displayName }}</td>
                                 <td>
                                     {% for role in user.roles %}
-                                        <span class="tag is-info is-light">{{ role }}</span>
+                                        <span class="tag {{ role == 'ROLE_ADMIN' ? 'is-primary is-light' : 'is-light' }}">{{ role }}</span>
                                     {% endfor %}
                                 </td>
                                 {% if app.environment == 'dev' %}
-                                    <td>
-                                        <a href="{{ path('app_home', {'_switch_user': user.email}) }}" class="button is-small is-warning">
-                                            Se connecter
+                                    <td class="has-text-right">
+                                        <a href="{{ path('app_home', {'_switch_user': user.email}) }}" class="button is-small is-warning is-light">
+                                            <span class="icon is-small">{{ ux_icon('material-symbols:switch-account') }}</span>
+                                            <span>Impersonner</span>
                                         </a>
                                     </td>
                                 {% endif %}

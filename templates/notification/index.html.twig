@@ -5,19 +5,19 @@
 {% block body %}
 <section class="section">
     <div class="container">
-        <div class="level">
+        <div class="level mb-5">
             <div class="level-left">
-                <h1 class="title">
-                    <span class="icon">{{ ux_icon('material-symbols:notifications') }}</span>
-                    <span>Notifications</span>
-                </h1>
+                <div>
+                    <h1 class="title is-3 mb-1">Notifications</h1>
+                    <p class="subtitle is-6 mb-0">Activité non lue dans vos projets de cadeaux.</p>
+                </div>
             </div>
             {% if total_unread > 0 %}
             <div class="level-right">
                 <form method="post" action="{{ path('app_notification_mark_all_read') }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('mark_all_read') }}">
-                    <button class="button is-link is-outlined" type="submit">
-                        <span class="icon">{{ ux_icon('material-symbols:done') }}</span>
+                    <button class="button is-light" type="submit">
+                        <span class="icon">{{ ux_icon('material-symbols:done-all') }}</span>
                         <span>Tout marquer comme lu</span>
                     </button>
                 </form>
@@ -26,44 +26,46 @@
         </div>
 
         {% if unread_projects is empty %}
-            <div class="notification is-info is-light">
-                <span class="icon">{{ ux_icon('material-symbols:info') }}</span>
-                <span>Aucune nouveauté pour le moment.</span>
+            <div class="box empty-state has-text-centered py-6">
+                <span class="kpi-icon is-success mx-auto mb-3">
+                    {{ ux_icon('material-symbols:notifications-off', {height: '1.75rem', width: '1.75rem'}) }}
+                </span>
+                <p class="title is-5 mb-1">Vous êtes à jour !</p>
+                <p class="subtitle is-6 mb-0">Aucune nouveauté pour le moment.</p>
             </div>
         {% else %}
-            <div class="content">
+            <div class="columns is-multiline">
                 {% for data in unread_projects %}
                     {% set project = data.project %}
                     {% set count = data.count %}
                     {% set activity = data.latestActivity %}
-                    <a href="{{ path('app_project_show', {'id': project.id, 'tab': 'activite'}) }}" class="box notification-box">
-                        <div class="level is-mobile">
-                            <div class="level-left">
-                                <div class="level-item">
-                                    <span class="icon is-large has-text-danger">
-                                        {{ ux_icon('material-symbols:mark-email-unread') }}
-                                    </span>
-                                </div>
-                                <div class="level-item">
-                                    <div>
-                                        <p class="has-text-weight-bold is-size-5">{{ project.name }}</p>
-                                        <p class="has-text-grey">
-                                            <span class="tag is-danger is-rounded">{{ count }}</span>
-                                            nouveaut{{ count > 1 ? 'és' : 'é' }}
-                                        </p>
-                                        <p class="has-text-grey-dark is-size-7 mt-1">
-                                            {{ activity.message }} — {{ activity.createdAt|date('d/m/Y H:i') }}
-                                        </p>
+                    <div class="column is-12">
+                        <a href="{{ path('app_project_show', {'id': project.id, 'tab': 'activite'}) }}" class="box notification-box p-4">
+                            <div class="level is-mobile">
+                                <div class="level-left">
+                                    <div class="is-flex is-align-items-center" style="gap: 1rem;">
+                                        <span class="kpi-icon is-danger is-flex-shrink-0">
+                                            {{ ux_icon('material-symbols:notifications-active', {height: '1.4rem', width: '1.4rem'}) }}
+                                        </span>
+                                        <div>
+                                            <div class="is-flex is-align-items-center mb-1" style="gap: 0.5rem;">
+                                                <p class="has-text-weight-bold is-size-5 mb-0">{{ project.name }}</p>
+                                                <span class="tag is-danger is-rounded is-small">
+                                                    {{ count }} nouveaut{{ count > 1 ? 'és' : 'é' }}
+                                                </span>
+                                            </div>
+                                            <p class="has-text-grey is-size-6 mb-0">
+                                                {{ activity.message }} · <span class="tabular-nums is-size-7">{{ activity.createdAt|date('d/m/Y H:i') }}</span>
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="level-right">
-                                <div class="level-item">
-                                    <span class="icon">{{ ux_icon('material-symbols:chevron-right') }}</span>
+                                <div class="level-right">
+                                    <span class="icon has-text-grey">{{ ux_icon('material-symbols:chevron-right') }}</span>
                                 </div>
                             </div>
-                        </div>
-                    </a>
+                        </a>
+                    </div>
                 {% endfor %}
             </div>
         {% endif %}

@@ -1,0 +1,15 @@
+{#
+  Renders a circular initials avatar with a deterministic color tone.
+  Parameters:
+  - name: string (display name or email)
+  - size: 'sm' | 'md' | 'lg' (default: 'md')
+#}
+{% set clean_name = (name|default('?'))|trim %}
+{% set parts = clean_name|split(' ') %}
+{% if parts|length > 1 and parts[0]|length > 0 and parts[1]|length > 0 %}
+    {% set initials = (parts[0]|slice(0, 1) ~ parts[1]|slice(0, 1))|upper %}
+{% else %}
+    {% set initials = clean_name|slice(0, 2)|upper %}
+{% endif %}
+{% set tone = (clean_name|length + (parts|length * 3)) % 6 %}
+<span class="kdo-avatar kdo-avatar--{{ size|default('md') }} kdo-avatar--tone-{{ tone }}" title="{{ clean_name }}" aria-hidden="true">{{ initials }}</span>

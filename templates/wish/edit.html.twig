@@ -6,22 +6,31 @@
 <section class="section">
     <div class="container">
         <div class="columns is-centered">
-            <div class="column is-half">
-                <h1 class="title has-text-centered">Modifier le souhait</h1>
+            <div class="column is-6-tablet is-5-desktop">
+                <div class="box p-5">
+                    <div id="wish-modal-content">
+                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+                            <div class="is-flex is-align-items-center" style="gap: 0.65rem;">
+                                <span class="kpi-icon is-sm is-primary">
+                                    {{ ux_icon('material-symbols:edit') }}
+                                </span>
+                                <h1 class="title is-5 mb-0">Modifier le souhait</h1>
+                            </div>
+                            <button type="button" class="delete" aria-label="Fermer" data-modal-close></button>
+                        </div>
 
-                <div class="box">
-                    {{ include('wish/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+                        {{ include('wish/_form.html.twig', {
+                            'button_label': 'Mettre à jour',
+                            'form_action': path('app_wish_edit', {'id': wish.id})
+                        }) }}
+                    </div>
                 </div>
 
-                <div class="level is-mobile">
-                    <div class="level-left">
-                        <a href="{{ path('app_wish_index') }}" class="button is-text">
-                            <span class="icon">{{ ux_icon('material-symbols:arrow-back') }}</span>
-                            <span>Retour</span>
-                        </a>
-                    </div>
-                    <div class="level-right">
-                    </div>
+                <div class="has-text-centered mt-4">
+                    <a href="{{ path('app_wish_index') }}" class="button is-ghost">
+                        <span class="icon">{{ ux_icon('material-symbols:arrow-back') }}</span>
+                        <span>Retour à la liste</span>
+                    </a>
                 </div>
             </div>
         </div>

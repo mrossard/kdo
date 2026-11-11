@@ -1,50 +1,54 @@
 {% if project.recipient %}
 <div class="box">
-    <h3 class="title is-4">Liste de souhaits de {{ project.recipient.displayName }}</h3>
+    <div class="is-flex is-align-items-center mb-4" style="gap: 0.75rem;">
+        {{ include('_components/_avatar.html.twig', {name: project.recipient.displayName, size: 'md'}) }}
+        <div>
+            <h3 class="title is-4 mb-0">Liste de souhaits de {{ project.recipient.displayName }}</h3>
+            <p class="is-size-7 has-text-grey">Importez directement un souhait de {{ project.recipient.displayName }} dans les idées du projet.</p>
+        </div>
+    </div>
 
     {% if project.recipient.wishes is not empty %}
         <div class="columns is-multiline">
             {% for wish in project.recipient.wishes %}
                 <div class="column is-6">
-                    <div class="card">
+                    <div class="card product-card h-100">
                         <div class="card-content">
-                            <div class="media mb-3">
+                            <div class="is-flex is-align-items-flex-start" style="gap: 1rem;">
                                 {% if wish.imageUrl %}
-                                    <div class="media-left">
-                                        <figure class="image is-64x64">
-                                            <img src="{{ wish.imageUrl }}" alt="{{ wish.name }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 6px;">
-                                        </figure>
-                                    </div>
+                                    <figure class="image is-64x64 is-flex-shrink-0">
+                                        <img src="{{ wish.imageUrl }}" alt="{{ wish.name }}" class="wish-thumb" style="width: 64px; height: 64px;">
+                                    </figure>
+                                {% else %}
+                                    <span class="kpi-icon is-light is-flex-shrink-0">
+                                        {{ ux_icon('material-symbols:redeem') }}
+                                    </span>
                                 {% endif %}
-                                <div class="media-content">
-                                    <p class="title is-5 mb-2">{{ wish.name }}</p>
-                                    <span class="tag {{ wish.priorityEnum.badgeClass }}">
+                                <div class="is-flex-grow-1">
+                                    <div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-1" style="gap: 0.5rem;">
+                                        <p class="title is-5 mb-0">{{ wish.name }}</p>
+                                        {% if wish.price %}
+                                            <span class="tag is-light has-text-weight-semibold tabular-nums">{{ wish.price }} €</span>
+                                        {% endif %}
+                                    </div>
+                                    <span class="tag {{ wish.priorityEnum.badgeClass }} mb-2">
                                         <span class="icon is-small mr-1">{{ ux_icon(wish.priorityEnum.icon) }}</span>
                                         <span>{{ wish.priorityEnum.label }}</span>
                                     </span>
-                                </div>
-                            </div>
-
-                            {% if wish.description %}
-                                <div class="content">{{ wish.description|nl2br }}</div>
-                            {% endif %}
-
-                            {% if wish.price %}
-                                <p class="mb-2"><strong>Prix estimé :</strong> {{ wish.price }} €</p>
-                            {% endif %}
-
-                            {% if wish.url %}
-                                <div class="field">
-                                    <div class="control">
-                                        <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer" class="button is-small is-link is-light">
+                                    {% if wish.description %}
+                                        <p class="is-size-7 has-text-grey mb-2">{{ wish.description|nl2br }}</p>
+                                    {% endif %}
+                                    {% if wish.url %}
+                                        <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer" class="button is-small is-link is-light mt-1">
                                             <span class="icon is-small">{{ ux_icon('material-symbols:open-in-new') }}</span>
                                             <span>Voir le produit</span>
                                         </a>
-                                    </div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
-
-                            <div class="field mt-3">
+                            </div>
+                        </div>
+                        <footer class="card-footer">
+                            <div class="card-footer-item p-1">
                                 {% if wish.id in copied_wish_ids|default([]) %}
                                     <button class="button is-light is-small is-fullwidth" disabled>
                                         <span class="icon is-small">{{ ux_icon('material-symbols:check') }}</span>
@@ -56,7 +60,7 @@
                                         <span>Réservé par {{ wish.reservedBy.displayName }}</span>
                                     </button>
                                 {% elseif not project.locked and project.deliveredAt is null %}
-                                    <form method="post" action="{{ path('app_project_copy_wish', {'id': project.id, 'wish_id': wish.id}) }}"
+                                    <form class="w-100" method="post" action="{{ path('app_project_copy_wish', {'id': project.id, 'wish_id': wish.id}) }}"
                                           hx-post="{{ path('app_project_copy_wish', {'id': project.id, 'wish_id': wish.id}) }}"
                                           hx-target="body"
                                           hx-swap="outerHTML">
@@ -68,7 +72,7 @@
                                     </form>
                                 {% endif %}
                             </div>
-                        </div>
+                        </footer>
                     </div>
                 </div>
             {% endfor %}
