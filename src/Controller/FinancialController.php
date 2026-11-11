@@ -42,7 +42,10 @@ final class FinancialController extends AbstractController
                         'to' => $transfer['to'],
                         'amount' => $transfer['amount'],
                     ];
-                } elseif ($transfer['to']->getId() === $user->getId()) {
+                    continue;
+                }
+
+                if ($transfer['to']->getId() === $user->getId()) {
                     $credits[] = [
                         'project' => $project,
                         'from' => $transfer['from'],

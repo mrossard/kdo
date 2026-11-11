@@ -21,10 +21,11 @@ class ActivityRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return Activity[]
+     * @return list<Activity>
      */
     public function findRecentForProject(GiftProject $project, int $limit = 20): array
     {
+        /** @var list<Activity> */
         return $this
             ->createQueryBuilder('a')
             ->where('a.project = :project')
@@ -53,7 +54,7 @@ class ActivityRepository extends ServiceEntityRepository
             INNER JOIN gift_project gp ON gp.id = a.project_id
             LEFT JOIN gift_project_user gpu ON gpu.gift_project_id = gp.id
             WHERE (gp.owner_id = :userId OR gpu.user_id = :userId)
-              AND gp.recipient_id != :userId
+              AND (gp.recipient_id IS NULL OR gp.recipient_id != :userId)
               AND (prs.last_read_at IS NULL OR a.created_at > prs.last_read_at)
             GROUP BY a.project_id
         ';
@@ -83,7 +84,7 @@ class ActivityRepository extends ServiceEntityRepository
             INNER JOIN gift_project gp ON gp.id = a.project_id
             LEFT JOIN gift_project_user gpu ON gpu.gift_project_id = gp.id
             WHERE (gp.owner_id = :userId OR gpu.user_id = :userId)
-              AND gp.recipient_id != :userId
+              AND (gp.recipient_id IS NULL OR gp.recipient_id != :userId)
               AND (prs.last_read_at IS NULL OR a.created_at > prs.last_read_at)
         ';
 
@@ -95,16 +96,17 @@ class ActivityRepository extends ServiceEntityRepository
     /**
      * Returns recent activities across all projects for a user (dashboard feed).
      *
-     * @return Activity[]
+     * @return list<Activity>
      */
     public function findRecentForUser(User $user, int $limit = 5): array
     {
+        /** @var list<Activity> */
         return $this
             ->createQueryBuilder('a')
             ->innerJoin('a.project', 'gp')
             ->leftJoin('gp.participants', 'p')
             ->where('gp.owner = :user OR p = :user')
-            ->andWhere('gp.recipient != :user')
+            ->andWhere('gp.recipient IS NULL OR gp.recipient != :user')
             ->setParameter('user', $user)
             ->orderBy('a.createdAt', 'DESC')
             ->setMaxResults($limit)
@@ -125,6 +127,7 @@ class ActivityRepository extends ServiceEntityRepository
             return [];
         }
 
+        /** @var list<Activity> $projects */
         $projects = $this
             ->createQueryBuilder('a')
             ->innerJoin('a.project', 'gp')
@@ -136,13 +139,14 @@ class ActivityRepository extends ServiceEntityRepository
 
         $result = [];
         foreach ($projects as $activity) {
-            $projectId = $activity->getProject()->getId();
-            if (isset($result[$projectId])) {
+            $project = $activity->getProject();
+            $projectId = $project?->getId();
+            if ($project === null || $projectId === null || array_key_exists($projectId, $result)) {
                 continue;
             }
 
             $result[$projectId] = [
-                'project' => $activity->getProject(),
+                'project' => $project,
                 'count' => $unreadCounts[$projectId],
                 'latestActivity' => $activity,
             ];

@@ -108,21 +108,25 @@
 
         {% for message in app.flashes('success') %}
             <div class="notification is-success">
+                <button class="delete" aria-label="delete"></button>
                 {{ message }}
             </div>
         {% endfor %}
         {% for message in app.flashes('warning') %}
             <div class="notification is-warning">
+                <button class="delete" aria-label="delete"></button>
                 {{ message }}
             </div>
         {% endfor %}
         {% for message in app.flashes('danger') %}
             <div class="notification is-danger">
+                <button class="delete" aria-label="delete"></button>
                 {{ message }}
             </div>
         {% endfor %}
         {% for message in app.flashes('info') %}
             <div class="notification is-info">
+                <button class="delete" aria-label="delete"></button>
                 {{ message }}
             </div>
         {% endfor %}

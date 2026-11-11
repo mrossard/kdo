@@ -40,7 +40,11 @@ final class ResetPasswordController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            return $this->processSendingPasswordResetEmail($form->get('email')->getData(), $mailer);
+            /** @var string|null $rawEmail */
+            $rawEmail = $form->get('email')->getData();
+            $email = $rawEmail ?? '';
+
+            return $this->processSendingPasswordResetEmail($email, $mailer);
         }
 
         return $this->render('reset_password/request.html.twig', [
@@ -108,9 +112,12 @@ final class ResetPasswordController extends AbstractController
             $this->resetPasswordHelper->removeResetRequest($token);
 
             // Encode(hash) the plain password, and set it.
-            assert($user instanceof User);
+            assert($user instanceof User, 'Expected instance of App\Entity\User.');
 
-            $encodedPassword = $passwordHasher->hashPassword($user, $form->get('plainPassword')->getData());
+            /** @var string|null $rawPassword */
+            $rawPassword = $form->get('plainPassword')->getData();
+            $plainPassword = $rawPassword ?? '';
+            $encodedPassword = $passwordHasher->hashPassword($user, $plainPassword);
 
             $user->setPassword($encodedPassword);
             $this->entityManager->flush();
@@ -156,8 +163,13 @@ final class ResetPasswordController extends AbstractController
             return $this->redirectToRoute('app_check_email');
         }
 
+        $userEmail = $user->getEmail();
+        if ($userEmail === null) {
+            return $this->redirectToRoute('app_check_email');
+        }
+
         $email = new TemplatedEmail()
-            ->to($user->getEmail())
+            ->to($userEmail)
             ->subject('Votre demande de réinitialisation de mot de passe')
             ->htmlTemplate('reset_password/email.html.twig')
             ->context([

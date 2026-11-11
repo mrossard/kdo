@@ -182,7 +182,7 @@ final class FinancialServiceTest extends TestCase
         self::assertSame($project, $reimbursement->getProject());
         self::assertSame($bob, $reimbursement->getFromUser());
         self::assertSame($alice, $reimbursement->getToUser());
-        self::assertSame('20', $reimbursement->getAmount());
+        self::assertSame('20.00', $reimbursement->getAmount());
     }
 
     public function testGetContactCumulativeBalance(): void

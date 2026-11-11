@@ -189,11 +189,11 @@ final class WishAndContactControllerTest extends WebTestCase
         $this->client->submit($editForm);
         self::assertResponseRedirects('/wish');
 
-        // 4. Delete wish
+        // 4. Delete wish (HTMX)
         $showCrawler = $this->client->request('GET', '/wish/' . $wish->getId());
         $deleteToken = $showCrawler->filter('form[action$="/wish/' . $wish->getId() . '"] input[name="_token"]')->attr('value');
-        $this->client->request('POST', '/wish/' . $wish->getId(), ['_token' => $deleteToken]);
-        self::assertResponseRedirects('/wish');
+        $this->client->request('POST', '/wish/' . $wish->getId(), ['_token' => $deleteToken], [], ['HTTP_HX-Request' => 'true']);
+        self::assertResponseIsSuccessful();
 
         $this->em->clear();
         self::assertNull($this->em->getRepository(Wish::class)->find($wish->getId()));
@@ -256,6 +256,14 @@ final class WishAndContactControllerTest extends WebTestCase
         $settleToken = $settleForm->filter('input[name="_token"]')->attr('value');
         $this->client->request('POST', '/contact/settle/' . $bob->getId(), ['_token' => $settleToken]);
         self::assertResponseRedirects('/contact/');
+
+        $this->em->clear();
+        $reimbursementActivity = $this->em->getRepository(\App\Entity\Activity::class)->findOneBy([
+            'project' => $project->getId(),
+            'type' => \App\Entity\Activity::TYPE_REIMBURSEMENT_CREATED,
+        ]);
+        self::assertNotNull($reimbursementActivity);
+        self::assertSame(['amount' => '20.00'], $reimbursementActivity->getMeta());
 
         $aliceCrawler = $this->client->request('GET', '/contact/');
         $removeForm = $aliceCrawler->filter('form[action$="/remove/' . $bob->getId() . '"]');

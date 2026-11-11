@@ -21,7 +21,7 @@ class ResetPasswordRequest implements ResetPasswordRequestInterface
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
-    private ?User $user = null;
+    private User $user;
 
     public function __construct(
         object $user,
@@ -30,7 +30,7 @@ class ResetPasswordRequest implements ResetPasswordRequestInterface
         #[\SensitiveParameter]
         string $hashedToken,
     ) {
-        assert($user instanceof User);
+        assert($user instanceof User, 'Expected instance of App\Entity\User.');
         $this->user = $user;
         $this->initialize($expiresAt, $selector, $hashedToken);
     }

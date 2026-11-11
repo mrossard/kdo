@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\Activity;
 use App\Entity\GiftIdea;
 use App\Entity\GiftProject;
 use App\Entity\Reimbursement;
 use App\Entity\User;
 use App\Repository\GiftProjectRepository;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 
+// @mago-expect lint:cyclomatic-complexity,kan-defect
 class FinancialService
 {
     private GiftProjectRepository $giftProjectRepository;
@@ -20,8 +23,12 @@ class FinancialService
         $this->giftProjectRepository = $giftProjectRepository;
     }
 
-    public function settleDebts(User $debtor, User $creditor, EntityManagerInterface $entityManager): int
-    {
+    public function settleDebts(
+        User $debtor,
+        User $creditor,
+        EntityManagerInterface $entityManager,
+        ?ActivityLogger $activityLogger = null,
+    ): int {
         $count = 0;
         $projects = $this->giftProjectRepository->findProjectsInvolvingUsers($debtor, $creditor);
 
@@ -32,145 +39,77 @@ class FinancialService
                     continue;
                 }
 
+                $formattedAmount = number_format($transfer['amount'], 2, '.', '');
                 $reimbursement = new Reimbursement();
                 $reimbursement->setProject($project);
                 $reimbursement->setFromUser($debtor);
                 $reimbursement->setToUser($creditor);
-                $reimbursement->setAmount((string) $transfer['amount']);
+                $reimbursement->setAmount($formattedAmount);
 
                 $entityManager->persist($reimbursement);
+                $activityLogger?->log($project, Activity::TYPE_REIMBURSEMENT_CREATED, $creditor, [
+                    'amount' => $formattedAmount,
+                ]);
                 $count++;
             }
         }
         $entityManager->flush();
+
         return $count;
     }
 
+    /**
+     * @return array{
+     *     summary: list<array{user: User, paid: float, balance: float}>,
+     *     transfers: list<array{from: User, to: User, amount: float}>,
+     *     total_cost: float,
+     *     average_cost: float,
+     *     reimbursements: Collection<int, Reimbursement>
+     * }
+     */
     public function calculate(GiftProject $project): array
     {
-        $participants = $project->getParticipants()->toArray();
-        if (!$project->getParticipants()->contains($project->getOwner())) {
-            $participants[] = $project->getOwner();
-        }
-
-        $paidBy = []; // UserID => amount
-        $userMap = []; // UserID => User object
+        $participants = $this->getProjectParticipants($project);
+        /** @var array<int, float> $paidBy */
+        $paidBy = [];
+        /** @var array<int, User> $userMap */
+        $userMap = [];
 
         foreach ($participants as $p) {
-            $paidBy[$p->getId()] = 0.0;
-            $userMap[$p->getId()] = $p;
-        }
-
-        $totalCost = 0.0;
-        foreach ($project->getGiftIdeas() as $idea) {
-            if (
-                !(
-                    $idea->getStatus() === GiftIdea::STATUS_SELECTED
-                    && $idea->getPurchasedBy()
-                    && $idea->getPurchasePrice()
-                )
-            ) {
+            $pid = $p->getId();
+            if ($pid === null) {
                 continue;
             }
-
-            $uid = $idea->getPurchasedBy()->getId();
-            $amount = (float) $idea->getPurchasePrice();
-
-            // Only count if the purchaser is part of the group (should be, but safety check)
-            if (isset($paidBy[$uid])) {
-                $paidBy[$uid] += $amount;
-                $totalCost += $amount;
-            }
+            $paidBy[$pid] = 0.0;
+            $userMap[$pid] = $p;
         }
 
+        $totalCost = $this->accumulatePaidIdeas($project, $paidBy);
         $count = count($participants);
-        $averageCost = $count > 0 ? $totalCost / $count : 0;
+        $averageCost = $count > 0 ? $totalCost / $count : 0.0;
 
+        /** @var array<int, float> $balances */
         $balances = [];
+        foreach ($paidBy as $uid => $amount) {
+            $balances[$uid] = $amount - $averageCost;
+        }
+
+        $reimbursements = $project->getReimbursements();
+        $this->applyReimbursements($reimbursements, $balances);
+
+        /** @var list<array{user: User, paid: float, balance: float}> $summary */
         $summary = [];
         foreach ($paidBy as $uid => $amount) {
-            $balance = $amount - $averageCost;
-            $balances[$uid] = $balance;
             $summary[] = [
                 'user' => $userMap[$uid],
                 'paid' => $amount,
-                'balance' => $balance, // Initial balance before reimbursements
+                'balance' => $balances[$uid],
             ];
-        }
-
-        // Apply Reimbursements
-        $reimbursements = $project->getReimbursements();
-        foreach ($reimbursements as $r) {
-            $fid = $r->getFromUser()->getId();
-            $tid = $r->getToUser()->getId();
-            $amount = (float) $r->getAmount();
-
-            if (isset($balances[$fid])) {
-                $balances[$fid] += $amount; // Paid debt
-            }
-            if (isset($balances[$tid])) {
-                $balances[$tid] -= $amount; // Received payment
-            }
-        }
-
-        // Update summary with final balance? Or keep "Theoretical" balance?
-        // The prompt says: "indicate that he has been reimbursed".
-        // The "Equilibrage" section shows remaining debts.
-        // The "Summary" table shows "Paid" and "Balance".
-        // If I adjust balance in Summary, it reflects "Net Position".
-        // If A owed 50 and paid 50, A's Net Position is 0.
-        // Users want to see if they are "squared".
-        // So yes, update summary balances too.
-
-        foreach ($summary as &$row) {
-            $uid = $row['user']->getId();
-            $row['balance'] = $balances[$uid];
-        }
-        unset($row); // Break reference
-
-        // Calculate Transfers (Greedy Algorithm)
-        $debtors = [];
-        $creditors = [];
-        foreach ($balances as $uid => $balance) {
-            if ($balance < -0.01)
-                $debtors[$uid] = $balance; // Negative balance = owes money
-            if ($balance > 0.01)
-                $creditors[$uid] = $balance; // Positive balance = needs reimbursement
-        }
-
-        $transfers = [];
-
-        // While we have both debtors and creditors
-        while (count($debtors) > 0 && count($creditors) > 0) {
-            // Get first debtor and creditor
-            $dUid = array_key_first($debtors);
-            $cUid = array_key_first($creditors);
-
-            $debt = abs($debtors[$dUid]);
-            $credit = $creditors[$cUid];
-
-            $amount = min($debt, $credit);
-
-            $transfers[] = [
-                'from' => $userMap[$dUid],
-                'to' => $userMap[$cUid],
-                'amount' => $amount,
-            ];
-
-            // Update balances
-            $debtors[$dUid] += $amount;
-            $creditors[$cUid] -= $amount;
-
-            // Remove settled accounts
-            if (abs($debtors[$dUid]) < 0.01)
-                unset($debtors[$dUid]);
-            if ($creditors[$cUid] < 0.01)
-                unset($creditors[$cUid]);
         }
 
         return [
             'summary' => $summary,
-            'transfers' => $transfers,
+            'transfers' => $this->computeTransfers($balances, $userMap),
             'total_cost' => $totalCost,
             'average_cost' => $averageCost,
             'reimbursements' => $reimbursements,
@@ -180,8 +119,6 @@ class FinancialService
     public function getContactCumulativeBalance(User $currentUser, User $contact): float
     {
         $cumulativeBalance = 0.0;
-
-        // Find projects where currentUser and contact are involved
         $projects = $this->giftProjectRepository->findProjectsInvolvingUsers($currentUser, $contact);
 
         foreach ($projects as $project) {
@@ -192,16 +129,129 @@ class FinancialService
                     $transfer['from']->getId() === $contact->getId()
                     && $transfer['to']->getId() === $currentUser->getId()
                 ) {
-                    $cumulativeBalance -= (float) $transfer['amount'];
-                } elseif (
+                    $cumulativeBalance -= $transfer['amount'];
+                    continue;
+                }
+
+                if (
                     $transfer['from']->getId() === $currentUser->getId()
                     && $transfer['to']->getId() === $contact->getId()
                 ) {
-                    $cumulativeBalance += (float) $transfer['amount'];
+                    $cumulativeBalance += $transfer['amount'];
                 }
             }
         }
 
         return $cumulativeBalance;
+    }
+
+    /**
+     * @return list<User>
+     */
+    private function getProjectParticipants(GiftProject $project): array
+    {
+        $participants = array_values($project->getParticipants()->toArray());
+        $owner = $project->getOwner();
+        if ($owner !== null && !$project->getParticipants()->contains($owner)) {
+            $participants[] = $owner;
+        }
+
+        return $participants;
+    }
+
+    /**
+     * @param array<int, float> $paidBy
+     */
+    private function accumulatePaidIdeas(GiftProject $project, array &$paidBy): float
+    {
+        $totalCost = 0.0;
+        foreach ($project->getGiftIdeas() as $idea) {
+            $purchaser = $idea->getPurchasedBy();
+            $price = $idea->getPurchasePrice();
+            if ($idea->getStatus() !== GiftIdea::STATUS_SELECTED || $purchaser === null || $price === null) {
+                continue;
+            }
+
+            $uid = $purchaser->getId();
+            if ($uid === null || !array_key_exists($uid, $paidBy)) {
+                continue;
+            }
+
+            $amount = is_numeric($price) ? (float) $price : 0.0;
+            $paidBy[$uid] += $amount;
+            $totalCost += $amount;
+        }
+
+        return $totalCost;
+    }
+
+    /**
+     * @param Collection<int, Reimbursement> $reimbursements
+     * @param array<int, float> $balances
+     */
+    private function applyReimbursements(Collection $reimbursements, array &$balances): void
+    {
+        foreach ($reimbursements as $r) {
+            $fid = $r->getFromUser()?->getId();
+            $tid = $r->getToUser()?->getId();
+            $rawAmount = $r->getAmount();
+            $amount = $rawAmount !== null && is_numeric($rawAmount) ? (float) $rawAmount : 0.0;
+
+            if ($fid !== null && array_key_exists($fid, $balances)) {
+                $balances[$fid] += $amount;
+            }
+            if ($tid !== null && array_key_exists($tid, $balances)) {
+                $balances[$tid] -= $amount;
+            }
+        }
+    }
+
+    /**
+     * @param array<int, float> $balances
+     * @param array<int, User> $userMap
+     * @return list<array{from: User, to: User, amount: float}>
+     */
+    private function computeTransfers(array $balances, array $userMap): array
+    {
+        /** @var array<int, float> $debtors */
+        $debtors = [];
+        /** @var array<int, float> $creditors */
+        $creditors = [];
+        foreach ($balances as $uid => $balance) {
+            if ($balance < -0.01) {
+                $debtors[$uid] = $balance;
+            }
+            if ($balance > 0.01) {
+                $creditors[$uid] = $balance;
+            }
+        }
+
+        $transfers = [];
+        while (count($debtors) > 0 && count($creditors) > 0) {
+            $dUid = array_key_first($debtors);
+            $cUid = array_key_first($creditors);
+
+            $debt = abs($debtors[$dUid]);
+            $credit = $creditors[$cUid];
+            $amount = min($debt, $credit);
+
+            $transfers[] = [
+                'from' => $userMap[$dUid],
+                'to' => $userMap[$cUid],
+                'amount' => $amount,
+            ];
+
+            $debtors[$dUid] += $amount;
+            $creditors[$cUid] -= $amount;
+
+            if (abs($debtors[$dUid]) < 0.01) {
+                unset($debtors[$dUid]);
+            }
+            if ($creditors[$cUid] < 0.01) {
+                unset($creditors[$cUid]);
+            }
+        }
+
+        return $transfers;
     }
 }

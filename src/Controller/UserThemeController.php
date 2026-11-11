@@ -21,7 +21,9 @@ final class UserThemeController extends AbstractController
         $prefs = $user->getUiPreferences() ?? [];
 
         // Default is light, so if not set or light, switch to dark
-        $currentTheme = $prefs['theme'] ?? 'light';
+        /** @var string|null $rawTheme */
+        $rawTheme = $prefs['theme'] ?? null;
+        $currentTheme = is_string($rawTheme) ? $rawTheme : 'light';
         $newTheme = $currentTheme === 'light' ? 'dark' : 'light';
 
         $prefs['theme'] = $newTheme;

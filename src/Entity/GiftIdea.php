@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\GiftIdeaStatus;
 use App\Repository\GiftIdeaRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
+// @mago-expect lint:too-many-properties
 #[ORM\Entity(repositoryClass: GiftIdeaRepository::class)]
 class GiftIdea
 {
@@ -68,9 +70,9 @@ class GiftIdea
     #[ORM\OneToMany(mappedBy: 'giftIdea', targetEntity: Vote::class, orphanRemoval: true)]
     private Collection $votes;
 
-    public const string STATUS_PROPOSED = 'PROPOSED';
-    public const string STATUS_SELECTED = 'SELECTED';
-    public const string STATUS_DISCARDED = 'DISCARDED';
+    public const string STATUS_PROPOSED = GiftIdeaStatus::PROPOSED->value;
+    public const string STATUS_SELECTED = GiftIdeaStatus::SELECTED->value;
+    public const string STATUS_DISCARDED = GiftIdeaStatus::DISCARDED->value;
 
     public function __construct()
     {

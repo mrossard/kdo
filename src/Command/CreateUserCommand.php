@@ -38,26 +38,40 @@ class CreateUserCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $email = $input->getArgument('email');
-        $password = $input->getArgument('password');
-        $isAdmin = $input->getOption('admin');
+        /** @var string|null $rawEmail */
+        $rawEmail = $input->getArgument('email');
+        $email = $rawEmail ?? '';
+        /** @var string|null $rawPassword */
+        $rawPassword = $input->getArgument('password');
+        $password = $rawPassword ?? '';
+        $isAdmin = $input->getOption('admin') === true;
+        /** @var string|null $firstname */
         $firstname = $input->getOption('firstname');
+        /** @var string|null $lastname */
         $lastname = $input->getOption('lastname');
 
-        if (!$email) {
-            $email = $io->ask('Email');
+        if ($email === '') {
+            /** @var string|null $askedEmail */
+            $askedEmail = $io->ask('Email');
+            $email = $askedEmail ?? '';
         }
 
-        if (!$password) {
-            $password = $io->askHidden('Password');
+        if ($password === '') {
+            /** @var string|null $askedPassword */
+            $askedPassword = $io->askHidden('Password');
+            $password = $askedPassword ?? '';
         }
 
-        if (!$firstname) {
-            $firstname = $io->ask('Firstname (optional)', null);
+        if ($firstname === null || $firstname === '') {
+            /** @var string|null $askedFirstname */
+            $askedFirstname = $io->ask('Firstname (optional)', null);
+            $firstname = $askedFirstname;
         }
 
-        if (!$lastname) {
-            $lastname = $io->ask('Lastname (optional)', null);
+        if ($lastname === null || $lastname === '') {
+            /** @var string|null $askedLastname */
+            $askedLastname = $io->ask('Lastname (optional)', null);
+            $lastname = $askedLastname;
         }
 
         $user = new User();

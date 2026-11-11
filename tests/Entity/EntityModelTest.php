@@ -5,12 +5,19 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\Activity;
+use App\Entity\Comment;
 use App\Entity\ContactRequest;
 use App\Entity\GiftIdea;
 use App\Entity\GiftProject;
 use App\Entity\User;
 use App\Entity\Vote;
+use App\Enum\GiftIdeaStatus;
+use App\Security\Voter\CommentVoter;
+use App\Security\Voter\GiftIdeaVoter;
+use App\Security\Voter\GiftProjectVoter;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\Security\Core\Authorization\Voter\VoterInterface;
 
 final class EntityModelTest extends TestCase
 {
@@ -217,5 +224,60 @@ final class EntityModelTest extends TestCase
         $project->removeActivity($activity);
         $project->removeReimbursement($reimb);
         self::assertCount(0, $project->getGiftIdeas());
+    }
+
+    public function testSecurityVotersAndEnumWeights(): void
+    {
+        self::assertSame(1, GiftIdeaStatus::SELECTED->getSortWeight());
+        self::assertSame(2, GiftIdeaStatus::PROPOSED->getSortWeight());
+        self::assertSame(3, GiftIdeaStatus::DISCARDED->getSortWeight());
+
+        $owner = new User()->setEmail('owner@example.com');
+        $participant = new User()->setEmail('participant@example.com');
+        $recipient = new User()->setEmail('recipient@example.com');
+        $outsider = new User()->setEmail('outsider@example.com');
+
+        $project = new GiftProject()
+            ->setName('Cadeau')
+            ->setOwner($owner)
+            ->setRecipient($recipient)
+            ->addParticipant($participant);
+
+        $idea = new GiftIdea()
+            ->setName('Livre')
+            ->setGiftProject($project)
+            ->setProposer($participant);
+
+        $comment = new Comment()
+            ->setContent('Super')
+            ->setGiftIdea($idea)
+            ->setAuthor($participant);
+
+        $projectVoter = new GiftProjectVoter();
+        $ideaVoter = new GiftIdeaVoter();
+        $commentVoter = new CommentVoter();
+
+        $ownerToken = new UsernamePasswordToken($owner, 'main', $owner->getRoles());
+        $participantToken = new UsernamePasswordToken($participant, 'main', $participant->getRoles());
+        $recipientToken = new UsernamePasswordToken($recipient, 'main', $recipient->getRoles());
+        $outsiderToken = new UsernamePasswordToken($outsider, 'main', $outsider->getRoles());
+
+        // Project Voter
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $projectVoter->vote($ownerToken, $project, [GiftProjectVoter::VIEW]));
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $projectVoter->vote($ownerToken, $project, [GiftProjectVoter::MANAGE]));
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $projectVoter->vote($participantToken, $project, [GiftProjectVoter::VIEW]));
+        self::assertSame(VoterInterface::ACCESS_DENIED, $projectVoter->vote($participantToken, $project, [GiftProjectVoter::MANAGE]));
+        self::assertSame(VoterInterface::ACCESS_DENIED, $projectVoter->vote($recipientToken, $project, [GiftProjectVoter::VIEW]));
+        self::assertSame(VoterInterface::ACCESS_DENIED, $projectVoter->vote($outsiderToken, $project, [GiftProjectVoter::VIEW]));
+
+        // Idea Voter
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $ideaVoter->vote($ownerToken, $idea, [GiftIdeaVoter::EDIT]));
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $ideaVoter->vote($participantToken, $idea, [GiftIdeaVoter::EDIT]));
+        self::assertSame(VoterInterface::ACCESS_DENIED, $ideaVoter->vote($outsiderToken, $idea, [GiftIdeaVoter::EDIT]));
+
+        // Comment Voter
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $commentVoter->vote($participantToken, $comment, [CommentVoter::EDIT]));
+        self::assertSame(VoterInterface::ACCESS_DENIED, $commentVoter->vote($ownerToken, $comment, [CommentVoter::EDIT]));
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $commentVoter->vote($ownerToken, $comment, [CommentVoter::DELETE]));
     }
 }

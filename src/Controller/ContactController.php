@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Entity\Activity;
 use App\Entity\ContactRequest;
 use App\Entity\User;
 use App\Entity\WishlistShare;
 use App\Form\AddContactFormType;
 use App\Repository\ContactRequestRepository;
-use App\Repository\GiftProjectRepository;
 use App\Repository\UserRepository;
 use App\Repository\WishlistShareRepository;
 use App\Service\ActivityLogger;
@@ -26,133 +24,50 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Uid\Uuid;
 
+// @mago-expect lint:cyclomatic-complexity,kan-defect
 #[Route('/contact')]
 #[IsGranted('ROLE_USER')]
 final class ContactController extends AbstractController
 {
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
+        private readonly WishlistShareRepository $wishlistShareRepository,
+        private readonly ContactRequestRepository $contactRequestRepository,
+        private readonly FinancialService $financialService,
+    ) {}
+
     #[Route('/', name: 'app_contact_index', methods: ['GET', 'POST'])]
-    public function index(
-        Request $request,
-        EntityManagerInterface $entityManager,
-        UserRepository $userRepository,
-        WishlistShareRepository $wishlistShareRepository,
-        ContactRequestRepository $contactRequestRepository,
-        MailerInterface $mailer,
-        FinancialService $financialService,
-    ): Response {
+    public function index(Request $request, UserRepository $userRepository, MailerInterface $mailer): Response
+    {
         /** @var User $user */
         $user = $this->getUser();
 
-        // Handle Add Contact Form
         $addContactForm = $this->createForm(AddContactFormType::class);
         $addContactForm->handleRequest($request);
 
         if ($addContactForm->isSubmitted() && $addContactForm->isValid()) {
-            $email = $addContactForm->get('email')->getData();
-            $recipient = $userRepository->findOneBy(['email' => $email]);
-
-            if ($recipient === $user) {
-                $this->addFlash('warning', 'Vous ne pouvez pas vous ajouter vous-même comme contact.');
-            } else {
-                // Check for existing request or contact
-                $existingRequest = null;
-                if ($recipient) { // If registered user
-                    $existingRequest = $contactRequestRepository->findOneBy([
-                        'sender' => $user,
-                        'recipient' => $recipient,
-                        'status' => ContactRequest::STATUS_PENDING,
-                    ]);
-                } else { // If unregistered user
-                    $existingRequest = $contactRequestRepository->findOneBy([
-                        'sender' => $user,
-                        'recipientEmail' => $email,
-                        'status' => ContactRequest::STATUS_PENDING,
-                    ]);
-                }
-
-                $reverseRequest = null;
-                if ($recipient) {
-                    $reverseRequest = $contactRequestRepository->findOneBy([
-                        'sender' => $recipient,
-                        'recipient' => $user,
-                        'status' => ContactRequest::STATUS_PENDING,
-                    ]);
-                }
-
-                $mutualShareExist = false;
-                if ($recipient) {
-                    $share1 = $wishlistShareRepository->findOneBy(['owner' => $user, 'recipient' => $recipient]);
-                    $share2 = $wishlistShareRepository->findOneBy(['owner' => $recipient, 'recipient' => $user]);
-                    if ($share1 && $share2) {
-                        $mutualShareExist = true;
-                    }
-                }
-
-                if ($existingRequest) {
-                    $this->addFlash('info', 'Une demande de contact est déjà en attente pour cet utilisateur.');
-                } elseif ($reverseRequest) {
-                    $this->addFlash(
-                        'info',
-                        'Cet utilisateur vous a déjà envoyé une demande de contact. Vous pouvez l´accepter ci-dessous.',
-                    );
-                } elseif ($mutualShareExist) {
-                    $this->addFlash('info', 'Vous êtes déjà en contact avec cet utilisateur.');
-                } else {
-                    $contactRequest = new ContactRequest();
-                    $contactRequest->setSender($user);
-
-                    $emailMessage = new Email()->to($email)->subject('Nouvelle demande de contact sur KDO');
-
-                    if ($recipient) {
-                        $contactRequest->setRecipient($recipient);
-                        $emailMessage->text(
-                            "Bonjour,\n\n{$user->getDisplayName()} souhaite vous ajouter à ses contacts sur KDO.\nConnectez-vous pour accepter la demande : "
-                                . $this->generateUrl('app_login', [], UrlGeneratorInterface::ABSOLUTE_URL),
-                        );
-                        $this->addFlash(
-                            'success',
-                            'Demande de contact envoyée à ' . $recipient->getDisplayName() . '.',
-                        );
-                    } else {
-                        $contactRequest->setRecipientEmail($email);
-                        $token = Uuid::v4();
-                        $contactRequest->setInvitationToken($token);
-
-                        $registrationUrl = $this->generateUrl(
-                            'app_register',
-                            ['invitation_token' => $token],
-                            UrlGeneratorInterface::ABSOLUTE_URL,
-                        );
-                        $emailMessage->text(
-                            "Bonjour,\n\n{$user->getDisplayName()} vous invite à rejoindre KDO pour partager vos listes de cadeaux.\n\nCliquez sur le lien suivant pour vous inscrire et accepter la demande :\n{$registrationUrl}",
-                        );
-
-                        $this->addFlash(
-                            'success',
-                            'Invitation envoyée à ' . $email . '. Un email a été envoyé pour l´inviter à s´inscrire.',
-                        );
-                    }
-
-                    $entityManager->persist($contactRequest);
-                    $entityManager->flush();
-
-                    $mailer->send($emailMessage);
-                }
-            }
+            /** @var string|null $rawEmail */
+            $rawEmail = $addContactForm->get('email')->getData();
+            $email = $rawEmail ?? '';
+            $this->handleAddContactSubmission($user, $email, $userRepository, $mailer);
 
             return $this->redirectToRoute('app_contact_index');
         }
 
-        // Obtenir les contacts mutuels de l'utilisateur actuel (Partage de liste de souhaits)
-        $myContacts = $this->getMutualContacts($user, $wishlistShareRepository);
+        $myContacts = $this->wishlistShareRepository->findMutualContactsForUser($user);
 
+        /** @var array<int, float> $contactBalances */
         $contactBalances = [];
         foreach ($myContacts as $contact) {
-            $contactBalances[$contact->getId()] = $financialService->getContactCumulativeBalance($user, $contact);
+            $contactId = $contact->getId();
+            if ($contactId === null) {
+                continue;
+            }
+            $contactBalances[$contactId] = $this->financialService->getContactCumulativeBalance($user, $contact);
         }
 
-        // Get pending requests (sent by me, or sent to me)
-        $sentRequests = $contactRequestRepository
+        /** @var list<ContactRequest> $sentRequests */
+        $sentRequests = $this->contactRequestRepository
             ->createQueryBuilder('cr')
             ->where('cr.sender = :user')
             ->andWhere('cr.status = :status')
@@ -161,7 +76,8 @@ final class ContactController extends AbstractController
             ->getQuery()
             ->getResult();
 
-        $receivedRequests = $contactRequestRepository
+        /** @var list<ContactRequest> $receivedRequests */
+        $receivedRequests = $this->contactRequestRepository
             ->createQueryBuilder('cr')
             ->where('cr.recipient = :user')
             ->andWhere('cr.status = :status')
@@ -180,12 +96,8 @@ final class ContactController extends AbstractController
     }
 
     #[Route('/request/{id}/accept', name: 'app_contact_request_accept', methods: ['POST'])]
-    public function acceptRequest(
-        Request $request,
-        ContactRequest $contactRequest,
-        EntityManagerInterface $entityManager,
-        WishlistShareRepository $wishlistShareRepository,
-    ): Response {
+    public function acceptRequest(Request $request, ContactRequest $contactRequest): Response
+    {
         /** @var User $user */
         $user = $this->getUser();
 
@@ -195,53 +107,42 @@ final class ContactController extends AbstractController
         ) {
             throw $this->createAccessDeniedException('Impossible d´accepter cette demande.');
         }
-        // If recipientEmail is set but recipient is null, it means the token was used.
-        // This case should not be accepted via this route, but rather upon registration.
+
         if ($contactRequest->getRecipient() === null && $contactRequest->getRecipientEmail()) {
             throw $this->createAccessDeniedException(
                 'Cette demande d´invitation doit être acceptée via le lien d´inscription.',
             );
         }
 
-        if (
-            $this->isCsrfTokenValid(
-                'accept_request' . $contactRequest->getId(),
-                $request->getPayload()->getString('_token'),
-            )
-        ) {
+        if ($this->isCsrfTokenValid(
+            'accept_request' . (string) $contactRequest->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
             $contactRequest->setStatus(ContactRequest::STATUS_ACCEPTED);
             $contactRequest->setUpdatedAt(new \DateTimeImmutable());
 
-            // Créer des partages de liste de souhaits mutuels
-            // L'expéditeur partage avec le destinataire
             $share1 = new WishlistShare();
             $share1->setOwner($contactRequest->getSender());
             $share1->setRecipient($contactRequest->getRecipient());
-            $entityManager->persist($share1);
+            $this->entityManager->persist($share1);
 
-            // Recipient shares with Sender (mutual contact)
             $share2 = new WishlistShare();
             $share2->setOwner($contactRequest->getRecipient());
             $share2->setRecipient($contactRequest->getSender());
-            $entityManager->persist($share2);
+            $this->entityManager->persist($share2);
 
-            $entityManager->flush();
+            $this->entityManager->flush();
 
-            $this->addFlash(
-                'success',
-                'Demande de contact acceptée avec ' . $contactRequest->getSender()->getDisplayName() . '.',
-            );
+            $senderName = $contactRequest->getSender()?->getDisplayName() ?? '';
+            $this->addFlash('success', 'Demande de contact acceptée avec ' . $senderName . '.');
         }
 
         return $this->redirectToRoute('app_contact_index');
     }
 
     #[Route('/request/{id}/decline', name: 'app_contact_request_decline', methods: ['POST'])]
-    public function declineRequest(
-        Request $request,
-        ContactRequest $contactRequest,
-        EntityManagerInterface $entityManager,
-    ): Response {
+    public function declineRequest(Request $request, ContactRequest $contactRequest): Response
+    {
         /** @var User $user */
         $user = $this->getUser();
 
@@ -252,15 +153,13 @@ final class ContactController extends AbstractController
             throw $this->createAccessDeniedException('Impossible de refuser cette demande.');
         }
 
-        if (
-            $this->isCsrfTokenValid(
-                'decline_request' . $contactRequest->getId(),
-                $request->getPayload()->getString('_token'),
-            )
-        ) {
+        if ($this->isCsrfTokenValid(
+            'decline_request' . (string) $contactRequest->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
             $contactRequest->setStatus(ContactRequest::STATUS_DECLINED);
             $contactRequest->setUpdatedAt(new \DateTimeImmutable());
-            $entityManager->flush();
+            $this->entityManager->flush();
 
             $this->addFlash('info', 'Demande de contact refusée.');
         }
@@ -269,39 +168,31 @@ final class ContactController extends AbstractController
     }
 
     #[Route('/remove/{id}', name: 'app_contact_remove', methods: ['POST'])]
-    public function removeContact(
-        Request $request,
-        User $contactUser,
-        EntityManagerInterface $entityManager,
-        WishlistShareRepository $wishlistShareRepository,
-    ): Response {
+    public function removeContact(Request $request, User $contactUser): Response
+    {
         /** @var User $user */
         $user = $this->getUser();
 
-        // Find and remove mutual shares
-        $share1 = $wishlistShareRepository->findOneBy(['owner' => $user, 'recipient' => $contactUser]);
-        $share2 = $wishlistShareRepository->findOneBy(['owner' => $contactUser, 'recipient' => $user]);
+        $share1 = $this->wishlistShareRepository->findOneBy(['owner' => $user, 'recipient' => $contactUser]);
+        $share2 = $this->wishlistShareRepository->findOneBy(['owner' => $contactUser, 'recipient' => $user]);
 
         if (!$share1 && !$share2) {
             throw $this->createAccessDeniedException('Ce contact n´existe pas ou n´est pas mutuel.');
         }
 
-        if (
-            $this->isCsrfTokenValid(
-                'remove_contact' . $contactUser->getId(),
-                $request->getPayload()->getString('_token'),
-            )
-        ) {
-            if ($share1) {
-                $entityManager->remove($share1);
+        if ($this->isCsrfTokenValid(
+            'remove_contact' . (string) $contactUser->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            if ($share1 !== null) {
+                $this->entityManager->remove($share1);
             }
-            if ($share2) {
-                $entityManager->remove($share2);
+            if ($share2 !== null) {
+                $this->entityManager->remove($share2);
             }
 
-            // Also remove any pending/accepted/declined ContactRequests between them to clean up
-            $requests = $entityManager
-                ->getRepository(ContactRequest::class)
+            /** @var list<ContactRequest> $requests */
+            $requests = $this->contactRequestRepository
                 ->createQueryBuilder('cr')
                 ->where(
                     '(cr.sender = :user AND cr.recipient = :contactUser) OR (cr.sender = :contactUser AND cr.recipient = :user)',
@@ -312,10 +203,10 @@ final class ContactController extends AbstractController
                 ->getResult();
 
             foreach ($requests as $req) {
-                $entityManager->remove($req);
+                $this->entityManager->remove($req);
             }
 
-            $entityManager->flush();
+            $this->entityManager->flush();
 
             $this->addFlash('success', 'Contact ' . $contactUser->getDisplayName() . ' supprimé.');
         }
@@ -324,52 +215,47 @@ final class ContactController extends AbstractController
     }
 
     #[Route('/settle/{id}', name: 'app_contact_settle_debt', methods: ['POST'])]
-    public function settleDebt(
-        Request $request,
-        User $contactUser,
-        EntityManagerInterface $entityManager,
-        FinancialService $financialService,
-        ActivityLogger $activityLogger,
-        GiftProjectRepository $projectRepository,
-    ): Response {
+    public function settleDebt(Request $request, User $contactUser, ActivityLogger $activityLogger): Response
+    {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
 
-        if (
-            $this->isCsrfTokenValid('settle_debt' . $contactUser->getId(), $request->getPayload()->getString('_token'))
-        ) {
-            $count = $financialService->settleDebts($contactUser, $currentUser, $entityManager);
-
-            if ($count > 0) {
-                $projects = $projectRepository->findProjectsInvolvingUsers($currentUser, $contactUser);
-                foreach ($projects as $project) {
-                    $activityLogger->log($project, Activity::TYPE_REIMBURSEMENT_CREATED, $currentUser, [
-                        'amount' => 'régler',
-                    ]);
-                }
-                $entityManager->flush();
-                $this->addFlash('success', "Dettes réglées pour {$count} projet(s).");
-            } else {
-                $this->addFlash('info', 'Aucune dette à régler trouvée.');
-            }
+        if (!$this->isCsrfTokenValid(
+            'settle_debt' . (string) $contactUser->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            return $this->redirectToRoute('app_contact_index');
         }
+
+        $count = $this->financialService->settleDebts(
+            $contactUser,
+            $currentUser,
+            $this->entityManager,
+            $activityLogger,
+        );
+        if ($count === 0) {
+            $this->addFlash('info', 'Aucune dette à régler trouvée.');
+
+            return $this->redirectToRoute('app_contact_index');
+        }
+
+        $this->addFlash('success', "Dettes réglées pour {$count} projet(s).");
 
         return $this->redirectToRoute('app_contact_index');
     }
 
     #[Route('/view/{id}', name: 'app_contact_view', methods: ['GET'])]
-    public function viewContactListeDeSouhaits(User $owner, WishlistShareRepository $wishlistShareRepository): Response
+    public function viewContactListeDeSouhaits(User $owner): Response
     {
         /** @var User $me */
         $me = $this->getUser();
 
-        // Check if $me has access to $owner's list (i.e., $owner shares with $me)
-        $share = $wishlistShareRepository->findOneBy([
+        $share = $this->wishlistShareRepository->findOneBy([
             'owner' => $owner,
             'recipient' => $me,
         ]);
 
-        if (!$share && $owner !== $me) { // Allow viewing own list via this route too
+        if (!$share && $owner !== $me) {
             throw $this->createAccessDeniedException("Vous n'avez pas accès à cette liste.");
         }
 
@@ -379,34 +265,92 @@ final class ContactController extends AbstractController
         ]);
     }
 
-    private function getMutualContacts(User $user, WishlistShareRepository $wishlistShareRepository): array
-    {
-        $qb = $wishlistShareRepository->createQueryBuilder('ws');
-        $contacts = $qb
-            ->where('ws.owner = :user OR ws.recipient = :user')
-            ->andWhere('ws.owner != ws.recipient')
-            ->setParameter('user', $user)
-            ->getQuery()
-            ->getResult(); // Ensure it's not a self-share (shouldn't happen)
+    private function handleAddContactSubmission(
+        User $user,
+        string $email,
+        UserRepository $userRepository,
+        MailerInterface $mailer,
+    ): void {
+        $recipient = $userRepository->findOneBy(['email' => $email]);
+        if ($recipient === $user) {
+            $this->addFlash('warning', 'Vous ne pouvez pas vous ajouter vous-même comme contact.');
 
-        $mutualContacts = [];
-        foreach ($contacts as $share) {
-            $otherUser = $share->getOwner() === $user ? $share->getRecipient() : $share->getOwner();
-            // Check if a reverse share exists (mutual contact)
-            $reverseShare = $wishlistShareRepository->findOneBy([
-                'owner' => $otherUser,
+            return;
+        }
+
+        $existingCriteria = $recipient !== null
+            ? ['sender' => $user, 'recipient' => $recipient, 'status' => ContactRequest::STATUS_PENDING]
+            : ['sender' => $user, 'recipientEmail' => $email, 'status' => ContactRequest::STATUS_PENDING];
+
+        if ($this->contactRequestRepository->findOneBy($existingCriteria) !== null) {
+            $this->addFlash('info', 'Une demande de contact est déjà en attente pour cet utilisateur.');
+
+            return;
+        }
+
+        if ($recipient !== null) {
+            $reverseRequest = $this->contactRequestRepository->findOneBy([
+                'sender' => $recipient,
                 'recipient' => $user,
+                'status' => ContactRequest::STATUS_PENDING,
             ]);
+            if ($reverseRequest !== null) {
+                $this->addFlash(
+                    'info',
+                    'Cet utilisateur vous a déjà envoyé une demande de contact. Vous pouvez l´accepter ci-dessous.',
+                );
 
-            // Add only if mutual
-            if ($reverseShare && !isset($mutualContacts[$otherUser->getId()])) {
-                $mutualContacts[$otherUser->getId()] = $otherUser;
+                return;
+            }
+
+            $share1 = $this->wishlistShareRepository->findOneBy(['owner' => $user, 'recipient' => $recipient]);
+            $share2 = $this->wishlistShareRepository->findOneBy(['owner' => $recipient, 'recipient' => $user]);
+            if ($share1 !== null && $share2 !== null) {
+                $this->addFlash('info', 'Vous êtes déjà en contact avec cet utilisateur.');
+
+                return;
             }
         }
 
-        // Sort by display name (or email if no display name)
-        uasort($mutualContacts, static fn(User $a, User $b) => strcmp($a->getDisplayName(), $b->getDisplayName()));
+        $this->sendContactInvitation($user, $email, $recipient, $mailer);
+    }
 
-        return array_values($mutualContacts);
+    private function sendContactInvitation(User $user, string $email, ?User $recipient, MailerInterface $mailer): void
+    {
+        $contactRequest = new ContactRequest();
+        $contactRequest->setSender($user);
+        $emailMessage = new Email()->to($email)->subject('Nouvelle demande de contact sur KDO');
+
+        if ($recipient !== null) {
+            $contactRequest->setRecipient($recipient);
+            $emailMessage->text(
+                "Bonjour,\n\n{$user->getDisplayName()} souhaite vous ajouter à ses contacts sur KDO.\nConnectez-vous pour accepter la demande : "
+                    . $this->generateUrl('app_login', [], UrlGeneratorInterface::ABSOLUTE_URL),
+            );
+            $this->addFlash('success', 'Demande de contact envoyée à ' . $recipient->getDisplayName() . '.');
+        }
+
+        if ($recipient === null) {
+            $contactRequest->setRecipientEmail($email);
+            $token = Uuid::v4();
+            $contactRequest->setInvitationToken($token);
+
+            $registrationUrl = $this->generateUrl(
+                'app_register',
+                ['invitation_token' => $token],
+                UrlGeneratorInterface::ABSOLUTE_URL,
+            );
+            $emailMessage->text(
+                "Bonjour,\n\n{$user->getDisplayName()} vous invite à rejoindre KDO pour partager vos listes de cadeaux.\n\nCliquez sur le lien suivant pour vous inscrire et accepter la demande :\n{$registrationUrl}",
+            );
+            $this->addFlash(
+                'success',
+                'Invitation envoyée à ' . $email . '. Un email a été envoyé pour l´inviter à s´inscrire.',
+            );
+        }
+
+        $this->entityManager->persist($contactRequest);
+        $this->entityManager->flush();
+        $mailer->send($emailMessage);
     }
 }

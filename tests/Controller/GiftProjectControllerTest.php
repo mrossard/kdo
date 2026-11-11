@@ -213,9 +213,17 @@ final class GiftProjectControllerTest extends WebTestCase
 
         $this->client->loginUser($owner);
 
-        // 1. Index page
-        $this->client->request('GET', '/project/');
+        // 1. Index page (including project with free recipientName where recipient is NULL)
+        $freeRecipientProject = new GiftProject()
+            ->setName('Cadeau Mamie Libre')
+            ->setRecipientName('Mamie')
+            ->setOwner($owner);
+        $this->em->persist($freeRecipientProject);
+        $this->em->flush();
+
+        $indexCrawler = $this->client->request('GET', '/project/');
         self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Cadeau Mamie Libre', $indexCrawler->text());
 
         // 2. Create project via form
         $crawler = $this->client->request('GET', '/project/new');
@@ -282,18 +290,29 @@ final class GiftProjectControllerTest extends WebTestCase
         self::assertNotNull($idea);
         $ideaId = $idea->getId();
 
-        // 6. Edit gift idea via HTMX + display fragment
+        // 6. Edit gift idea via HTMX + display fragment (and ensure comment form stays available)
         $editIdeaCrawler = $this->client->request('GET', "/project/idea/{$ideaId}/edit", [], [], ['HTTP_HX-Request' => 'true']);
         self::assertResponseIsSuccessful();
         $ideaForm = $editIdeaCrawler->selectButton('Enregistrer')->form([
             'gift_idea[name]' => 'Souhait Modifié',
             'gift_idea[price]' => '60.00',
         ]);
-        $this->client->submit($ideaForm, [], ['HTTP_HX-Request' => 'true']);
+        $editedIdeaCrawler = $this->client->submit($ideaForm, [], ['HTTP_HX-Request' => 'true']);
         self::assertResponseIsSuccessful();
+        self::assertCount(1, $editedIdeaCrawler->filter("form[action$='/idea/{$ideaId}/comment']"));
 
-        $this->client->request('GET', "/project/idea/{$ideaId}/display");
+        $displayCrawler = $this->client->request('GET', "/project/idea/{$ideaId}/display");
         self::assertResponseIsSuccessful();
+        self::assertCount(1, $displayCrawler->filter("form[action$='/idea/{$ideaId}/comment']"));
+
+        // Direct non-HTMX load of liste_souhaits & activite tabs
+        $nonHtmxWishCrawler = $this->client->request('GET', "/project/{$projectId}?tab=liste_souhaits");
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Déjà copié', $nonHtmxWishCrawler->text());
+
+        $nonHtmxActivityCrawler = $this->client->request('GET', "/project/{$projectId}?tab=activite");
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Souhait Destinataire', $nonHtmxActivityCrawler->text());
 
         // 7. Add, show, edit, and delete a comment on the idea
         $ideasCrawler = $this->client->request('GET', "/project/{$projectId}?tab=ideas", [], [], ['HTTP_HX-Request' => 'true']);
@@ -323,11 +342,11 @@ final class GiftProjectControllerTest extends WebTestCase
         $this->client->request('DELETE', $deleteCommentUrl, [], [], ['HTTP_HX-Request' => 'true']);
         self::assertResponseIsSuccessful();
 
-        // 8. Change idea status to SELECTED
+        // 8. Change idea status to SELECTED (HTMX)
         $ideasCrawler = $this->client->request('GET', "/project/{$projectId}?tab=ideas", [], [], ['HTTP_HX-Request' => 'true']);
-        $statusToken = $ideasCrawler->filter("form[action$='/status/SELECTED'] input[name='_token']")->attr('value');
-        $this->client->request('POST', "/project/idea/{$ideaId}/status/SELECTED", ['_token' => $statusToken]);
-        self::assertResponseRedirects("/project/{$projectId}?tab=ideas");
+        $statusToken = $ideasCrawler->filter("form[action*='/status/SELECTED'] input[name='_token']")->attr('value');
+        $this->client->request('POST', "/project/idea/{$ideaId}/status/SELECTED", ['_token' => $statusToken], [], ['HTTP_HX-Request' => 'true']);
+        self::assertResponseIsSuccessful();
 
         // 9. Lock, Unlock, then Lock again
         $ideasCrawler = $this->client->request('GET', "/project/{$projectId}?tab=ideas", [], [], ['HTTP_HX-Request' => 'true']);

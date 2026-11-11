@@ -48,7 +48,8 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
         TokenInterface $token,
         string $firewallName,
     ): ?Response {
-        if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {
+        $targetPath = $this->getTargetPath($request->getSession(), $firewallName);
+        if ($targetPath !== null && $targetPath !== '') {
             return new RedirectResponse($targetPath);
         }
 

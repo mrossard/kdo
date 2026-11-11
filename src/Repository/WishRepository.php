@@ -25,47 +25,66 @@ class WishRepository extends ServiceEntityRepository
         parent::__construct($registry, Wish::class);
     }
 
-    public function findUserWishesWithGiftIdeaDetails(
+    /**
+     * @return list<Wish>
+     */
+    public function findAllUserWishesWithGiftIdeaDetails(
         User $user,
-        bool $showDelivered = false,
         ?string $sort = 'name',
         ?string $direction = 'ASC',
     ): array {
-        $qb = $this
+        /** @var list<Wish> */
+        return $this->createUserWishesQueryBuilder($user, $sort, $direction)->getQuery()->getResult();
+    }
+
+    /**
+     * @return list<Wish>
+     */
+    public function findUndeliveredUserWishesWithGiftIdeaDetails(
+        User $user,
+        ?string $sort = 'name',
+        ?string $direction = 'ASC',
+    ): array {
+        $qb = $this->createUserWishesQueryBuilder($user, $sort, $direction);
+
+        $subquery = $this
+            ->getEntityManager()
+            ->createQueryBuilder()
+            ->select('w_delivered.id')
+            ->from(Wish::class, 'w_delivered')
+            ->leftJoin('w_delivered.giftIdeasUsedFor', 'gi_delivered')
+            ->leftJoin('gi_delivered.giftProject', 'gp_delivered')
+            ->where('gi_delivered.status = :selectedStatus')
+            ->andWhere('gp_delivered.deliveredAt IS NOT NULL')
+            ->andWhere('w_delivered.user = :user');
+
+        $qb->andWhere($qb->expr()->notIn('w.id', $subquery->getDQL()))->setParameter(
+            'selectedStatus',
+            GiftIdea::STATUS_SELECTED,
+        );
+
+        /** @var list<Wish> */
+        return $qb->getQuery()->getResult();
+    }
+
+    private function createUserWishesQueryBuilder(
+        User $user,
+        ?string $sort,
+        ?string $direction,
+    ): \Doctrine\ORM\QueryBuilder {
+        $sortField = match ($sort) {
+            'price' => 'w.price',
+            default => 'w.name',
+        };
+        $safeDirection = strtoupper((string) $direction) === 'DESC' ? 'DESC' : 'ASC';
+
+        return $this
             ->createQueryBuilder('w')
             ->addSelect('gi', 'gp')
             ->leftJoin('w.giftIdeasUsedFor', 'gi')
             ->leftJoin('gi.giftProject', 'gp')
             ->where('w.user = :user')
-            ->setParameter('user', $user);
-
-        if (!$showDelivered) {
-            // Subquery to find Wishes that HAVE a selected and delivered GiftIdea
-            $subquery = $this
-                ->getEntityManager()
-                ->createQueryBuilder()
-                ->select('w_delivered.id')
-                ->from(Wish::class, 'w_delivered')
-                ->leftJoin('w_delivered.giftIdeasUsedFor', 'gi_delivered')
-                ->leftJoin('gi_delivered.giftProject', 'gp_delivered')
-                ->where('gi_delivered.status = :selectedStatus')
-                ->andWhere('gp_delivered.deliveredAt IS NOT NULL') // This is the key part
-                ->andWhere('w_delivered.user = :user'); // Important to scope to current user
-
-            $qb->andWhere($qb->expr()->notIn('w.id', $subquery->getDQL()))->setParameter(
-                'selectedStatus',
-                GiftIdea::STATUS_SELECTED,
-            );
-        }
-
-        $sortField = match ($sort) {
-            'price' => 'w.price',
-            default => 'w.name',
-        };
-
-        $safeDirection = strtoupper((string) $direction) === 'DESC' ? 'DESC' : 'ASC';
-
-        /** @var list<Wish> */
-        return $qb->orderBy($sortField, $safeDirection)->getQuery()->getResult();
+            ->setParameter('user', $user)
+            ->orderBy($sortField, $safeDirection);
     }
 }

@@ -41,7 +41,9 @@ final class ProfileController extends AbstractController
         $passwordForm->handleRequest($request);
 
         if ($passwordForm->isSubmitted() && $passwordForm->isValid()) {
-            $newPassword = $passwordForm->get('plainPassword')->getData();
+            /** @var string|null $rawPassword */
+            $rawPassword = $passwordForm->get('plainPassword')->getData();
+            $newPassword = $rawPassword ?? '';
             $encodedPassword = $passwordHasher->hashPassword($user, $newPassword);
 
             $user->setPassword($encodedPassword);

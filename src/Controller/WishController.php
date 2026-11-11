@@ -28,8 +28,12 @@ final class WishController extends AbstractController
         $sort = $request->query->getString('sort', 'name');
         $direction = $request->query->getString('direction', 'ASC');
 
+        $wishes = $showDelivered
+            ? $wishRepository->findAllUserWishesWithGiftIdeaDetails($user, $sort, $direction)
+            : $wishRepository->findUndeliveredUserWishesWithGiftIdeaDetails($user, $sort, $direction);
+
         return $this->render('wish/index.html.twig', [
-            'wishes' => $wishRepository->findUserWishesWithGiftIdeaDetails($user, $showDelivered, $sort, $direction),
+            'wishes' => $wishes,
             'show_delivered' => $showDelivered,
             'current_sort' => $sort,
             'current_direction' => $direction,
@@ -95,9 +99,13 @@ final class WishController extends AbstractController
     {
         $this->denyAccessUnlessOwner($wish);
 
-        if ($this->isCsrfTokenValid('delete' . $wish->getId(), $request->getPayload()->getString('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . (string) $wish->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($wish);
             $entityManager->flush();
+
+            if ($request->headers->get('HX-Request')) {
+                return new Response('', Response::HTTP_OK);
+            }
         }
 
         return $this->redirectToRoute('app_wish_index', [], Response::HTTP_SEE_OTHER);

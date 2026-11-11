@@ -17,6 +17,10 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class HomeController extends AbstractController
 {
+    public function __construct(
+        private readonly ActivityRepository $activityRepository,
+    ) {}
+
     #[Route('/', name: 'app_home')]
     public function index(
         GiftProjectRepository $projectRepository,
@@ -24,7 +28,6 @@ final class HomeController extends AbstractController
         FinancialService $financialService,
         WishlistShareRepository $wishlistShareRepository,
         ContactRequestRepository $contactRequestRepository,
-        ActivityRepository $activityRepository,
     ): Response {
         $user = $this->getUser();
 
@@ -40,8 +43,6 @@ final class HomeController extends AbstractController
 
         $globalBalance = 0.0;
         foreach ($allProjects as $project) {
-            // Calculate financials for all projects (including archived ones?)
-            // Usually you want to know debts even if archived. Let's include all.
             $financials = $financialService->calculate($project);
             foreach ($financials['summary'] as $row) {
                 if ($row['user'] !== $user) {
@@ -52,30 +53,7 @@ final class HomeController extends AbstractController
             }
         }
 
-        // Contacts: count mutual wishlist shares (both directions)
-        $shares = $wishlistShareRepository
-            ->createQueryBuilder('ws')
-            ->where('ws.owner = :user OR ws.recipient = :user')
-            ->andWhere('ws.owner != ws.recipient')
-            ->setParameter('user', $user)
-            ->getQuery()
-            ->getResult();
-
-        $mutualContactIds = [];
-        foreach ($shares as $share) {
-            $other = $share->getOwner() === $user ? $share->getRecipient() : $share->getOwner();
-            if (!$other) {
-                continue;
-            }
-            $reverse = $wishlistShareRepository->findOneBy([
-                'owner' => $other,
-                'recipient' => $user,
-            ]);
-            if ($reverse) {
-                $mutualContactIds[$other->getId()] = true;
-            }
-        }
-        $contactsCount = count($mutualContactIds);
+        $contactsCount = $wishlistShareRepository->countMutualContactsForUser($user);
 
         // Pending contact requests incoming for the user
         $pendingContactsCount = $contactRequestRepository->count([
@@ -89,7 +67,7 @@ final class HomeController extends AbstractController
             'global_balance' => $globalBalance,
             'contacts_count' => $contactsCount,
             'pending_contacts_count' => $pendingContactsCount,
-            'recent_activities' => $activityRepository->findRecentForUser($user, 5),
+            'recent_activities' => $this->activityRepository->findRecentForUser($user, 5),
         ]);
     }
 }

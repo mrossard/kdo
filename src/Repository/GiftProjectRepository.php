@@ -23,14 +23,15 @@ class GiftProjectRepository extends ServiceEntityRepository
      * Finds projects where the user is owner OR participant,
      * BUT excludes projects where the user is the recipient (surprise!).
      *
-     * @return GiftProject[]
+     * @return list<GiftProject>
      */
     public function findAccessibleProjectsForUser(User $user): array
     {
+        /** @var list<GiftProject> */
         return $this
             ->createQueryBuilder('g')
             ->leftJoin('g.participants', 'p')
-            ->where('g.recipient != :user') // Important: Never show if I am the recipient
+            ->where('g.recipient IS NULL OR g.recipient != :user') // Important: Never show if I am the recipient
             ->andWhere('g.owner = :user OR p = :user') // Show if owner OR participant
             ->setParameter('user', $user)
             ->orderBy('g.createdAt', 'DESC')
@@ -41,7 +42,7 @@ class GiftProjectRepository extends ServiceEntityRepository
     /**
      * Finds projects where both user1 and user2 are involved (owner, participant, or recipient).
      *
-     * @return GiftProject[]
+     * @return list<GiftProject>
      */
     public function findProjectsInvolvingUsers(User $user1, User $user2): array
     {
@@ -53,6 +54,7 @@ class GiftProjectRepository extends ServiceEntityRepository
             ->setParameter('user1', $user1)
             ->setParameter('user2', $user2);
 
+        /** @var list<GiftProject> */
         return $qb->getQuery()->getResult();
     }
 }

@@ -13,6 +13,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+// @mago-expect lint:too-many-properties,too-many-methods,cyclomatic-complexity,kan-defect
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
@@ -32,6 +33,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $lastname = null;
 
+    /**
+     * @var array<string, mixed>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $uiPreferences = null;
 
@@ -191,17 +195,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->firstname) {
             return $this->firstname;
         }
-        return $this->email;
+        return $this->email ?? '';
     }
 
     /**
      * A visual identifier that represents this user.
      *
      * @see UserInterface
+     * @return non-empty-string
      */
     public function getUserIdentifier(): string
     {
-        return (string) $this->email;
+        $identifier = (string) $this->email;
+
+        return $identifier !== '' ? $identifier : 'anonymous';
     }
 
     /**
@@ -229,7 +236,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @see PasswordAuthenticatedUserInterface
      */
-    public function getPassword(): string
+    public function getPassword(): ?string
     {
         return $this->password;
     }
@@ -454,11 +461,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getUiPreferences(): ?array
     {
         return $this->uiPreferences;
     }
 
+    /**
+     * @param array<string, mixed>|null $uiPreferences
+     */
     public function setUiPreferences(?array $uiPreferences): static
     {
         $this->uiPreferences = $uiPreferences;

@@ -24,10 +24,11 @@ class GiftIdeaRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return GiftIdea[]
+     * @return list<GiftIdea>
      */
     public function findPurchasedByUser(\App\Entity\User $user): array
     {
+        /** @var list<GiftIdea> */
         return $this
             ->createQueryBuilder('g')
             ->where('g.purchasedBy = :user')
@@ -36,28 +37,4 @@ class GiftIdeaRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
-
-    //    /**
-    //     * @return GiftIdea[] Returns an array of GiftIdea objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('g')
-    //            ->andWhere('g.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('g.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-    //    public function findOneBySomeField($value): ?GiftIdea
-    //    {
-    //        return $this->createQueryBuilder('g')
-    //            ->andWhere('g.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
 }

@@ -93,10 +93,14 @@ Expected variables:
                 </button>
 
                 {% if app.user == project.owner %}
+                    {% set status_sort = current_sort|default(app.request.query.get('sort', 'status')) %}
                     {% if idea.status == constant('App\\Entity\\GiftIdea::STATUS_PROPOSED') %}
                         {# "Valider" button, shown if status is PROPOSED #}
                         <form method="post"
-                              action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_SELECTED')}) }}">
+                              action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_SELECTED'), 'sort': status_sort}) }}"
+                              hx-post="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_SELECTED'), 'sort': status_sort}) }}"
+                              hx-target="#project-content"
+                              hx-swap="innerHTML">
                             <input type="hidden" name="_token" value="{{ csrf_token('status_idea' ~ idea.id) }}">
                             <button class="button is-success is-light">
                                 <span class="icon is-small">{{ ux_icon('material-symbols:done') }}</span>
@@ -107,7 +111,10 @@ Expected variables:
                     {% if idea.status == constant('App\\Entity\\GiftIdea::STATUS_PROPOSED') %}
                         {# "Rejeter" button, shown if status is PROPOSED #}
                         <form method="post"
-                              action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_DISCARDED')}) }}">
+                              action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_DISCARDED'), 'sort': status_sort}) }}"
+                              hx-post="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_DISCARDED'), 'sort': status_sort}) }}"
+                              hx-target="#project-content"
+                              hx-swap="innerHTML">
                             <input type="hidden" name="_token" value="{{ csrf_token('status_idea' ~ idea.id) }}">
                             <button class="button is-danger is-light">
                                 <span class="icon is-small">{{ ux_icon('material-symbols:close') }}</span>
@@ -118,7 +125,10 @@ Expected variables:
                     {% if idea.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED') %}
                         {# "Invalider" button, shown if status is SELECTED #}
                         <form method="post"
-                              action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_PROPOSED')}) }}">
+                              action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_PROPOSED'), 'sort': status_sort}) }}"
+                              hx-post="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_PROPOSED'), 'sort': status_sort}) }}"
+                              hx-target="#project-content"
+                              hx-swap="innerHTML">
                             <input type="hidden" name="_token" value="{{ csrf_token('status_idea' ~ idea.id) }}">
                             <button class="button is-danger is-light"> {# Changed to is-danger #}
                                 <span class="icon is-small">{{ ux_icon('material-symbols:refresh') }}</span>
@@ -128,7 +138,10 @@ Expected variables:
                     {% elseif idea.status == constant('App\\Entity\\GiftIdea::STATUS_DISCARDED') %}
                         {# "Rétablir" button, shown if status is DISCARDED #}
                         <form method="post"
-                              action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_PROPOSED')}) }}">
+                              action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_PROPOSED'), 'sort': status_sort}) }}"
+                              hx-post="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_PROPOSED'), 'sort': status_sort}) }}"
+                              hx-target="#project-content"
+                              hx-swap="innerHTML">
                             <input type="hidden" name="_token" value="{{ csrf_token('status_idea' ~ idea.id) }}">
                             <button class="button is-success is-light">
                                 <span class="icon is-small">{{ ux_icon('material-symbols:refresh') }}</span>
@@ -148,7 +161,7 @@ Expected variables:
                 {% for comment in idea.comments %}
                     {% include 'gift_project/_comment.html.twig' %}
                 {% else %}
-                    <p class="is-size-7 has-text-grey-light is-italic mb-2">Aucun commentaire.</p>
+                    <p id="no-comments-{{ idea.id }}" class="is-size-7 has-text-grey-light is-italic mb-2">Aucun commentaire.</p>
                 {% endfor %}
             </div>
             <div class="mt-2">
@@ -160,7 +173,7 @@ Expected variables:
                             'hx-post': path('app_gift_idea_comment', {'id': idea.id}),
                             'hx-target': '#comments-list-' ~ idea.id,
                             'hx-swap': 'beforeend',
-                            'hx-on::after:request': 'if(ctx.response.raw.ok) this.reset()'
+                            'hx-on::after-request': 'if(event.detail.successful){ this.reset(); document.getElementById("no-comments-' ~ idea.id ~ '")?.remove(); }'
                         }
                     }) }}
                     <div class="field has-addons">

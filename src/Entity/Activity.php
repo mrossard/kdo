@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\ActivityType;
 use App\Repository\ActivityRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -12,17 +13,17 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\HasLifecycleCallbacks]
 class Activity
 {
-    public const TYPE_IDEA_ADDED = 'idea_added';
-    public const TYPE_IDEA_SELECTED = 'idea_selected';
-    public const TYPE_IDEA_DISCARDED = 'idea_discarded';
-    public const TYPE_IDEA_PURCHASED = 'idea_purchased';
-    public const TYPE_COMMENT_ADDED = 'comment_added';
-    public const TYPE_PARTICIPANT_ADDED = 'participant_added';
-    public const TYPE_PARTICIPANT_REMOVED = 'participant_removed';
-    public const TYPE_PROJECT_LOCKED = 'project_locked';
-    public const TYPE_PROJECT_UNLOCKED = 'project_unlocked';
-    public const TYPE_PROJECT_DELIVERED = 'project_delivered';
-    public const TYPE_REIMBURSEMENT_CREATED = 'reimbursement_created';
+    public const string TYPE_IDEA_ADDED = ActivityType::IDEA_ADDED->value;
+    public const string TYPE_IDEA_SELECTED = ActivityType::IDEA_SELECTED->value;
+    public const string TYPE_IDEA_DISCARDED = ActivityType::IDEA_DISCARDED->value;
+    public const string TYPE_IDEA_PURCHASED = ActivityType::IDEA_PURCHASED->value;
+    public const string TYPE_COMMENT_ADDED = ActivityType::COMMENT_ADDED->value;
+    public const string TYPE_PARTICIPANT_ADDED = ActivityType::PARTICIPANT_ADDED->value;
+    public const string TYPE_PARTICIPANT_REMOVED = ActivityType::PARTICIPANT_REMOVED->value;
+    public const string TYPE_PROJECT_LOCKED = ActivityType::PROJECT_LOCKED->value;
+    public const string TYPE_PROJECT_UNLOCKED = ActivityType::PROJECT_UNLOCKED->value;
+    public const string TYPE_PROJECT_DELIVERED = ActivityType::PROJECT_DELIVERED->value;
+    public const string TYPE_REIMBURSEMENT_CREATED = ActivityType::REIMBURSEMENT_CREATED->value;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -119,39 +120,17 @@ class Activity
     public function getMessage(): string
     {
         $userName = $this->getUser()?->getDisplayName() ?? 'Quelqu\'un';
+        /** @var array<string, string|int|float|null> $meta */
         $meta = $this->getMeta() ?? [];
+        $type = ActivityType::tryFrom($this->getType() ?? '');
 
-        return match ($this->getType()) {
-            self::TYPE_IDEA_ADDED => "{$userName} a proposé l'idée « {$meta['idea_name']} »",
-            self::TYPE_IDEA_SELECTED => "{$userName} a sélectionné l'idée « {$meta['idea_name']} »",
-            self::TYPE_IDEA_DISCARDED => "{$userName} a écarté l'idée « {$meta['idea_name']} »",
-            self::TYPE_IDEA_PURCHASED => "{$userName} a acheté « {$meta['idea_name']} » pour {$meta['price']} €",
-            self::TYPE_COMMENT_ADDED => "{$userName} a commenté « {$meta['idea_name']} »",
-            self::TYPE_PARTICIPANT_ADDED => "{$userName} a rejoint le projet",
-            self::TYPE_PARTICIPANT_REMOVED => "{$userName} a quitté le projet",
-            self::TYPE_PROJECT_LOCKED => "{$userName} a verrouillé le projet",
-            self::TYPE_PROJECT_UNLOCKED => "{$userName} a déverrouillé le projet",
-            self::TYPE_PROJECT_DELIVERED => "{$userName} a marqué le projet comme remis",
-            self::TYPE_REIMBURSEMENT_CREATED => "{$userName} a enregistré un remboursement de {$meta['amount']} €",
-            default => 'Action inconnue',
-        };
+        return $type !== null ? $type->formatMessage($userName, $meta) : 'Action inconnue';
     }
 
     public function getIcon(): string
     {
-        return match ($this->getType()) {
-            self::TYPE_IDEA_ADDED => 'material-symbols:lightbulb',
-            self::TYPE_IDEA_SELECTED => 'material-symbols:check-circle',
-            self::TYPE_IDEA_DISCARDED => 'material-symbols:cancel',
-            self::TYPE_IDEA_PURCHASED => 'material-symbols:shopping-cart',
-            self::TYPE_COMMENT_ADDED => 'material-symbols:comment',
-            self::TYPE_PARTICIPANT_ADDED => 'material-symbols:person-add',
-            self::TYPE_PARTICIPANT_REMOVED => 'material-symbols:person-remove',
-            self::TYPE_PROJECT_LOCKED => 'material-symbols:lock',
-            self::TYPE_PROJECT_UNLOCKED => 'material-symbols:lock-open',
-            self::TYPE_PROJECT_DELIVERED => 'material-symbols:redeem',
-            self::TYPE_REIMBURSEMENT_CREATED => 'material-symbols:euro',
-            default => 'material-symbols:info',
-        };
+        $type = ActivityType::tryFrom($this->getType() ?? '');
+
+        return $type !== null ? $type->getIcon() : 'material-symbols:info';
     }
 }

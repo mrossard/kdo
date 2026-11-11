@@ -37,7 +37,11 @@
                                 <td>
                                     <div class="buttons are-small">
                                         {% if contact_balances[contact.id] < 0 %}
-                                            <form method="post" action="{{ path('app_contact_settle_debt', {'id': contact.id}) }}" onsubmit="return confirm('Confirmer que {{ contact.displayName }} vous a remboursé ?');">
+                                            <form method="post"
+                                                  action="{{ path('app_contact_settle_debt', {'id': contact.id}) }}"
+                                                  hx-post="{{ path('app_contact_settle_debt', {'id': contact.id}) }}"
+                                                  hx-confirm="Confirmer que {{ contact.displayName }} vous a remboursé ?"
+                                                  hx-target="body">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('settle_debt' ~ contact.id) }}">
                                                 <button class="button is-success is-light" title="Signaler dette payée">
                                                     <span class="icon">{{ ux_icon('material-symbols:paid') }}</span>
@@ -47,7 +51,11 @@
                                         <a href="{{ path('app_contact_view', {'id': contact.id}) }}" class="button is-info" title="Voir la liste de souhaits">
                                             <span class="icon">{{ ux_icon('material-symbols:list') }}</span>
                                         </a>
-                                        <form method="post" action="{{ path('app_contact_remove', {'id': contact.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce contact ?');">
+                                        <form method="post"
+                                              action="{{ path('app_contact_remove', {'id': contact.id}) }}"
+                                              hx-post="{{ path('app_contact_remove', {'id': contact.id}) }}"
+                                              hx-confirm="Êtes-vous sûr de vouloir supprimer ce contact ?"
+                                              hx-target="body">
                                             <input type="hidden" name="_token" value="{{ csrf_token('remove_contact' ~ contact.id) }}">
                                             <button class="button is-small is-danger" title="Supprimer ce contact">
                                                 <span class="icon">{{ ux_icon('material-symbols:delete') }}</span>
@@ -132,14 +140,22 @@
                                 <td>{{ request.sender.displayName }}</td>
                                 <td>
                                     <div class="buttons are-small">
-                                        <form method="post" action="{{ path('app_contact_request_accept', {'id': request.id}) }}" onsubmit="return confirm('Accepter la demande de {{ request.sender.displayName }} ?');">
+                                        <form method="post"
+                                              action="{{ path('app_contact_request_accept', {'id': request.id}) }}"
+                                              hx-post="{{ path('app_contact_request_accept', {'id': request.id}) }}"
+                                              hx-confirm="Accepter la demande de {{ request.sender.displayName }} ?"
+                                              hx-target="body">
                                             <input type="hidden" name="_token" value="{{ csrf_token('accept_request' ~ request.id) }}">
                                             <button class="button is-success">
                                                 <span class="icon">{{ ux_icon('material-symbols:check') }}</span>
                                                 <span>Accepter</span>
                                             </button>
                                         </form>
-                                        <form method="post" action="{{ path('app_contact_request_decline', {'id': request.id}) }}" onsubmit="return confirm('Refuser la demande de {{ request.sender.displayName }} ?');">
+                                        <form method="post"
+                                              action="{{ path('app_contact_request_decline', {'id': request.id}) }}"
+                                              hx-post="{{ path('app_contact_request_decline', {'id': request.id}) }}"
+                                              hx-confirm="Refuser la demande de {{ request.sender.displayName }} ?"
+                                              hx-target="body">
                                             <input type="hidden" name="_token" value="{{ csrf_token('decline_request' ~ request.id) }}">
                                             <button class="button is-danger">
                                                 <span class="icon">{{ ux_icon('material-symbols:close') }}</span>

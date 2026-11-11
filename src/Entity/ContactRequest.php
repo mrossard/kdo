@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\ContactRequestStatus;
 use App\Repository\ContactRequestRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -42,9 +43,9 @@ class ContactRequest
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    public const string STATUS_PENDING = 'PENDING';
-    public const string STATUS_ACCEPTED = 'ACCEPTED';
-    public const string STATUS_DECLINED = 'DECLINED';
+    public const string STATUS_PENDING = ContactRequestStatus::PENDING->value;
+    public const string STATUS_ACCEPTED = ContactRequestStatus::ACCEPTED->value;
+    public const string STATUS_DECLINED = ContactRequestStatus::DECLINED->value;
 
     public function __construct()
     {

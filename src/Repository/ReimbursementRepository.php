@@ -19,10 +19,11 @@ class ReimbursementRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return Reimbursement[]
+     * @return list<Reimbursement>
      */
     public function findByUserInvolvement(\App\Entity\User $user): array
     {
+        /** @var list<Reimbursement> */
         return $this
             ->createQueryBuilder('r')
             ->where('r.fromUser = :user OR r.toUser = :user')
@@ -31,28 +32,4 @@ class ReimbursementRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
-
-    //    /**
-    //     * @return Reimbursement[] Returns an array of Reimbursement objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('r.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-    //    public function findOneBySomeField($value): ?Reimbursement
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
 }

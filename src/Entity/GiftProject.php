@@ -10,6 +10,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
+// @mago-expect lint:too-many-properties
 #[ORM\Entity(repositoryClass: GiftProjectRepository::class)]
 class GiftProject
 {
@@ -28,10 +29,10 @@ class GiftProject
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(options: ['default' => false])]
-    private ?bool $isLocked = false;
+    private bool $isLocked = false;
 
     #[ORM\Column(options: ['default' => false])]
-    private ?bool $isArchived = false;
+    private bool $isArchived = false;
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $lastActivityAt = null;
@@ -127,7 +128,7 @@ class GiftProject
         return $this;
     }
 
-    public function isLocked(): ?bool
+    public function isLocked(): bool
     {
         return $this->isLocked;
     }
@@ -139,7 +140,7 @@ class GiftProject
         return $this;
     }
 
-    public function isArchived(): ?bool
+    public function isArchived(): bool
     {
         return $this->isArchived;
     }

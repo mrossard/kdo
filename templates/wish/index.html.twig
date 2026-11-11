@@ -4,7 +4,7 @@
 
 {% block body %}
     <section class="section">
-        <div class="container">
+        <div class="container" id="wish-list-container">
             <div class="level">
                 <div class="level-left">
                     <h1 class="title">Ma Liste de souhaits</h1>
@@ -13,12 +13,24 @@
                     <div class="buttons">
                         <div class="level-item">
                             {% if show_delivered %}
-                                <a href="{{ path('app_wish_index') }}" class="button is-info is-light">
+                                <a href="{{ path('app_wish_index') }}"
+                                   hx-get="{{ path('app_wish_index') }}"
+                                   hx-target="#wish-list-container"
+                                   hx-select="#wish-list-container"
+                                   hx-swap="outerHTML"
+                                   hx-push-url="true"
+                                   class="button is-info is-light">
                                     <span class="icon">{{ ux_icon('material-symbols:visibility-off') }}</span>
                                     <span>Non reçus uniquement</span>
                                 </a>
                             {% else %}
-                                <a href="{{ path('app_wish_index', {'showDelivered': true}) }}" class="button is-info">
+                                <a href="{{ path('app_wish_index', {'showDelivered': true}) }}"
+                                   hx-get="{{ path('app_wish_index', {'showDelivered': true}) }}"
+                                   hx-target="#wish-list-container"
+                                   hx-select="#wish-list-container"
+                                   hx-swap="outerHTML"
+                                   hx-push-url="true"
+                                   class="button is-info">
                                     <span class="icon">{{ ux_icon('material-symbols:visibility') }}</span>
                                     <span>Inclure les cadeaux reçus</span>
                                 </a>
@@ -36,11 +48,17 @@
                 <thead>
                 <tr>
                     <th>
-                        <a href="{{ path('app_wish_index', {
+                        {% set name_sort_url = path('app_wish_index', {
                             'sort': 'name',
                             'direction': (current_sort == 'name' and current_direction == 'ASC') ? 'DESC' : 'ASC',
                             'showDelivered': show_delivered
-                        }) }}">
+                        }) %}
+                        <a href="{{ name_sort_url }}"
+                           hx-get="{{ name_sort_url }}"
+                           hx-target="#wish-list-container"
+                           hx-select="#wish-list-container"
+                           hx-swap="outerHTML"
+                           hx-push-url="true">
                             Nom
                             {% if current_sort == 'name' %}
                                 <span class="icon is-small">
@@ -50,11 +68,17 @@
                         </a>
                     </th>
                     <th>
-                        <a href="{{ path('app_wish_index', {
+                        {% set price_sort_url = path('app_wish_index', {
                             'sort': 'price',
                             'direction': (current_sort == 'price' and current_direction == 'ASC') ? 'DESC' : 'ASC',
                             'showDelivered': show_delivered
-                        }) }}">
+                        }) %}
+                        <a href="{{ price_sort_url }}"
+                           hx-get="{{ price_sort_url }}"
+                           hx-target="#wish-list-container"
+                           hx-select="#wish-list-container"
+                           hx-swap="outerHTML"
+                           hx-push-url="true">
                             Prix
                             {% if current_sort == 'price' %}
                                 <span class="icon is-small">
@@ -127,7 +151,12 @@
                                     <span class="icon">{{ ux_icon('material-symbols:edit') }}</span>
                                     <span>Modifier</span>
                                 </a>
-                                <form method="post" action="{{ path('app_wish_delete', {'id': wish.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce souhait ?');">
+                                <form method="post"
+                                      action="{{ path('app_wish_delete', {'id': wish.id}) }}"
+                                      hx-post="{{ path('app_wish_delete', {'id': wish.id}) }}"
+                                      hx-confirm="Êtes-vous sûr de vouloir supprimer ce souhait ?"
+                                      hx-target="closest tr"
+                                      hx-swap="outerHTML">
                                     <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ wish.id) }}">
                                     <button class="button is-danger is-light is-small">
                                         <span class="icon">{{ ux_icon('material-symbols:delete') }}</span>

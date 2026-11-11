@@ -31,4 +31,11 @@ htmx.onLoad((content) => {
             }
         });
     });
+
+    const $notificationDeletes = content.querySelectorAll('.notification .delete');
+    $notificationDeletes.forEach($delete => {
+        $delete.addEventListener('click', () => {
+            $delete.parentElement?.remove();
+        });
+    });
 });
