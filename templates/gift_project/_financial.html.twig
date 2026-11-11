@@ -1,13 +1,64 @@
 <div class="box">
-    <h3 class="title is-4">Bilan Financier</h3>
+    <div class="level mb-4">
+        <div class="level-left">
+            <div>
+                <h3 class="title is-4 mb-1">Bilan Financier</h3>
+                <p class="subtitle is-6 mb-0">Répartition des parts et calcul automatique des remboursements.</p>
+            </div>
+        </div>
+    </div>
+
+    {# Top KPI summary row #}
+    <div class="columns is-multiline mb-4">
+        <div class="column is-4">
+            <div class="box has-background-light p-3 h-100">
+                <div class="is-flex is-align-items-center" style="gap: 0.75rem;">
+                    <span class="kpi-icon is-sm is-primary">
+                        {{ ux_icon('material-symbols:shopping-bag') }}
+                    </span>
+                    <div>
+                        <p class="heading mb-0">Coût total</p>
+                        <p class="title is-4 mb-0 tabular-nums">{{ total_cost|number_format(2, ',', ' ') }} €</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="column is-4">
+            <div class="box has-background-light p-3 h-100">
+                <div class="is-flex is-align-items-center" style="gap: 0.75rem;">
+                    <span class="kpi-icon is-sm is-info">
+                        {{ ux_icon('material-symbols:pie-chart') }}
+                    </span>
+                    <div>
+                        <p class="heading mb-0">Coût / part</p>
+                        <p class="title is-4 mb-0 tabular-nums">{{ cost_per_share|default(average_cost)|number_format(2, ',', ' ') }} €</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="column is-4">
+            <div class="box has-background-light p-3 h-100">
+                <div class="is-flex is-align-items-center" style="gap: 0.75rem;">
+                    <span class="kpi-icon is-sm is-link">
+                        {{ ux_icon('material-symbols:group') }}
+                    </span>
+                    <div>
+                        <p class="heading mb-0">Total des parts</p>
+                        <p class="title is-4 mb-0 tabular-nums">{{ total_shares|default(summary|length)|number_format(1, ',', ' ') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="columns">
+        {# Left: Récapitulatif des dépenses #}
         <div class="column is-6">
-            <div class="card">
+            <div class="card h-100">
                 <header class="card-header">
                     <p class="card-header-title">
-                        <span class="icon mr-2">{{ ux_icon('material-symbols:account-balance-wallet') }}</span>
-                        Récapitulatif des dépenses
+                        <span class="icon mr-2 has-text-primary">{{ ux_icon('material-symbols:account-balance-wallet') }}</span>
+                        <span>Récapitulatif des dépenses</span>
                     </p>
                 </header>
                 <div class="card-content">
@@ -19,7 +70,8 @@
                               hx-swap="innerHTML">
                             <input type="hidden" name="_token" value="{{ csrf_token('update_shares_' ~ project.id) }}">
                     {% endif %}
-                    <table class="table is-fullwidth is-striped is-vcentered">
+
+                    <table class="table is-fullwidth is-vcentered">
                         <thead>
                             <tr>
                                 <th>Participant</th>
@@ -32,26 +84,31 @@
                         <tbody>
                             {% for item in summary %}
                                 <tr>
-                                    <td>{{ item.user.displayName }}</td>
-                                    <td class="has-text-right">
+                                    <td>
+                                        <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                            {{ include('_components/_avatar.html.twig', {name: item.user.displayName, size: 'sm'}) }}
+                                            <span class="has-text-weight-medium">{{ item.user.displayName }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="has-text-right tabular-nums">
                                         {% if can_edit_shares %}
                                             <input class="input is-small has-text-right" type="number" step="0.5" min="0"
                                                    name="shares[{{ item.user.id }}]"
                                                    value="{{ item.share|default(1) }}"
-                                                   style="width: 75px; display: inline-block;">
+                                                   style="width: 70px; display: inline-block;">
                                         {% else %}
-                                            {{ item.share|default(1)|number_format(1, ',', ' ') }}
+                                            <span class="tag is-light">{{ item.share|default(1)|number_format(1, ',', ' ') }}</span>
                                         {% endif %}
                                     </td>
-                                    <td class="has-text-right">{{ item.target|default(average_cost)|number_format(2, ',', ' ') }} €</td>
-                                    <td class="has-text-right">{{ item.paid|number_format(2, ',', ' ') }} €</td>
-                                    <td class="has-text-right">
+                                    <td class="has-text-right tabular-nums">{{ item.target|default(average_cost)|number_format(2, ',', ' ') }} €</td>
+                                    <td class="has-text-right tabular-nums">{{ item.paid|number_format(2, ',', ' ') }} €</td>
+                                    <td class="has-text-right tabular-nums">
                                         {% if item.balance > 0 %}
-                                            <span class="has-text-success">+{{ item.balance|number_format(2, ',', ' ') }} €</span>
+                                            <span class="tag is-success is-light">+{{ item.balance|number_format(2, ',', ' ') }} €</span>
                                         {% elseif item.balance < 0 %}
-                                            <span class="has-text-danger">{{ item.balance|number_format(2, ',', ' ') }} €</span>
+                                            <span class="tag is-danger is-light">{{ item.balance|number_format(2, ',', ' ') }} €</span>
                                         {% else %}
-                                            <span class="has-text-grey">-</span>
+                                            <span class="tag is-light">0,00 €</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -60,21 +117,17 @@
                         <tfoot>
                             <tr>
                                 <th>Total</th>
-                                <th class="has-text-right">{{ total_shares|default(summary|length)|number_format(1, ',', ' ') }}</th>
-                                <th class="has-text-right">{{ total_cost|number_format(2, ',', ' ') }} €</th>
-                                <th class="has-text-right">{{ total_cost|number_format(2, ',', ' ') }} €</th>
+                                <th class="has-text-right tabular-nums">{{ total_shares|default(summary|length)|number_format(1, ',', ' ') }}</th>
+                                <th class="has-text-right tabular-nums">{{ total_cost|number_format(2, ',', ' ') }} €</th>
+                                <th class="has-text-right tabular-nums">{{ total_cost|number_format(2, ',', ' ') }} €</th>
                                 <th></th>
-                            </tr>
-                            <tr>
-                                <th colspan="2">Coût / part</th>
-                                <th class="has-text-right">{{ cost_per_share|default(average_cost)|number_format(2, ',', ' ') }} €</th>
-                                <th colspan="2"></th>
                             </tr>
                         </tfoot>
                     </table>
+
                     {% if can_edit_shares %}
-                        <div class="has-text-right mt-2">
-                            <button type="submit" class="button is-small is-link is-light">
+                        <div class="has-text-right mt-3">
+                            <button type="submit" class="button is-small is-primary is-light">
                                 <span class="icon is-small">{{ ux_icon('material-symbols:save') }}</span>
                                 <span>Enregistrer les parts</span>
                             </button>
@@ -85,75 +138,94 @@
             </div>
         </div>
 
+        {# Right: Équilibrage Tricount / Splitwise #}
         <div class="column is-6">
-            <div class="card">
+            <div class="card h-100">
                 <header class="card-header">
                     <p class="card-header-title">
-                        <span class="icon mr-2">{{ ux_icon('material-symbols:savings') }}</span>
-                        Équilibrage (Qui doit à qui ?)
+                        <span class="icon mr-2 has-text-success">{{ ux_icon('material-symbols:savings') }}</span>
+                        <span>Équilibrage (Qui doit à qui ?)</span>
                     </p>
                 </header>
                 <div class="card-content">
                     {% if transfers is not empty %}
-                        <div class="content">
-                            <ul style="list-style: none; margin-left: 0;">
-                                {% for transfer in transfers %}
-                                    <li class="mb-3 box has-background-white-ter p-3">
-                                        <div class="level is-mobile">
-                                            <div class="level-left">
-                                                <strong>{{ transfer.from.displayName }}</strong>
-                                            </div>
-                                            <div class="level-item has-text-centered">
-                                                <div class="is-flex is-flex-direction-column is-align-items-center">
-                                                    <span class="tag is-info is-light mb-1">{{ transfer.amount|number_format(2, ',', ' ') }} €</span>
-                                                    <span class="icon has-text-grey-light">{{ ux_icon('material-symbols:arrow-right-alt') }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="level-right">
-                                                <div class="is-flex is-flex-direction-column is-align-items-end">
-                                                    <strong>{{ transfer.to.displayName }}</strong>
-                                                    {% if transfer.to == app.user %}
-                                                        <form method="post" action="{{ path('app_project_reimburse', {'id': project.id}) }}"
-                                                              hx-post="{{ path('app_project_reimburse', {'id': project.id}) }}"
-                                                              hx-confirm="Confirmez-vous avoir reçu {{ transfer.amount }} € de {{ transfer.from.displayName }} ?"
-                                                              hx-target="body"
-                                                              class="mt-1">
-                                                            <input type="hidden" name="_token" value="{{ csrf_token('reimburse_' ~ project.id) }}">
-                                                            <input type="hidden" name="debtor_id" value="{{ transfer.from.id }}">
-                                                            <input type="hidden" name="amount" value="{{ transfer.amount }}">
-                                                            <button type="submit" class="button is-small is-success is-light" title="Confirmer la réception">
-                                                                <span class="icon is-small">{{ ux_icon('material-symbols:check') }}</span>
-                                                                <span>Reçu</span>
-                                                            </button>
-                                                        </form>
-                                                    {% endif %}
-                                                </div>
+                        <div class="is-flex is-flex-direction-column" style="gap: 0.75rem;">
+                            {% for transfer in transfers %}
+                                <div class="transfer-card">
+                                    <div class="transfer-flow">
+                                        <div class="transfer-person">
+                                            {{ include('_components/_avatar.html.twig', {name: transfer.from.displayName, size: 'md'}) }}
+                                            <div>
+                                                <p class="has-text-weight-bold is-size-6 mb-0">{{ transfer.from.displayName }}</p>
+                                                <span class="is-size-7 has-text-danger">Doit rembourser</span>
                                             </div>
                                         </div>
-                                    </li>
-                                {% endfor %}
-                            </ul>
+
+                                        <div class="transfer-bridge">
+                                            <span class="transfer-amount-badge tabular-nums">
+                                                {{ transfer.amount|number_format(2, ',', ' ') }} €
+                                            </span>
+                                            <div class="transfer-line"></div>
+                                        </div>
+
+                                        <div class="transfer-person is-justify-content-flex-end has-text-right">
+                                            <div>
+                                                <p class="has-text-weight-bold is-size-6 mb-0">{{ transfer.to.displayName }}</p>
+                                                <span class="is-size-7 has-text-success">Doit recevoir</span>
+                                            </div>
+                                            {{ include('_components/_avatar.html.twig', {name: transfer.to.displayName, size: 'md'}) }}
+                                        </div>
+                                    </div>
+
+                                    {% if transfer.to == app.user %}
+                                        <div class="has-text-right mt-3 pt-2" style="border-top: 1px dashed var(--bulma-border-weak);">
+                                            <form method="post" action="{{ path('app_project_reimburse', {'id': project.id}) }}"
+                                                  hx-post="{{ path('app_project_reimburse', {'id': project.id}) }}"
+                                                  hx-confirm="Confirmez-vous avoir reçu {{ transfer.amount }} € de {{ transfer.from.displayName }} ?"
+                                                  hx-target="body">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('reimburse_' ~ project.id) }}">
+                                                <input type="hidden" name="debtor_id" value="{{ transfer.from.id }}">
+                                                <input type="hidden" name="amount" value="{{ transfer.amount }}">
+                                                <button type="submit" class="button is-small is-success is-light" title="Confirmer la réception">
+                                                    <span class="icon is-small">{{ ux_icon('material-symbols:check') }}</span>
+                                                    <span>Marquer les {{ transfer.amount|number_format(2, ',', ' ') }} € comme reçus</span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
                         </div>
                     {% else %}
-                        <div class="notification is-success is-light">
-                            Les comptes sont équilibrés !
+                        <div class="box empty-state has-text-centered py-5">
+                            <span class="kpi-icon is-success mx-auto mb-2">
+                                {{ ux_icon('material-symbols:check-circle', {height: '1.75rem', width: '1.75rem'}) }}
+                            </span>
+                            <p class="title is-6 mb-1">Comptes à l'équilibre !</p>
+                            <p class="subtitle is-7 mb-0">Tous les remboursements entre participants sont réglés.</p>
                         </div>
                     {% endif %}
 
                     {% if reimbursements is not empty %}
-                        <hr>
-                        <h4 class="title is-6">Historique des remboursements</h4>
-                        <div class="content is-small">
-                            <ul>
-                                {% for r in reimbursements %}
-                                    <li>
-                                        {{ r.createdAt|date('d/m') }} : 
-                                        <strong>{{ r.fromUser.displayName }}</strong> a remboursé 
-                                        <strong>{{ r.amount|number_format(2, ',', ' ') }} €</strong> à 
-                                        <strong>{{ r.toUser.displayName }}</strong>
-                                    </li>
-                                {% endfor %}
-                            </ul>
+                        <hr class="my-4">
+                        <h4 class="title is-6 mb-3 is-flex is-align-items-center" style="gap: 0.4rem;">
+                            <span class="icon is-small has-text-grey">{{ ux_icon('material-symbols:history') }}</span>
+                            <span>Historique des remboursements</span>
+                        </h4>
+                        <div class="is-flex is-flex-direction-column" style="gap: 0.4rem;">
+                            {% for r in reimbursements %}
+                                <div class="participant-row">
+                                    <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                        {{ include('_components/_avatar.html.twig', {name: r.fromUser.displayName, size: 'sm'}) }}
+                                        <span class="is-size-7">
+                                            <strong>{{ r.fromUser.displayName }}</strong> a remboursé
+                                            <strong class="has-text-success tabular-nums">{{ r.amount|number_format(2, ',', ' ') }} €</strong> à
+                                            <strong>{{ r.toUser.displayName }}</strong>
+                                        </span>
+                                    </div>
+                                    <span class="tag is-light is-size-7 tabular-nums">{{ r.createdAt|date('d/m') }}</span>
+                                </div>
+                            {% endfor %}
                         </div>
                     {% endif %}
                 </div>

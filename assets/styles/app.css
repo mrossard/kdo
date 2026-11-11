@@ -162,12 +162,9 @@ hr {
     margin: 1.25rem 0;
 }
 
-/* Equal height helper used in dashboard & contact grids */
+/* Equal height utility */
 .h-100 {
     height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
 }
 
 .rounded {
@@ -878,21 +875,27 @@ html[data-theme="dark"] .kdo-avatar--tone-5 { color: hsl(36, 92%, 68%); }
 /* E-commerce Product Cards */
 .product-card-media {
     position: relative;
-    aspect-ratio: 16 / 10;
-    background: linear-gradient(135deg, hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.08), hsla(199, 89%, 48%, 0.08));
+    height: 160px;
+    background: var(--bulma-scheme-main-bis);
     border-bottom: 1px solid var(--bulma-border-weak);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
     overflow: hidden;
 }
 
 .product-card-media img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    transition: transform 0.25s ease;
 }
 
 .product-card:hover .product-card-media img {
-    transform: scale(1.03);
+    transform: scale(1.04);
 }
 
 .product-card-placeholder {
@@ -902,6 +905,38 @@ html[data-theme="dark"] .kdo-avatar--tone-5 { color: hsl(36, 92%, 68%); }
     align-items: center;
     justify-content: center;
     color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.45);
+}
+
+/* Compact Adaptive Idea Thumbnail */
+.idea-thumb-box {
+    width: 84px;
+    height: 84px;
+    border-radius: var(--bulma-radius-medium);
+    border: 1px solid var(--bulma-border-weak);
+    background-color: var(--bulma-scheme-main-bis);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    overflow: hidden;
+}
+
+.idea-thumb-box img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+}
+
+.idea-card:hover .idea-thumb-box img {
+    transform: scale(1.05);
+}
+
+.idea-thumb-box.is-placeholder {
+    color: var(--bulma-text-weak);
+    background-color: var(--kdo-surface-subtle);
 }
 
 .product-price-badge {
@@ -930,4 +965,152 @@ body #wish-modal-content [data-modal-close] {
 
 .w-100 {
     width: 100%;
+}
+
+/* ==========================================================================
+   Live Poll, Idea Cards & Financial Transfer Cards
+   ========================================================================== */
+
+/* Live Poll Component */
+.poll-card {
+    background: var(--bulma-scheme-main);
+    border: 1px solid var(--bulma-border-weak);
+    border-radius: var(--bulma-radius-large);
+    box-shadow: var(--bulma-shadow);
+}
+
+.poll-option {
+    border: 1px solid var(--bulma-border-weak);
+    border-radius: var(--bulma-radius);
+    padding: 0.65rem 0.85rem;
+    transition: all 0.16s ease;
+    cursor: pointer;
+    background-color: var(--bulma-scheme-main-bis);
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.poll-option:hover {
+    border-color: var(--bulma-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+}
+
+.poll-option.is-voted {
+    border-color: var(--bulma-success);
+    background-color: hsla(160, 84%, 39%, 0.05);
+}
+
+.poll-track {
+    position: relative;
+    height: 8px;
+    background: var(--bulma-scheme-main-ter);
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.poll-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    background: linear-gradient(90deg, var(--bulma-primary), hsl(199, 89%, 48%));
+}
+
+.poll-fill.is-voted {
+    background: linear-gradient(90deg, var(--bulma-success), hsl(160, 84%, 48%));
+}
+
+/* Enhanced Idea Card */
+.idea-card {
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    border-radius: var(--bulma-radius-large);
+    overflow: hidden;
+}
+
+.idea-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -4px rgba(15, 23, 42, 0.1);
+}
+
+.idea-card.is-selected {
+    box-shadow: 0 0 0 2px var(--bulma-success), var(--bulma-shadow);
+}
+
+.idea-card.is-discarded {
+    opacity: 0.72;
+    filter: grayscale(0.2);
+}
+
+/* Payment Transfer Flow Cards (Splitwise style) */
+.transfer-card {
+    background: var(--bulma-scheme-main);
+    border: 1px solid var(--bulma-border-weak);
+    border-radius: var(--bulma-radius-large);
+    padding: 1rem;
+    box-shadow: var(--bulma-shadow);
+    transition: all 0.16s ease;
+}
+
+.transfer-card:hover {
+    border-color: var(--bulma-primary);
+}
+
+.transfer-flow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.transfer-person {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 120px;
+}
+
+.transfer-bridge {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.5rem;
+}
+
+.transfer-line {
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--bulma-border-weak), var(--bulma-primary), var(--bulma-border-weak));
+    position: relative;
+    margin-top: 0.25rem;
+}
+
+.transfer-line::after {
+    content: '';
+    position: absolute;
+    right: -2px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid var(--bulma-primary);
+    border-right: 2px solid var(--bulma-primary);
+    transform: rotate(45deg);
+}
+
+.transfer-amount-badge {
+    background-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.12);
+    color: var(--bulma-primary);
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.2rem 0.75rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+}
+
+html[data-theme="dark"] .transfer-amount-badge {
+    background-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.22);
+    color: hsl(var(--bulma-primary-h), var(--bulma-primary-s), 78%);
 }

@@ -10,67 +10,95 @@ Expected variables:
 
 {% set card_class = '' %}
 {% if idea.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED') %}
-    {% set card_class = 'has-background-success-light' %}
+    {% set card_class = 'has-background-success-light is-selected' %}
 {% elseif idea.status == constant('App\\Entity\\GiftIdea::STATUS_DISCARDED') %}
-    {% set card_class = 'has-background-grey-lighter' %}
+    {% set card_class = 'has-background-grey-lighter is-discarded' %}
 {% endif %}
 {% set comment_forms = comment_forms|default([]) %}
 
-<div class="card {{ card_class }}" id="gift-idea-{{ idea.id }}"> {# Add an ID for HTMX targeting #}
-    <div class="card-content">
-        <div class="level is-mobile mb-2">
-            <div class="level-left">
-                {% if idea.imageUrl %}
-                    <figure class="image is-64x64 mr-3 is-flex-shrink-0">
-                        <img src="{{ idea.imageUrl }}" alt="{{ idea.name }}" style="object-fit: cover; width: 64px; height: 64px; border-radius: 6px;">
-                    </figure>
-                {% endif %}
-                <div class="media-content">
-                    <p class="title is-4 mb-1">{{ idea.name }}</p>
-                    <p class="subtitle is-6 mb-1">{{ idea.price ? idea.price|format_currency('EUR') : 'Prix non défini' }}</p>
-                    <span class="tag is-small {{ idea.priorityEnum.badgeClass }}">
-                        <span class="icon is-small mr-1">{{ ux_icon(idea.priorityEnum.icon) }}</span>
-                        <span>{{ idea.priorityEnum.label }}</span>
+<div class="card idea-card h-100 {{ card_class }}" id="gift-idea-{{ idea.id }}">
+    <div class="card-content p-4">
+        {# Top bar: Tags, Price & Status #}
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3" style="gap: 0.5rem; flex-wrap: wrap;">
+            <div class="tags mb-0">
+                <span class="tag is-small {{ idea.priorityEnum.badgeClass }}">
+                    <span class="icon is-small mr-1">{{ ux_icon(idea.priorityEnum.icon) }}</span>
+                    <span>{{ idea.priorityEnum.label }}</span>
+                </span>
+                {% if idea.price %}
+                    <span class="tag is-primary is-light has-text-weight-bold tabular-nums">
+                        {{ idea.price|format_currency('EUR') }}
                     </span>
-                </div>
-            </div>
-            <div class="level-right">
-                {% if idea.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED') %}
-                    <span class="tag is-success is-medium">Validé</span>
-                {% elseif idea.status == constant('App\\Entity\\GiftIdea::STATUS_DISCARDED') %}
-                    <span class="tag is-danger is-light">Mis de côté</span>
                 {% else %}
-                    <span class="tag is-info is-light">Proposé</span>
+                    <span class="tag is-light is-size-7">Prix libre</span>
+                {% endif %}
+            </div>
+
+            <div>
+                {% if idea.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED') %}
+                    <span class="tag is-success is-medium">
+                        <span class="icon is-small mr-1">{{ ux_icon('material-symbols:check-circle') }}</span>
+                        <span>Validé</span>
+                    </span>
+                {% elseif idea.status == constant('App\\Entity\\GiftIdea::STATUS_DISCARDED') %}
+                    <span class="tag is-danger is-light">
+                        <span class="icon is-small mr-1">{{ ux_icon('material-symbols:block') }}</span>
+                        <span>Mis de côté</span>
+                    </span>
+                {% else %}
+                    <span class="tag is-info is-light">
+                        <span class="icon is-small mr-1">{{ ux_icon('material-symbols:lightbulb') }}</span>
+                        <span>Proposé</span>
+                    </span>
                 {% endif %}
             </div>
         </div>
 
-        {% if idea.description %}
-            <div class="content">{{ idea.description|nl2br }}</div>
-        {% endif %}
+        {# Main Media block: Adaptive Thumbnail + Title & Proposer #}
+        <div class="is-flex is-align-items-flex-start mb-3" style="gap: 0.85rem;">
+            {% if idea.imageUrl %}
+                <div class="idea-thumb-box is-flex-shrink-0">
+                    <img src="{{ idea.imageUrl }}" alt="{{ idea.name }}" loading="lazy">
+                </div>
+            {% else %}
+                <div class="idea-thumb-box is-placeholder is-flex-shrink-0">
+                    {{ ux_icon('material-symbols:redeem', {height: '1.75rem', width: '1.75rem'}) }}
+                </div>
+            {% endif %}
 
-        <div class="field is-grouped is-grouped-multiline">
-            {% if idea.url %}
-                <div class="control">
+            <div class="is-flex-grow-1" style="min-width: 0;">
+                <p class="title is-5 mb-1" style="word-break: break-word;">{{ idea.name }}</p>
+                <div class="is-flex is-align-items-center mb-2" style="gap: 0.45rem;">
+                    {{ include('_components/_avatar.html.twig', {name: idea.proposer.displayName, size: 'sm'}) }}
+                    <span class="is-size-7 has-text-grey">Proposé par <strong class="has-text-grey-dark">{{ idea.proposer.displayName }}</strong></span>
+                </div>
+                {% if idea.url %}
                     <a href="{{ idea.url }}" target="_blank" rel="noopener noreferrer"
                        class="button is-small is-link is-light">
                         <span class="icon is-small">{{ ux_icon('material-symbols:open-in-new') }}</span>
                         <span>Voir le produit</span>
                     </a>
-                </div>
-            {% endif %}
+                {% endif %}
+            </div>
         </div>
 
+        {% if idea.description %}
+            <div class="content is-size-7 has-text-grey mb-3 p-3 box has-background-light rounded">{{ idea.description|nl2br }}</div>
+        {% endif %}
+
+        {# Purchased indicator & form #}
         {% if project.locked and idea.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED') %}
-            <hr class="is-small">
+            <hr class="my-3">
             {% if idea.purchasedBy %}
-                <div class="notification is-success is-light p-3">
-                    <div class="mb-2">
-                        <span class="icon">{{ ux_icon('material-symbols:shopping-bag') }}</span>
-                        <strong>Acheté par {{ idea.purchasedBy.displayName }}</strong>
-                        {% if idea.purchasePrice %}
-                            pour {{ idea.purchasePrice }} €
-                        {% endif %}
+                <div class="notification is-success is-light p-3 mb-2">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="icon has-text-success">{{ ux_icon('material-symbols:shopping-bag') }}</span>
+                        <div>
+                            <strong>Acheté par {{ idea.purchasedBy.displayName }}</strong>
+                            {% if idea.purchasePrice %}
+                                <span class="tabular-nums">pour {{ idea.purchasePrice }} €</span>
+                            {% endif %}
+                        </div>
                     </div>
                     {% if project.deliveredAt is null and (app.user == idea.purchasedBy or app.user == project.owner) %}
                         <div class="is-flex is-flex-wrap-wrap is-align-items-center mt-2" style="gap: 0.5rem;">
@@ -80,13 +108,13 @@ Expected variables:
                                 <input type="hidden" name="_token" value="{{ csrf_token('mark_purchased' ~ idea.id) }}">
                                 <div class="field has-addons mb-0">
                                     <div class="control">
-                                        <input class="input is-small" type="number" name="price" step="0.01"
+                                        <input class="input is-small tabular-nums" type="number" name="price" step="0.01"
                                                value="{{ idea.purchasePrice }}" placeholder="Prix réel (€)" required style="width: 110px;">
                                     </div>
                                     <div class="control">
                                         <button type="submit" class="button is-small is-link is-light">
                                             <span class="icon is-small">{{ ux_icon('material-symbols:edit') }}</span>
-                                            <span>Modifier le prix</span>
+                                            <span>Modifier</span>
                                         </button>
                                     </div>
                                 </div>
@@ -111,7 +139,7 @@ Expected variables:
                     <input type="hidden" name="_token" value="{{ csrf_token('mark_purchased' ~ idea.id) }}">
                     <div class="field has-addons">
                         <div class="control">
-                            <input class="input is-small" type="number" name="price" step="0.01"
+                            <input class="input is-small tabular-nums" type="number" name="price" step="0.01"
                                    placeholder="Prix réel (€)" required>
                         </div>
                         <div class="control">
@@ -125,9 +153,9 @@ Expected variables:
             {% endif %}
         {% endif %}
 
-
+        {# Proposer / Owner action buttons #}
         {% if (app.user == idea.proposer or app.user == project.owner) and not project.locked and project.deliveredAt is null %}
-            <div class="buttons is-small mt-2 is-right">
+            <div class="buttons is-small mt-3 is-right">
                 <button class="button is-link is-light"
                         hx-get="{{ path('app_gift_idea_edit', {'id': idea.id}) }}"
                         hx-target="#gift-idea-{{ idea.id }}"
@@ -139,7 +167,6 @@ Expected variables:
                 {% if app.user == project.owner %}
                     {% set status_sort = current_sort|default(app.request.query.get('sort', 'status')) %}
                     {% if idea.status == constant('App\\Entity\\GiftIdea::STATUS_PROPOSED') %}
-                        {# "Valider" button, shown if status is PROPOSED #}
                         <form method="post"
                               action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_SELECTED'), 'sort': status_sort}) }}"
                               hx-post="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_SELECTED'), 'sort': status_sort}) }}"
@@ -153,7 +180,6 @@ Expected variables:
                         </form>
                     {% endif %}
                     {% if idea.status == constant('App\\Entity\\GiftIdea::STATUS_PROPOSED') %}
-                        {# "Rejeter" button, shown if status is PROPOSED #}
                         <form method="post"
                               action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_DISCARDED'), 'sort': status_sort}) }}"
                               hx-post="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_DISCARDED'), 'sort': status_sort}) }}"
@@ -167,20 +193,18 @@ Expected variables:
                         </form>
                     {% endif %}
                     {% if idea.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED') %}
-                        {# "Invalider" button, shown if status is SELECTED #}
                         <form method="post"
                               action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_PROPOSED'), 'sort': status_sort}) }}"
                               hx-post="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_PROPOSED'), 'sort': status_sort}) }}"
                               hx-target="#project-content"
                               hx-swap="innerHTML">
                             <input type="hidden" name="_token" value="{{ csrf_token('status_idea' ~ idea.id) }}">
-                            <button class="button is-danger is-light"> {# Changed to is-danger #}
+                            <button class="button is-danger is-light">
                                 <span class="icon is-small">{{ ux_icon('material-symbols:refresh') }}</span>
                                 <span>Invalider</span>
                             </button>
                         </form>
                     {% elseif idea.status == constant('App\\Entity\\GiftIdea::STATUS_DISCARDED') %}
-                        {# "Rétablir" button, shown if status is DISCARDED #}
                         <form method="post"
                               action="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_PROPOSED'), 'sort': status_sort}) }}"
                               hx-post="{{ path('app_gift_idea_status', {'id': idea.id, 'status': constant('App\\Entity\\GiftIdea::STATUS_PROPOSED'), 'sort': status_sort}) }}"
@@ -197,17 +221,27 @@ Expected variables:
             </div>
         {% endif %}
 
-
-        <hr class="is-small">
+        {# Comments discussion #}
+        <hr class="my-3">
         <div class="comments-section">
-            <h6 class="title is-6 mb-2">Commentaires</h6>
+            <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                <h6 class="title is-6 mb-0 is-flex is-align-items-center" style="gap: 0.4rem;">
+                    <span class="icon is-small has-text-grey">{{ ux_icon('material-symbols:chat-bubble-outline') }}</span>
+                    <span>Commentaires</span>
+                </h6>
+                {% if idea.comments|length > 0 %}
+                    <span class="tag is-rounded is-light is-small">{{ idea.comments|length }}</span>
+                {% endif %}
+            </div>
+
             <div id="comments-list-{{ idea.id }}">
                 {% for comment in idea.comments %}
                     {% include 'gift_project/_comment.html.twig' %}
                 {% else %}
-                    <p id="no-comments-{{ idea.id }}" class="is-size-7 has-text-grey-light is-italic mb-2">Aucun commentaire.</p>
+                    <p id="no-comments-{{ idea.id }}" class="is-size-7 has-text-grey is-italic mb-2">Aucun commentaire.</p>
                 {% endfor %}
             </div>
+
             <div class="mt-2">
                 {% if comment_forms[idea.id] is defined and project.deliveredAt is null %}
                     {% set comment_form = comment_forms[idea.id] %}
@@ -222,10 +256,10 @@ Expected variables:
                     }) }}
                     <div class="field has-addons">
                         <div class="control is-expanded">
-                            {{ form_widget(comment_form.content, {'attr': {'placeholder': 'Votre commentaire...', 'class': 'textarea is-small', 'rows': '1'}}) }}
+                            {{ form_widget(comment_form.content, {'attr': {'placeholder': 'Ajouter un mot...', 'class': 'textarea is-small', 'rows': '1'}}) }}
                         </div>
                         <div class="control">
-                            <button type="submit" class="button is-small is-link is-light" style="height: auto;">
+                            <button type="submit" class="button is-small is-primary is-light" style="height: auto;">
                                 <span class="icon is-small">{{ ux_icon('material-symbols:send') }}</span>
                             </button>
                         </div>
@@ -235,6 +269,7 @@ Expected variables:
             </div>
         </div>
 
+        {# Delete button #}
         {% if (app.user == idea.proposer or app.user == project.owner) and not project.locked and project.deliveredAt is null %}
             <div class="mt-3 has-text-right">
                 <button class="button is-danger is-small is-ghost"
@@ -243,7 +278,7 @@ Expected variables:
                         hx-target="closest .column"
                         hx-swap="outerHTML">
                     <span class="icon is-small">{{ ux_icon('material-symbols:delete') }}</span>
-                    <span>Supprimer</span>
+                    <span>Supprimer l'idée</span>
                 </button>
             </div>
         {% endif %}

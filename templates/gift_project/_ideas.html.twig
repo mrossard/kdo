@@ -1,12 +1,15 @@
 <div class="box">
-    <div class="level">
+    <div class="level mb-4">
         <div class="level-left">
-            <h3 class="title is-4">Idées de cadeaux</h3>
+            <div>
+                <h3 class="title is-4 mb-1">Idées de cadeaux</h3>
+                <p class="subtitle is-6 mb-0">{{ gift_ideas|length }} idée{{ gift_ideas|length > 1 ? 's' : '' }} proposée{{ gift_ideas|length > 1 ? 's' : '' }}</p>
+            </div>
         </div>
         <div class="level-right">
             <div class="field has-addons">
                 <p class="control">
-                    <a class="button is-small {{ current_sort == 'status' ? 'is-active is-primary' : '' }}"
+                    <a class="button is-small {{ current_sort == 'status' ? 'is-active is-primary' : 'is-light' }}"
                        hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'status'}) }}"
                        hx-target="#project-content"
                        hx-push-url="true">
@@ -15,7 +18,7 @@
                     </a>
                 </p>
                 <p class="control">
-                    <a class="button is-small {{ current_sort == 'priority_desc' ? 'is-active is-primary' : '' }}"
+                    <a class="button is-small {{ current_sort == 'priority_desc' ? 'is-active is-primary' : 'is-light' }}"
                        hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'priority_desc'}) }}"
                        hx-target="#project-content"
                        hx-push-url="true">
@@ -24,7 +27,7 @@
                     </a>
                 </p>
                 <p class="control">
-                    <a class="button is-small {{ current_sort == 'price_asc' ? 'is-active is-primary' : '' }}"
+                    <a class="button is-small {{ current_sort == 'price_asc' ? 'is-active is-primary' : 'is-light' }}"
                        hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'price_asc'}) }}"
                        hx-target="#project-content"
                        hx-push-url="true">
@@ -32,7 +35,7 @@
                     </a>
                 </p>
                 <p class="control">
-                    <a class="button is-small {{ current_sort == 'price_desc' ? 'is-active is-primary' : '' }}"
+                    <a class="button is-small {{ current_sort == 'price_desc' ? 'is-active is-primary' : 'is-light' }}"
                        hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'price_desc'}) }}"
                        hx-target="#project-content"
                        hx-push-url="true">
@@ -48,35 +51,55 @@
     {% if not project.locked and project.deliveredAt is null and proposable_ideas is not empty %}
         {% set max_votes = proposable_ideas|first.voteCount %}
         {% set max_votes = max_votes > 0 ? max_votes : 1 %}
-        <div class="box is-small has-background-light mb-4">
-            <div class="level mb-0">
+        {% set total_votes = 0 %}
+        {% for idea in proposable_ideas %}
+            {% set total_votes = total_votes + idea.voteCount %}
+        {% endfor %}
+
+        <div class="box poll-card p-4 mb-5">
+            <div class="level is-mobile mb-3">
                 <div class="level-left">
-                    <span class="icon has-text-info">{{ ux_icon('material-symbols:how-to-vote') }}</span>
-                    <strong class="ml-1">Sondage</strong>
-                    <span class="has-text-grey ml-2 is-size-7">Cliquez pour voter</span>
+                    <div class="is-flex is-align-items-center" style="gap: 0.65rem;">
+                        <span class="kpi-icon is-sm is-info">
+                            {{ ux_icon('material-symbols:how-to-vote') }}
+                        </span>
+                        <div>
+                            <h4 class="title is-6 mb-0">Sondage des participants</h4>
+                            <p class="is-size-7 has-text-grey">Cliquez sur une idée pour voter ou retirer votre vote ({{ total_votes }} vote{{ total_votes > 1 ? 's' : '' }} au total)</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="mt-2">
+
+            <div class="is-flex is-flex-direction-column" style="gap: 0.5rem;">
                 {% for idea in proposable_ideas %}
                     {% set width = (idea.voteCount / max_votes * 100)|round %}
-                    <div class="mb-1" style="cursor:pointer"
+                    {% set percent = total_votes > 0 ? (idea.voteCount / total_votes * 100)|round : 0 %}
+                    {% set has_user_vote = idea.hasVoteFromUser(app.user) %}
+
+                    <div class="poll-option {{ has_user_vote ? 'is-voted' : '' }}"
                          hx-post="{{ path('app_gift_idea_vote', {'id': idea.id}) }}"
                          hx-vals="{{ {'_token': csrf_token('vote_idea' ~ idea.id)}|json_encode }}"
                          hx-target="#project-content"
-                         hx-swap="innerHTML">
-                        <div class="level is-mobile mb-0">
-                            <div class="level-left">
-                                <span class="has-text-weight-semibold is-size-7">{{ idea.name }}</span>
+                         hx-swap="innerHTML"
+                         title="Cliquer pour voter">
+                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                            <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                <span class="has-text-weight-semibold is-size-6">{{ idea.name }}</span>
+                                {% if idea.price %}
+                                    <span class="is-size-7 has-text-grey tabular-nums">({{ idea.price|format_currency('EUR') }})</span>
+                                {% endif %}
                             </div>
-                            <div class="level-right">
-                                <span class="tag is-small {{ idea.hasVoteFromUser(app.user) ? 'is-success' : 'is-light' }}">
-                                    <span class="icon is-small">{{ ux_icon('material-symbols:thumb-up') }}</span>
-                                    <span>{{ idea.voteCount }}</span>
+                            <div class="is-flex is-align-items-center" style="gap: 0.65rem;">
+                                <span class="is-size-7 has-text-grey tabular-nums">{{ percent }}%</span>
+                                <span class="tag is-small {{ has_user_vote ? 'is-success' : 'is-light' }} is-rounded has-text-weight-semibold">
+                                    <span class="icon is-small mr-1">{{ ux_icon(has_user_vote ? 'material-symbols:check' : 'material-symbols:thumb-up') }}</span>
+                                    <span class="tabular-nums">{{ idea.voteCount }}</span>
                                 </span>
                             </div>
                         </div>
-                        <div class="is-relative" style="height:6px;background:var(--bulma-scheme-main);border-radius:3px;">
-                            <div class="{{ idea.hasVoteFromUser(app.user) ? 'has-background-success' : 'has-background-grey-light' }}" style="width:{{ width }}%;height:100%;border-radius:3px;transition:width .2s;"></div>
+                        <div class="poll-track">
+                            <div class="poll-fill {{ has_user_vote ? 'is-voted' : '' }}" style="width: {{ width }}%;"></div>
                         </div>
                     </div>
                 {% endfor %}
@@ -84,9 +107,9 @@
         </div>
     {% endif %}
 
-    {# Actions centrées en haut: Verrouiller / Déverrouiller #}
+    {# Actions Verrouiller / Déverrouiller #}
     {% if app.user == project.owner %}
-        <div class="has-text-centered mb-4">
+        <div class="has-text-centered mb-5">
             {% if not project.locked %}
                 {% set has_selected_idea = project.giftIdeas|filter(i => i.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED'))|length > 0 %}
                 {% if has_selected_idea %}
@@ -95,29 +118,29 @@
                           hx-confirm="Êtes-vous sûr de vouloir verrouiller le projet ? Plus aucune idée ne pourra être ajoutée ou modifiée."
                           hx-target="body">
                         <input type="hidden" name="_token" value="{{ csrf_token('lock_project' ~ project.id) }}">
-                        <button type="submit" class="button is-warning" title="Verrouiller les idées">
+                        <button type="submit" class="button is-warning is-light" title="Verrouiller les idées">
                             <span class="icon">{{ ux_icon('material-symbols:lock') }}</span>
-                            <span>Verrouiller</span>
+                            <span>Verrouiller le projet (fige les idées)</span>
                         </button>
                     </form>
                 {% endif %}
             {% else %}
-                {# Hide unlock button if the project has been delivered #}
                 {% if project.deliveredAt is null %}
                     <form method="post" action="{{ path('app_project_unlock', {'id': project.id}) }}"
                           hx-post="{{ path('app_project_unlock', {'id': project.id}) }}"
                           hx-confirm="Voulez-vous vraiment déverrouiller le projet ?"
                           hx-target="body">
                         <input type="hidden" name="_token" value="{{ csrf_token('unlock_project' ~ project.id) }}">
-                        <button type="submit" class="button is-info" title="Déverrouiller">
+                        <button type="submit" class="button is-info is-light" title="Déverrouiller">
                             <span class="icon">{{ ux_icon('material-symbols:lock-open') }}</span>
-                            <span>Déverrouiller</span>
+                            <span>Déverrouiller le projet</span>
                         </button>
                     </form>
                 {% endif %}
             {% endif %}
         </div>
     {% endif %}
+
     {% if gift_ideas is not empty %}
         <div class="columns is-multiline">
             {% for idea in gift_ideas %}
@@ -127,8 +150,12 @@
             {% endfor %}
         </div>
     {% else %}
-        <div class="notification is-info is-light">
-            Aucune idée de cadeau proposée pour le moment.
+        <div class="box empty-state has-text-centered py-6">
+            <span class="kpi-icon is-primary mx-auto mb-3">
+                {{ ux_icon('material-symbols:redeem', {height: '1.75rem', width: '1.75rem'}) }}
+            </span>
+            <p class="title is-5 mb-1">Aucune idée de cadeau proposée</p>
+            <p class="subtitle is-6 mb-0">Soyez le premier à proposer une idée ou copiez un souhait du destinataire !</p>
         </div>
     {% endif %}
 
@@ -140,4 +167,3 @@
         </div>
     {% endif %}
 </div>
-
