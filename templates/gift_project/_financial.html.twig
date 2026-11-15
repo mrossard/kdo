@@ -64,11 +64,12 @@
                 <div class="card-content">
                     {% set can_edit_shares = (app.user == project.owner and project.deliveredAt is null) %}
                     {% if can_edit_shares %}
-                        <form method="post" action="{{ path('app_project_update_shares', {'id': project.id}) }}"
+                        <form id="shares-form" method="post" action="{{ path('app_project_update_shares', {'id': project.id}) }}"
                               hx-post="{{ path('app_project_update_shares', {'id': project.id}) }}"
                               hx-target="#project-content"
                               hx-swap="innerHTML">
                             <input type="hidden" name="_token" value="{{ csrf_token('update_shares_' ~ project.id) }}">
+                        </form>
                     {% endif %}
 
                     <div class="table-container">
@@ -94,6 +95,7 @@
                                     <td class="has-text-right tabular-nums">
                                         {% if can_edit_shares %}
                                             <input class="input is-small has-text-right" type="number" step="0.5" min="0"
+                                                   form="shares-form"
                                                    name="shares[{{ item.user.id }}]"
                                                    value="{{ item.share|default(1) }}"
                                                    style="width: 70px; display: inline-block;">
@@ -149,12 +151,11 @@
 
                     {% if can_edit_shares %}
                         <div class="has-text-right mt-3">
-                            <button type="submit" class="button is-small is-primary is-light">
+                            <button type="submit" form="shares-form" class="button is-small is-primary is-light">
                                 <span class="icon is-small">{{ ux_icon('material-symbols:save') }}</span>
                                 <span>Enregistrer les parts</span>
                             </button>
                         </div>
-                        </form>
                     {% endif %}
                 </div>
             </div>

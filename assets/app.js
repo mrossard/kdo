@@ -113,10 +113,46 @@ document.addEventListener('htmx:finally:request', (e) => {
     }
 });
 
-// 2. Dynamic HTMX Modal (opens automatically when content settles into #kdo-dynamic-modal-body)
+// 2. Dynamic HTMX Modal & Project Tab Sync
+let lastDynamicModalTrigger = null;
+
+function closeModal(modal) {
+    if (!(modal instanceof HTMLElement)) {
+        return;
+    }
+    modal.classList.remove('is-active');
+    if (modal.id === 'kdo-dynamic-modal' && lastDynamicModalTrigger instanceof HTMLElement) {
+        lastDynamicModalTrigger.focus();
+        lastDynamicModalTrigger = null;
+    }
+}
+
+function syncProjectTabs(activeTabName = null) {
+    const tabContainer = document.getElementById('project-tabs');
+    if (!tabContainer) {
+        return;
+    }
+
+    const tabName = activeTabName || new URLSearchParams(window.location.search).get('tab') || 'details';
+    tabContainer.querySelectorAll('[data-project-tab]').forEach((tabLink) => {
+        const isActive = tabLink.getAttribute('data-project-tab') === tabName;
+        tabLink.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        tabLink.closest('li')?.classList.toggle('is-active', isActive);
+    });
+}
+
+window.addEventListener('popstate', () => {
+    syncProjectTabs();
+});
+
 document.addEventListener('htmx:after:settle', (e) => {
+    syncProjectTabs();
+
     const target = e.target;
     if (target instanceof HTMLElement && (target.id === 'kdo-dynamic-modal-body' || target.closest('#kdo-dynamic-modal-body'))) {
+        if (document.activeElement instanceof HTMLElement) {
+            lastDynamicModalTrigger = document.activeElement;
+        }
         const modal = document.getElementById('kdo-dynamic-modal');
         modal?.classList.add('is-active');
         const firstInput = target.querySelector('input:not([type="hidden"]), select, textarea');
@@ -132,11 +168,16 @@ document.addEventListener('click', (e) => {
         return;
     }
 
+    const projectTab = target.closest('[data-project-tab]');
+    if (projectTab) {
+        syncProjectTabs(projectTab.getAttribute('data-project-tab'));
+    }
+
     const closeBtn = target.closest('[data-modal-close]');
     if (closeBtn) {
         e.preventDefault();
         const modal = closeBtn.closest('.modal') || document.getElementById('kdo-dynamic-modal');
-        modal?.classList.remove('is-active');
+        closeModal(modal);
         return;
     }
 
@@ -162,9 +203,18 @@ function closeMobileMenu() {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         document.querySelectorAll('.modal.is-active').forEach((modal) => {
-            modal.classList.remove('is-active');
+            closeModal(modal);
         });
         closeMobileMenu();
+        return;
+    }
+
+    if ((e.key === 'Enter' || e.key === ' ') && e.target instanceof HTMLElement) {
+        const roleBtn = e.target.closest('[role="button"]:not(a[href]):not(button)');
+        if (roleBtn instanceof HTMLElement) {
+            e.preventDefault();
+            roleBtn.click();
+        }
     }
 });
 

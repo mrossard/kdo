@@ -41,7 +41,7 @@
                     </div>
                 {% endif %}
 
-                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain">
+                <a role="button" tabindex="0" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain">
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
@@ -150,7 +150,7 @@
         {% block body %}{% endblock %}
 
         {# Dynamic HTMX Modal for forms (e.g., Wish New/Edit) #}
-        <div id="kdo-dynamic-modal" class="modal" role="dialog" aria-modal="true">
+        <div id="kdo-dynamic-modal" class="modal" role="dialog" aria-modal="true" aria-label="Fenêtre modale">
             <div class="modal-background" data-modal-close></div>
             <div class="modal-card" style="max-width: 560px; width: 92%;">
                 <section id="kdo-dynamic-modal-body" class="modal-card-body box m-0 p-5"></section>

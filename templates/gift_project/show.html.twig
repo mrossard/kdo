@@ -14,69 +14,87 @@
 
         {% set current_tab = app.request.query.get('tab', 'details') %}
 
-        <div class="tabs is-boxed">
-            <ul>
-                <li class="{{ current_tab == 'details' ? 'is-active' : '' }}">
-                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'details'}) }}"
+        <div class="tabs is-boxed" id="project-tabs">
+            <ul role="tablist">
+                <li role="presentation" class="{{ current_tab == 'details' ? 'is-active' : '' }}">
+                    <a href="{{ path('app_project_show', {'id': project.id, 'tab': 'details'}) }}"
+                       role="tab"
+                       aria-selected="{{ current_tab == 'details' ? 'true' : 'false' }}"
+                       data-project-tab="details"
+                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'details'}) }}"
                        hx-target="#project-content"
                        hx-swap="innerHTML"
-                       hx-push-url="true"
-                       onclick="changeTab(this)">
+                       hx-push-url="true">
                         <span class="icon is-small">{{ ux_icon('material-symbols:info') }}</span>
                         <span>Détails</span>
                     </a>
                 </li>
-                <li class="{{ current_tab == 'ideas' ? 'is-active' : '' }}">
-                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas'}) }}"
+                <li role="presentation" class="{{ current_tab == 'ideas' ? 'is-active' : '' }}">
+                    <a href="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas'}) }}"
+                       role="tab"
+                       aria-selected="{{ current_tab == 'ideas' ? 'true' : 'false' }}"
+                       data-project-tab="ideas"
+                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas'}) }}"
                        hx-target="#project-content"
                        hx-swap="innerHTML"
-                       hx-push-url="true"
-                       onclick="changeTab(this)">
+                       hx-push-url="true">
                         <span class="icon is-small">{{ ux_icon('material-symbols:redeem') }}</span>
                         <span>Idées Cadeaux</span>
                         <span class="tag is-rounded ml-2">{{ project.giftIdeas|length }}</span>
                     </a>
                 </li>
                 {% if project.hasWishlistRecipient %}
-                <li class="{{ current_tab == 'liste_souhaits' ? 'is-active' : '' }}">
-                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'liste_souhaits'}) }}"
+                <li role="presentation" class="{{ current_tab == 'liste_souhaits' ? 'is-active' : '' }}">
+                    <a href="{{ path('app_project_show', {'id': project.id, 'tab': 'liste_souhaits'}) }}"
+                       role="tab"
+                       aria-selected="{{ current_tab == 'liste_souhaits' ? 'true' : 'false' }}"
+                       data-project-tab="liste_souhaits"
+                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'liste_souhaits'}) }}"
                        hx-target="#project-content"
                        hx-swap="innerHTML"
-                       hx-push-url="true"
-                       onclick="changeTab(this)">
+                       hx-push-url="true">
                         <span class="icon is-small">{{ ux_icon('material-symbols:list') }}</span>
                         <span>Liste de souhaits</span>
                         <span class="tag is-rounded ml-2">{{ project.recipientWishes|length }}</span>
                     </a>
                 </li>
                 {% endif %}
-                <li class="{{ current_tab == 'financial' ? 'is-active' : '' }}">
-                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'financial'}) }}"
+                <li role="presentation" class="{{ current_tab == 'financial' ? 'is-active' : '' }}">
+                    <a href="{{ path('app_project_show', {'id': project.id, 'tab': 'financial'}) }}"
+                       role="tab"
+                       aria-selected="{{ current_tab == 'financial' ? 'true' : 'false' }}"
+                       data-project-tab="financial"
+                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'financial'}) }}"
                        hx-target="#project-content"
                        hx-swap="innerHTML"
-                       hx-push-url="true"
-                       onclick="changeTab(this)">
+                       hx-push-url="true">
                         <span class="icon is-small">{{ ux_icon('material-symbols:payments') }}</span>
                         <span>Bilan Financier</span>
                     </a>
                 </li>
-                <li class="{{ current_tab == 'discussion' ? 'is-active' : '' }}">
-                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'discussion'}) }}"
+                <li role="presentation" class="{{ current_tab == 'discussion' ? 'is-active' : '' }}">
+                    <a href="{{ path('app_project_show', {'id': project.id, 'tab': 'discussion'}) }}"
+                       role="tab"
+                       aria-selected="{{ current_tab == 'discussion' ? 'true' : 'false' }}"
+                       data-project-tab="discussion"
+                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'discussion'}) }}"
                        hx-target="#project-content"
                        hx-swap="innerHTML"
-                       hx-push-url="true"
-                       onclick="changeTab(this)">
+                       hx-push-url="true">
                         <span class="icon is-small">{{ ux_icon('material-symbols:forum') }}</span>
                         <span>Discussion</span>
                         <span class="tag is-rounded ml-2">{{ project.comments|length }}</span>
                     </a>
                 </li>
-                <li class="{{ current_tab == 'activite' ? 'is-active' : '' }}">
-                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'activite'}) }}"
+                <li role="presentation" class="{{ current_tab == 'activite' ? 'is-active' : '' }}">
+                    <a href="{{ path('app_project_show', {'id': project.id, 'tab': 'activite'}) }}"
+                       role="tab"
+                       aria-selected="{{ current_tab == 'activite' ? 'true' : 'false' }}"
+                       data-project-tab="activite"
+                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'activite'}) }}"
                        hx-target="#project-content"
                        hx-swap="innerHTML"
-                       hx-push-url="true"
-                       onclick="changeTab(this)">
+                       hx-push-url="true">
                         <span class="icon is-small">{{ ux_icon('material-symbols:history') }}</span>
                         <span>Activité</span>
                     </a>
@@ -116,16 +134,4 @@
 
                     </div>
 </section>
-
-<script>
-function changeTab(element) {
-    // Remove is-active from all tabs
-    var tabs = element.closest('ul').querySelectorAll('li');
-    tabs.forEach(function(tab) {
-        tab.classList.remove('is-active');
-    });
-    // Add is-active to the clicked tab's parent li
-    element.parentElement.classList.add('is-active');
-}
-</script>
 {% endblock %}

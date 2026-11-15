@@ -193,7 +193,8 @@ Expected variables:
                     </form>
                 {% endif %}
 
-                <button class="button is-link is-light"
+                <button type="button"
+                        class="button is-link is-light"
                         hx-get="{{ path('app_gift_idea_edit', {'id': idea.id}) }}"
                         hx-target="#gift-idea-{{ idea.id }}"
                         hx-swap="outerHTML">
@@ -261,7 +262,8 @@ Expected variables:
         {# Delete button #}
         {% if (app.user == idea.proposer or app.user == project.owner) and not project.locked and project.deliveredAt is null %}
             <div class="mt-3 has-text-right">
-                <button class="button is-danger is-small is-ghost"
+                <button type="button"
+                        class="button is-danger is-small is-ghost"
                         hx-delete="{{ path('app_gift_idea_delete', {'id': idea.id, '_token': csrf_token('delete_idea' ~ idea.id)}) }}"
                         hx-confirm="Êtes-vous sûr de vouloir supprimer cette idée ?"
                         hx-target="closest .column"

@@ -29,7 +29,7 @@ RUN set -eux; \
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 COPY --link docker/frankenphp/conf.d/app.ini $PHP_INI_DIR/conf.d/
-COPY --link docker/frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY --link --chmod=755 docker/frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 COPY --link docker/frankenphp/Caddyfile /etc/caddy/Caddyfile
 
 ENTRYPOINT ["docker-entrypoint"]
@@ -67,3 +67,6 @@ RUN set -eux; \
 
 # Asset Mapper compilation (important for prod)
 RUN php bin/console asset-map:compile
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost/ || exit 1

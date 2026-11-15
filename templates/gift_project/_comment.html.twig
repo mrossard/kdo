@@ -16,7 +16,8 @@
         <div class="media-right">
             <div class="buttons are-small">
                 {% if app.user == comment.author %}
-                    <button class="button is-ghost p-0 mx-1"
+                    <button type="button"
+                            class="button is-ghost p-0 mx-1"
                             hx-get="{{ path('app_comment_edit', {'id': comment.id}) }}"
                             hx-target="closest .media"
                             hx-swap="outerHTML"
@@ -25,7 +26,8 @@
                     </button>
                 {% endif %}
                 
-                <button class="button is-ghost has-text-danger p-0 mx-1"
+                <button type="button"
+                        class="button is-ghost has-text-danger p-0 mx-1"
                         hx-delete="{{ path('app_comment_delete', {'id': comment.id, '_token': csrf_token('delete_comment' ~ comment.id)}) }}"
                         hx-confirm="Supprimer ce commentaire ?"
                         hx-target="closest .media"
