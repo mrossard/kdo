@@ -53,7 +53,7 @@
                 <div class="level-left">
                     <div>
                         {% if is_managed %}
-                            <div class="is-flex is-align-items-center" style="gap: 0.75rem;">
+                            <div class="is-flex is-align-items-center is-flex-wrap-wrap" style="gap: 0.75rem;">
                                 <h1 class="title is-3 mb-1">Liste de {{ current_managed_person.displayName }}</h1>
                                 <a href="{{ path('app_managed_person_edit', {'id': current_managed_person.id}) }}"
                                    hx-get="{{ path('app_managed_person_edit', {'id': current_managed_person.id}) }}"
@@ -124,15 +124,69 @@
             </div>
 
             {% if wishes is not empty %}
-                <table class="table is-fullwidth">
+                {% set name_sort_url = path(list_route, list_base_params|merge({
+                    'sort': 'name',
+                    'direction': (current_sort == 'name' and current_direction == 'ASC') ? 'DESC' : 'ASC',
+                    'showDelivered': show_delivered
+                })) %}
+                {% set price_sort_url = path(list_route, list_base_params|merge({
+                    'sort': 'price',
+                    'direction': (current_sort == 'price' and current_direction == 'ASC') ? 'DESC' : 'ASC',
+                    'showDelivered': show_delivered
+                })) %}
+                {% set priority_sort_url = path(list_route, list_base_params|merge({
+                    'sort': 'priority',
+                    'direction': (current_sort == 'priority' and current_direction == 'DESC') ? 'ASC' : 'DESC',
+                    'showDelivered': show_delivered
+                })) %}
+
+                <div class="is-hidden-tablet mb-3">
+                    <div class="buttons are-small mb-0">
+                        <span class="is-size-7 has-text-grey mr-1 is-align-self-center">Trier :</span>
+                        <a href="{{ name_sort_url }}"
+                           hx-get="{{ name_sort_url }}"
+                           hx-target="#wish-list-container"
+                           hx-select="#wish-list-container"
+                           hx-swap="outerHTML"
+                           hx-push-url="true"
+                           class="button {{ current_sort == 'name' ? 'is-primary is-light' : 'is-light' }}">
+                            <span>Nom</span>
+                            {% if current_sort == 'name' %}
+                                <span class="icon is-small">{{ ux_icon(current_direction == 'ASC' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') }}</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ price_sort_url }}"
+                           hx-get="{{ price_sort_url }}"
+                           hx-target="#wish-list-container"
+                           hx-select="#wish-list-container"
+                           hx-swap="outerHTML"
+                           hx-push-url="true"
+                           class="button {{ current_sort == 'price' ? 'is-primary is-light' : 'is-light' }}">
+                            <span>Prix</span>
+                            {% if current_sort == 'price' %}
+                                <span class="icon is-small">{{ ux_icon(current_direction == 'ASC' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') }}</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ priority_sort_url }}"
+                           hx-get="{{ priority_sort_url }}"
+                           hx-target="#wish-list-container"
+                           hx-select="#wish-list-container"
+                           hx-swap="outerHTML"
+                           hx-push-url="true"
+                           class="button {{ current_sort == 'priority' ? 'is-primary is-light' : 'is-light' }}">
+                            <span>Priorité</span>
+                            {% if current_sort == 'priority' %}
+                                <span class="icon is-small">{{ ux_icon(current_direction == 'ASC' ? 'material-symbols:arrow-upward' : 'material-symbols:arrow-downward') }}</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                <table class="table is-fullwidth kdo-responsive-table">
                     <thead>
                     <tr>
                         <th>
-                            {% set name_sort_url = path(list_route, list_base_params|merge({
-                                'sort': 'name',
-                                'direction': (current_sort == 'name' and current_direction == 'ASC') ? 'DESC' : 'ASC',
-                                'showDelivered': show_delivered
-                            })) %}
                             <a href="{{ name_sort_url }}"
                                hx-get="{{ name_sort_url }}"
                                hx-target="#wish-list-container"
@@ -148,11 +202,6 @@
                             </a>
                         </th>
                         <th>
-                            {% set price_sort_url = path(list_route, list_base_params|merge({
-                                'sort': 'price',
-                                'direction': (current_sort == 'price' and current_direction == 'ASC') ? 'DESC' : 'ASC',
-                                'showDelivered': show_delivered
-                            })) %}
                             <a href="{{ price_sort_url }}"
                                hx-get="{{ price_sort_url }}"
                                hx-target="#wish-list-container"
@@ -168,11 +217,6 @@
                             </a>
                         </th>
                         <th>
-                            {% set priority_sort_url = path(list_route, list_base_params|merge({
-                                'sort': 'priority',
-                                'direction': (current_sort == 'priority' and current_direction == 'DESC') ? 'ASC' : 'DESC',
-                                'showDelivered': show_delivered
-                            })) %}
                             <a href="{{ priority_sort_url }}"
                                hx-get="{{ priority_sort_url }}"
                                hx-target="#wish-list-container"
@@ -208,7 +252,7 @@
                         {% endfor %}
 
                         <tr>
-                            <td>
+                            <td class="kdo-card-primary">
                                 <div class="is-flex is-align-items-center" style="gap: 0.85rem;">
                                     {% if wish.imageUrl %}
                                         <figure class="image is-48x48 is-flex-shrink-0">
@@ -227,20 +271,20 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="tabular-nums">
+                            <td class="tabular-nums" data-label="Prix">
                                 {% if wish.price %}
                                     <span class="has-text-weight-semibold">{{ wish.price }} €</span>
                                 {% else %}
                                     <span class="has-text-grey-light">—</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td data-label="Priorité">
                                 <span class="tag {{ wish.priorityEnum.badgeClass }}">
                                     <span class="icon is-small mr-1">{{ ux_icon(wish.priorityEnum.icon) }}</span>
                                     <span>{{ wish.priorityEnum.label }}</span>
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Statut & lien">
                                 <div class="is-flex is-align-items-center is-flex-wrap-wrap" style="gap: 0.4rem;">
                                     {% if wish.url %}
                                         <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer" class="button is-small is-link is-light">
@@ -271,7 +315,7 @@
                                     {% endif %}
                                 </div>
                             </td>
-                            <td class="has-text-right">
+                            <td class="has-text-right kdo-card-actions">
                                 <div class="buttons are-small is-right">
                                     <a href="{{ path('app_wish_edit', {'id': wish.id}) }}"
                                        hx-get="{{ path('app_wish_edit', {'id': wish.id}) }}"
@@ -301,6 +345,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
+                </div>
             {% else %}
                 <div class="box empty-state has-text-centered py-6">
                     <span class="kpi-icon is-primary mx-auto mb-3">

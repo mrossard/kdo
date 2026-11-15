@@ -71,6 +71,7 @@
                             <input type="hidden" name="_token" value="{{ csrf_token('update_shares_' ~ project.id) }}">
                     {% endif %}
 
+                    <div class="table-container">
                     <table class="table is-fullwidth is-vcentered">
                         <thead>
                             <tr>
@@ -124,6 +125,7 @@
                             </tr>
                         </tfoot>
                     </table>
+                    </div>
 
                     {% set crowdfunded_ideas = project.giftIdeas|filter(i => i.isCrowdfunded and i.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED')) %}
                     {% if crowdfunded_ideas is not empty %}

@@ -7,41 +7,35 @@
             </div>
         </div>
         <div class="level-right">
-            <div class="field has-addons">
-                <p class="control">
-                    <a class="button is-small {{ current_sort == 'status' ? 'is-active is-primary' : 'is-light' }}"
-                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'status'}) }}"
-                       hx-target="#project-content"
-                       hx-push-url="true">
-                        <span class="icon is-small">{{ ux_icon('material-symbols:sort') }}</span>
-                        <span>Par statut</span>
-                    </a>
-                </p>
-                <p class="control">
-                    <a class="button is-small {{ current_sort == 'priority_desc' ? 'is-active is-primary' : 'is-light' }}"
-                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'priority_desc'}) }}"
-                       hx-target="#project-content"
-                       hx-push-url="true">
-                        <span class="icon is-small">{{ ux_icon('material-symbols:favorite') }}</span>
-                        <span>Priorité</span>
-                    </a>
-                </p>
-                <p class="control">
-                    <a class="button is-small {{ current_sort == 'price_asc' ? 'is-active is-primary' : 'is-light' }}"
-                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'price_asc'}) }}"
-                       hx-target="#project-content"
-                       hx-push-url="true">
-                        Prix {{ ux_icon('material-symbols:arrow-upward') }}
-                    </a>
-                </p>
-                <p class="control">
-                    <a class="button is-small {{ current_sort == 'price_desc' ? 'is-active is-primary' : 'is-light' }}"
-                       hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'price_desc'}) }}"
-                       hx-target="#project-content"
-                       hx-push-url="true">
-                        Prix {{ ux_icon('material-symbols:arrow-downward') }}
-                    </a>
-                </p>
+            <div class="buttons are-small mb-0">
+                <a class="button {{ current_sort == 'status' ? 'is-active is-primary' : 'is-light' }}"
+                   hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'status'}) }}"
+                   hx-target="#project-content"
+                   hx-push-url="true">
+                    <span class="icon is-small">{{ ux_icon('material-symbols:sort') }}</span>
+                    <span>Par statut</span>
+                </a>
+                <a class="button {{ current_sort == 'priority_desc' ? 'is-active is-primary' : 'is-light' }}"
+                   hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'priority_desc'}) }}"
+                   hx-target="#project-content"
+                   hx-push-url="true">
+                    <span class="icon is-small">{{ ux_icon('material-symbols:favorite') }}</span>
+                    <span>Priorité</span>
+                </a>
+                <a class="button {{ current_sort == 'price_asc' ? 'is-active is-primary' : 'is-light' }}"
+                   hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'price_asc'}) }}"
+                   hx-target="#project-content"
+                   hx-push-url="true">
+                    <span>Prix</span>
+                    <span class="icon is-small">{{ ux_icon('material-symbols:arrow-upward') }}</span>
+                </a>
+                <a class="button {{ current_sort == 'price_desc' ? 'is-active is-primary' : 'is-light' }}"
+                   hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'ideas', 'sort': 'price_desc'}) }}"
+                   hx-target="#project-content"
+                   hx-push-url="true">
+                    <span>Prix</span>
+                    <span class="icon is-small">{{ ux_icon('material-symbols:arrow-downward') }}</span>
+                </a>
             </div>
         </div>
     </div>

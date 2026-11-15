@@ -22,6 +22,7 @@
                         <h2 class="title is-5 mb-0">Mes contacts mutuels</h2>
                         <span class="tag is-rounded is-light">{{ my_contacts|length }}</span>
                     </div>
+                    <div class="table-container">
                     <table class="table is-fullwidth">
                         <thead>
                             <tr>
@@ -101,6 +102,7 @@
                         {% endfor %}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
 
@@ -124,6 +126,7 @@
                     {{ form_end(add_contact_form) }}
 
                     <h3 class="heading mt-5 mb-2">Demandes envoyées</h3>
+                    <div class="table-container">
                     <table class="table is-fullwidth">
                         <thead>
                             <tr>
@@ -155,6 +158,7 @@
                         {% endfor %}
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
                 <div class="box">
@@ -164,6 +168,7 @@
                             <span class="tag is-warning is-rounded">{{ received_requests|length }}</span>
                         {% endif %}
                     </div>
+                    <div class="table-container">
                     <table class="table is-fullwidth">
                         <thead>
                             <tr>
@@ -214,6 +219,7 @@
                         {% endfor %}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>

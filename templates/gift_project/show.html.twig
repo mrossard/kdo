@@ -14,7 +14,7 @@
 
         {% set current_tab = app.request.query.get('tab', 'details') %}
 
-        <div class="tabs is-boxed is-medium">
+        <div class="tabs is-boxed">
             <ul>
                 <li class="{{ current_tab == 'details' ? 'is-active' : '' }}">
                     <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'details'}) }}"

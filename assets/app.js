@@ -148,11 +148,23 @@ document.addEventListener('click', (e) => {
     }
 });
 
+function closeMobileMenu() {
+    document.querySelectorAll('.navbar-burger.is-active').forEach((el) => {
+        el.classList.remove('is-active');
+        el.setAttribute('aria-expanded', 'false');
+    });
+    document.querySelectorAll('.navbar-menu.is-active').forEach((menu) => {
+        menu.classList.remove('is-active');
+    });
+    document.documentElement.classList.remove('is-clipped-mobile');
+}
+
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         document.querySelectorAll('.modal.is-active').forEach((modal) => {
             modal.classList.remove('is-active');
         });
+        closeMobileMenu();
     }
 });
 
@@ -228,16 +240,29 @@ function initContent(content) {
             const $target = document.getElementById(target);
 
             if ($target) {
-                el.classList.toggle('is-active');
-                $target.classList.toggle('is-active');
-
-                const expanded = el.getAttribute('aria-expanded') === 'true';
-                el.setAttribute('aria-expanded', !expanded);
-
-                document.documentElement.classList.toggle('is-clipped-mobile');
+                const isActive = !el.classList.contains('is-active');
+                el.classList.toggle('is-active', isActive);
+                $target.classList.toggle('is-active', isActive);
+                el.setAttribute('aria-expanded', String(isActive));
+                document.documentElement.classList.toggle('is-clipped-mobile', isActive);
             }
         });
     });
+
+    const $navbarMenu = content.querySelector('#navbarMain');
+    if ($navbarMenu && $navbarMenu.dataset.menuCloseBound !== '1') {
+        $navbarMenu.dataset.menuCloseBound = '1';
+        $navbarMenu.addEventListener('click', (e) => {
+            const target = e.target;
+            if (!(target instanceof Element)) {
+                return;
+            }
+            const item = target.closest('.navbar-item:not(.has-dropdown), [data-tour-start]');
+            if (item) {
+                closeMobileMenu();
+            }
+        });
+    }
 
     const $notificationDeletes = content.querySelectorAll('.notification .delete');
     $notificationDeletes.forEach($delete => {

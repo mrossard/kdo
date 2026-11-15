@@ -8,6 +8,7 @@
         <h1 class="title">{{ wish.name }}</h1>
 
         <div class="box">
+            <div class="table-container">
             <table class="table is-fullwidth">
                 <tbody>
                     <tr>
@@ -22,7 +23,7 @@
                         <th>Url</th>
                         <td>
                             {% if wish.url %}
-                                <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer">{{ wish.url }}</a>
+                                <a href="{{ wish.url }}" target="_blank" rel="noopener noreferrer" style="word-break: break-all;">{{ wish.url }}</a>
                             {% else %}
                                 -
                             {% endif %}
@@ -30,12 +31,15 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
 
         <div class="level">
             <div class="level-left">
-                <a href="{{ path('app_wish_index') }}" class="button is-light">Retour à la liste</a>
-                <a href="{{ path('app_wish_edit', {'id': wish.id}) }}" class="button is-warning">Modifier</a>
+                <div class="buttons">
+                    <a href="{{ path('app_wish_index') }}" class="button is-light">Retour à la liste</a>
+                    <a href="{{ path('app_wish_edit', {'id': wish.id}) }}" class="button is-warning">Modifier</a>
+                </div>
             </div>
             <div class="level-right">
                 {{ include('wish/_delete_form.html.twig') }}

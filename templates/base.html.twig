@@ -24,6 +24,22 @@
                     <strong>KDO</strong>
                 </a>
 
+                {% if app.user %}
+                    <div class="navbar-mobile-actions is-hidden-desktop is-flex is-align-items-center ml-auto" style="gap: 0.35rem;">
+                        {{ include('theme/_toggle_button.html.twig', {theme: currentTheme}) }}
+                        <a href="{{ path('app_notification_index') }}"
+                           aria-label="Notifications"
+                           class="button is-light is-rounded is-small {% if unread_notification_count > 0 %}has-badge-danger{% endif %}">
+                            <span class="icon">
+                                {{ ux_icon('material-symbols:notifications') }}
+                            </span>
+                            {% if unread_notification_count > 0 %}
+                                <span class="tag is-danger is-rounded is-small notification-badge">{{ unread_notification_count }}</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                {% endif %}
+
                 <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain">
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
@@ -59,24 +75,14 @@
                     {% endif %}
                 </div>
                 <div class="navbar-end">
-                    <div class="navbar-item">
-                        {% if app.user %}
-                            {{ include('theme/_toggle_button.html.twig', {theme: currentTheme}) }}
-                        {% endif %}
-                    </div>
                     {% if app.user %}
-                        <div class="navbar-item">
-                            <button type="button"
-                                    class="button is-light is-rounded"
-                                    title="Visite guidée"
-                                    aria-label="Visite guidée"
-                                    data-tour-start>
-                                <span class="icon">{{ ux_icon('material-symbols:help') }}</span>
-                            </button>
+                        <div class="navbar-item is-hidden-touch">
+                            {{ include('theme/_toggle_button.html.twig', {theme: currentTheme}) }}
                         </div>
-                        <div class="navbar-item">
+                        <div class="navbar-item is-hidden-touch">
                             <a href="{{ path('app_notification_index') }}"
                                data-tour="navbar-notifications"
+                               aria-label="Notifications"
                                class="button is-light is-rounded {% if unread_notification_count > 0 %}has-badge-danger{% endif %}">
                                 <span class="icon">
                                     {{ ux_icon('material-symbols:notifications') }}

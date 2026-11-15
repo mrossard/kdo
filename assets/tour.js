@@ -495,7 +495,7 @@ class KdoTour {
         this.spotlightRing.setAttribute('height', String(spot.height));
 
         // Choose placement
-        const gap = 52; // Room for curved arrow
+        const gap = vw < 640 ? 28 : 52; // Room for curved arrow
         const spaceBelow = vh - spot.bottom - margin;
         const spaceAbove = spot.top - margin;
         const spaceRight = vw - spot.right - margin;
