@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-#[AsCommand(name: 'app:user:create', description: 'Create a new user')]
+#[AsCommand(name: 'app:user:create', description: 'Create a new user or promote an existing user to admin')]
 class CreateUserCommand extends Command
 {
     public function __construct(
@@ -30,7 +30,7 @@ class CreateUserCommand extends Command
         $this
             ->addArgument('email', InputArgument::OPTIONAL, 'The email of the user')
             ->addArgument('password', InputArgument::OPTIONAL, 'The password of the user')
-            ->addOption('admin', null, InputOption::VALUE_NONE, 'Set the user as admin')
+            ->addOption('admin', null, InputOption::VALUE_NONE, 'Set the user as admin (also works for existing users)')
             ->addOption('firstname', null, InputOption::VALUE_REQUIRED, 'The firstname of the user')
             ->addOption('lastname', null, InputOption::VALUE_REQUIRED, 'The lastname of the user');
     }
@@ -41,20 +41,38 @@ class CreateUserCommand extends Command
         /** @var string|null $rawEmail */
         $rawEmail = $input->getArgument('email');
         $email = $rawEmail ?? '';
-        /** @var string|null $rawPassword */
-        $rawPassword = $input->getArgument('password');
-        $password = $rawPassword ?? '';
         $isAdmin = $input->getOption('admin') === true;
-        /** @var string|null $firstname */
-        $firstname = $input->getOption('firstname');
-        /** @var string|null $lastname */
-        $lastname = $input->getOption('lastname');
 
         if ($email === '') {
             /** @var string|null $askedEmail */
             $askedEmail = $io->ask('Email');
             $email = $askedEmail ?? '';
         }
+
+        if ($email === '') {
+            $io->error('Email cannot be empty.');
+
+            return Command::FAILURE;
+        }
+
+        $existingUser = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
+        if ($existingUser instanceof User) {
+            if (!$isAdmin) {
+                $io->error(sprintf('User %s already exists. Use --admin to grant admin privileges.', $email));
+
+                return Command::FAILURE;
+            }
+
+            return $this->promoteToAdmin($io, $existingUser, $email);
+        }
+
+        /** @var string|null $rawPassword */
+        $rawPassword = $input->getArgument('password');
+        $password = $rawPassword ?? '';
+        /** @var string|null $firstname */
+        $firstname = $input->getOption('firstname');
+        /** @var string|null $lastname */
+        $lastname = $input->getOption('lastname');
 
         if ($password === '') {
             /** @var string|null $askedPassword */
@@ -85,6 +103,24 @@ class CreateUserCommand extends Command
         $this->entityManager->flush();
 
         $io->success(sprintf('User %s created successfully.', $email));
+
+        return Command::SUCCESS;
+    }
+
+    private function promoteToAdmin(SymfonyStyle $io, User $user, string $email): int
+    {
+        $roles = $user->getRoles();
+        if (in_array('ROLE_ADMIN', $roles, true)) {
+            $io->info(sprintf('User %s is already an admin.', $email));
+
+            return Command::SUCCESS;
+        }
+
+        $roles[] = 'ROLE_ADMIN';
+        $user->setRoles(array_values(array_unique($roles)));
+        $this->entityManager->flush();
+
+        $io->success(sprintf('User %s is now an admin.', $email));
 
         return Command::SUCCESS;
     }
