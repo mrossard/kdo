@@ -40,7 +40,7 @@ class ManagedPerson
     /**
      * @var Collection<int, Wish>
      */
-    #[ORM\OneToMany(targetEntity: Wish::class, mappedBy: 'managedPerson', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: Wish::class, mappedBy: 'managedPerson', orphanRemoval: true, fetch: 'EXTRA_LAZY')]
     private Collection $wishes;
 
     /**

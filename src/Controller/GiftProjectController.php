@@ -49,8 +49,7 @@ final class GiftProjectController extends AbstractProjectController
         $user = $this->getUser();
         $showArchived = $request->query->getBoolean('archived');
 
-        $allProjects = $projectRepository->findAccessibleProjectsForUser($user);
-        $projects = array_filter($allProjects, static fn(GiftProject $p) => $p->isArchived() === $showArchived);
+        $projects = $projectRepository->findAccessibleProjectsForUser($user, $showArchived);
         $unreadCounts = $this->activityRepository->countUnreadPerProjectForUser($user);
 
         return $this->render('gift_project/index.html.twig', [
@@ -199,7 +198,7 @@ final class GiftProjectController extends AbstractProjectController
             return $this->renderHtmxTab($currentTab, $project, $sort, $addParticipantForm);
         }
 
-        $sortedGiftIdeas = $this->sortGiftIdeas($project, $sort);
+        $sortedGiftIdeas = $currentTab === 'ideas' ? $this->sortGiftIdeas($project, $sort) : [];
         $financialData = $currentTab === 'financial' ? $this->financialService->calculate($project) : [];
 
         return $this->render('gift_project/show.html.twig', array_merge([

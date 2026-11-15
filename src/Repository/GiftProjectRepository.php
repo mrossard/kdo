@@ -25,10 +25,9 @@ class GiftProjectRepository extends ServiceEntityRepository
      *
      * @return list<GiftProject>
      */
-    public function findAccessibleProjectsForUser(User $user): array
+    public function findAccessibleProjectsForUser(User $user, ?bool $archived = null): array
     {
-        /** @var list<GiftProject> */
-        return $this
+        $qb = $this
             ->createQueryBuilder('g')
             ->leftJoin('g.owner', 'o')
             ->addSelect('o')
@@ -41,9 +40,14 @@ class GiftProjectRepository extends ServiceEntityRepository
             ->where('g.recipient IS NULL OR g.recipient != :user') // Important: Never show if I am the recipient
             ->andWhere('g.owner = :user OR :user MEMBER OF g.participants') // Show if owner OR participant
             ->setParameter('user', $user)
-            ->orderBy('g.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult();
+            ->orderBy('g.createdAt', 'DESC');
+
+        if ($archived !== null) {
+            $qb->andWhere('g.isArchived = :archived')->setParameter('archived', $archived);
+        }
+
+        /** @var list<GiftProject> */
+        return $qb->getQuery()->getResult();
     }
 
     /**

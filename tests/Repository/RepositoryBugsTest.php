@@ -98,4 +98,34 @@ final class RepositoryBugsTest extends KernelTestCase
         // Never return a project where one of the users is the recipient
         self::assertSame([], $projectRepo->findProjectsInvolvingUsers($alice, $recipient));
     }
+
+    public function testFindAccessibleProjectsForUserFiltersArchived(): void
+    {
+        $owner = $this->createUser('owner@example.com', 'Owner');
+        $recipient = $this->createUser('recipient@example.com', 'Recipient');
+
+        $active = new GiftProject();
+        $active->setName('Projet Actif')->setOwner($owner)->setRecipient($recipient)->setArchived(false);
+        $this->em->persist($active);
+
+        $archived = new GiftProject();
+        $archived->setName('Projet Archivé')->setOwner($owner)->setRecipient($recipient)->setArchived(true);
+        $this->em->persist($archived);
+
+        $this->em->flush();
+
+        /** @var GiftProjectRepository $projectRepo */
+        $projectRepo = $this->em->getRepository(GiftProject::class);
+
+        $all = $projectRepo->findAccessibleProjectsForUser($owner);
+        self::assertCount(2, $all);
+
+        $onlyActive = $projectRepo->findAccessibleProjectsForUser($owner, false);
+        self::assertCount(1, $onlyActive);
+        self::assertSame($active->getId(), $onlyActive[0]->getId());
+
+        $onlyArchived = $projectRepo->findAccessibleProjectsForUser($owner, true);
+        self::assertCount(1, $onlyArchived);
+        self::assertSame($archived->getId(), $onlyArchived[0]->getId());
+    }
 }

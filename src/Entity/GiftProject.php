@@ -77,7 +77,7 @@ class GiftProject
     /**
      * @var Collection<int, GiftIdea>
      */
-    #[ORM\OneToMany(mappedBy: 'giftProject', targetEntity: GiftIdea::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'giftProject', targetEntity: GiftIdea::class, orphanRemoval: true, fetch: 'EXTRA_LAZY')]
     private Collection $giftIdeas;
 
     /**
@@ -95,7 +95,7 @@ class GiftProject
     /**
      * @var Collection<int, Comment>
      */
-    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Comment::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Comment::class, orphanRemoval: true, fetch: 'EXTRA_LAZY')]
     #[ORM\OrderBy(['createdAt' => \SortDirection::Ascending])]
     private Collection $comments;
 

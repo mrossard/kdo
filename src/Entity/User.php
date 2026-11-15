@@ -54,7 +54,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var Collection<int, Wish>
      */
-    #[ORM\OneToMany(targetEntity: Wish::class, mappedBy: 'user', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: Wish::class, mappedBy: 'user', orphanRemoval: true, fetch: 'EXTRA_LAZY')]
     private Collection $wishes;
 
     /**
