@@ -1,0 +1,12 @@
+/.git/
+/.idea/
+/.junie/
+/.phpunit.cache/
+/.env.local
+/.env.*.local
+/assets/vendor/
+/public/assets/
+/public/bundles/
+/tests/
+/var/
+/vendor/
