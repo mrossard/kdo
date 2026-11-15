@@ -30,7 +30,7 @@
                         <div class="box has-background-light p-4 my-4">
                             <p class="heading mb-3">Destinataire du cadeau</p>
                             <div class="columns mb-0">
-                                <div class="column is-half">
+                                <div class="column is-one-third">
                                     <div class="field">
                                         {{ form_label(form.recipient, null, {'label_attr': {'class': 'label'}}) }}
                                         <div class="control">
@@ -42,7 +42,19 @@
                                         {{ form_errors(form.recipient) }}
                                     </div>
                                 </div>
-                                <div class="column is-half">
+                                <div class="column is-one-third">
+                                    <div class="field">
+                                        {{ form_label(form.managedRecipient, null, {'label_attr': {'class': 'label'}}) }}
+                                        <div class="control">
+                                            <div class="select is-fullwidth">
+                                                {{ form_widget(form.managedRecipient) }}
+                                            </div>
+                                        </div>
+                                        <p class="help">{{ form.managedRecipient.vars.help }}</p>
+                                        {{ form_errors(form.managedRecipient) }}
+                                    </div>
+                                </div>
+                                <div class="column is-one-third">
                                     <div class="field">
                                         {{ form_label(form.recipientName, null, {'label_attr': {'class': 'label'}}) }}
                                         <div class="control">

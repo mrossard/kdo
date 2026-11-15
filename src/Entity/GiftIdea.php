@@ -12,7 +12,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-// @mago-expect lint:too-many-properties
+// @mago-expect lint:too-many-properties,too-many-methods,cyclomatic-complexity,kan-defect
 #[ORM\Entity(repositoryClass: GiftIdeaRepository::class)]
 class GiftIdea
 {
@@ -71,6 +71,21 @@ class GiftIdea
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $purchasedAt = null;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $isCrowdfunded = false;
+
+    /**
+     * @var Collection<int, GiftIdeaContribution>
+     */
+    #[ORM\OneToMany(
+        mappedBy: 'giftIdea',
+        targetEntity: GiftIdeaContribution::class,
+        cascade: ['persist', 'remove'],
+        orphanRemoval: true,
+    )]
+    #[ORM\OrderBy(['createdAt' => 'ASC'])]
+    private Collection $contributions;
+
     /**
      * @var Collection<int, Vote>
      */
@@ -85,6 +100,7 @@ class GiftIdea
     {
         $this->comments = new ArrayCollection();
         $this->votes = new ArrayCollection();
+        $this->contributions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -326,5 +342,86 @@ class GiftIdea
         }
 
         return false;
+    }
+
+    public function isCrowdfunded(): bool
+    {
+        return $this->isCrowdfunded;
+    }
+
+    public function setIsCrowdfunded(bool $isCrowdfunded): static
+    {
+        $this->isCrowdfunded = $isCrowdfunded;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, GiftIdeaContribution>
+     */
+    public function getContributions(): Collection
+    {
+        return $this->contributions;
+    }
+
+    public function addContribution(GiftIdeaContribution $contribution): static
+    {
+        if (!$this->contributions->contains($contribution)) {
+            $this->contributions->add($contribution);
+            $contribution->setGiftIdea($this);
+        }
+
+        return $this;
+    }
+
+    public function removeContribution(GiftIdeaContribution $contribution): static
+    {
+        if ($this->contributions->removeElement($contribution)) {
+            if ($contribution->getGiftIdea() === $this) {
+                $contribution->setGiftIdea(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getTotalContributed(): float
+    {
+        $total = 0.0;
+        foreach ($this->contributions as $contribution) {
+            $total += $contribution->getAmountAsFloat();
+        }
+
+        return $total;
+    }
+
+    public function getRemainingAmount(): float
+    {
+        $rawPrice = $this->price;
+        $targetPrice = $rawPrice !== null && is_numeric($rawPrice) ? (float) $rawPrice : 0.0;
+
+        return max(0.0, $targetPrice - $this->getTotalContributed());
+    }
+
+    public function getProgressPercentage(): float
+    {
+        $rawPrice = $this->price;
+        $targetPrice = $rawPrice !== null && is_numeric($rawPrice) ? (float) $rawPrice : 0.0;
+        if ($targetPrice <= 0.0) {
+            return 0.0;
+        }
+
+        return min(100.0, round(($this->getTotalContributed() / $targetPrice) * 100, 1));
+    }
+
+    public function getContributionForUser(User $user): ?GiftIdeaContribution
+    {
+        foreach ($this->contributions as $contribution) {
+            if ($contribution->getUser() === $user) {
+                return $contribution;
+            }
+        }
+
+        return null;
     }
 }

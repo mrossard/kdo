@@ -1,0 +1,296 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Guide des fonctionnalités — KDO{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        {# Hero header #}
+        <div class="box p-5 mb-5" style="background: var(--bulma-scheme-main-bis); border-left: 5px solid var(--bulma-primary);">
+            <div class="level is-mobile-tablet">
+                <div class="level-left">
+                    <div>
+                        <span class="tag is-primary is-light is-rounded mb-2">Centre d'aide & Découverte</span>
+                        <h1 class="title is-3 mb-2">Guide complet des fonctionnalités KDO</h1>
+                        <p class="subtitle is-6 has-text-grey mb-0">
+                            Apprenez à maîtriser vos listes de souhaits, vos projets cadeaux collaboratifs et le suivi de vos cagnottes.
+                        </p>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <button type="button"
+                            class="button is-primary"
+                            hx-get="{{ path('app_tour_modal', {'step': 1}) }}"
+                            hx-target="#kdo-tour-modal-container"
+                            hx-swap="innerHTML">
+                        <span class="icon">{{ ux_icon('material-symbols:redeem') }}</span>
+                        <span>Lancer la visite interactive</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns is-variable is-5">
+            {# Sticky Sidebar Menu #}
+            <div class="column is-3-desktop is-4-tablet">
+                <div class="box p-4" style="position: sticky; top: 1.5rem;">
+                    <p class="menu-label mb-2">Sommaire</p>
+                    <ul class="menu-list">
+                        <li>
+                            <a href="#section-dashboard" class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                <span class="icon is-small has-text-primary">{{ ux_icon('material-symbols:redeem') }}</span>
+                                <span>1. Tableau de bord</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#section-wishlist" class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                <span class="icon is-small has-text-info">{{ ux_icon('material-symbols:list') }}</span>
+                                <span>2. Ma Liste de souhaits</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#section-contacts" class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                <span class="icon is-small has-text-link">{{ ux_icon('material-symbols:contacts') }}</span>
+                                <span>3. Contacts & Entourage</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#section-projects" class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                <span class="icon is-small has-text-danger">{{ ux_icon('material-symbols:group') }}</span>
+                                <span>4. Projets Cadeaux</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#section-finance" class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                <span class="icon is-small has-text-success">{{ ux_icon('material-symbols:euro') }}</span>
+                                <span>5. Cagnotte & Finances</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#section-notifications" class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                <span class="icon is-small has-text-warning">{{ ux_icon('material-symbols:notifications') }}</span>
+                                <span>6. Notifications & Profil</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#section-faq" class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                <span class="icon is-small has-text-grey">{{ ux_icon('material-symbols:help') }}</span>
+                                <span>Foire aux questions</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            {# Main Content #}
+            <div class="column is-9-desktop is-8-tablet">
+                {# Section 1: Dashboard #}
+                <div id="section-dashboard" class="box mb-5 p-5">
+                    <div class="is-flex is-align-items-center mb-3" style="gap: 0.75rem;">
+                        <span class="kpi-icon is-primary">{{ ux_icon('material-symbols:redeem') }}</span>
+                        <div>
+                            <h2 class="title is-4 mb-0">1. Tableau de bord (Accueil)</h2>
+                            <p class="is-size-7 has-text-grey">Le centre de contrôle de toutes vos activités cadeaux</p>
+                        </div>
+                    </div>
+
+                    <p class="mb-4">
+                        Dès votre connexion, la page d'accueil vous offre une vue globale et instantanée de vos activités :
+                    </p>
+
+                    <div class="columns is-multiline is-variable is-3 mb-4">
+                        <div class="column is-6">
+                            <div class="box p-3" style="background: var(--bulma-scheme-main-bis);">
+                                <strong>Ma Liste :</strong> indique le nombre d'envies enregistrées dans votre liste personnelle de souhaits.
+                            </div>
+                        </div>
+                        <div class="column is-6">
+                            <div class="box p-3" style="background: var(--bulma-scheme-main-bis);">
+                                <strong>Projets :</strong> liste les projets de cadeaux collectifs en cours dans lesquels vous êtes impliqué(e).
+                            </div>
+                        </div>
+                        <div class="column is-6">
+                            <div class="box p-3" style="background: var(--bulma-scheme-main-bis);">
+                                <strong>Bilan Global :</strong> affiche si on vous doit de l'argent ou si vous avez des remboursements en attente.
+                            </div>
+                        </div>
+                        <div class="column is-6">
+                            <div class="box p-3" style="background: var(--bulma-scheme-main-bis);">
+                                <strong>Contacts :</strong> affiche le nombre d'amis connectés et les demandes d'invitations en attente.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="notification is-info is-light is-size-7 p-3">
+                        <strong>Activité récente :</strong> Juste sous les compteurs, le flux en direct retrace chaque ajout d'idée, vote ou remboursement dans vos projets.
+                    </div>
+                </div>
+
+                {# Section 2: Wishlist #}
+                <div id="section-wishlist" class="box mb-5 p-5">
+                    <div class="is-flex is-align-items-center mb-3" style="gap: 0.75rem;">
+                        <span class="kpi-icon is-info">{{ ux_icon('material-symbols:list') }}</span>
+                        <div>
+                            <h2 class="title is-4 mb-0">2. Ma Liste de souhaits (Wishlist)</h2>
+                            <p class="is-size-7 has-text-grey">Rassemblez vos envies et partagez-les sans spoilers</p>
+                        </div>
+                    </div>
+
+                    <p class="mb-3">
+                        Votre liste personnelle vous permet de centraliser vos souhaits pour vos anniversaires, fêtes ou Noël :
+                    </p>
+
+                    <ul class="mb-4" style="line-height: 1.8;">
+                        <li><strong>Extraction d'URL intelligente :</strong> lorsque vous ajoutez un souhait, collez le lien du site marchand (ex: Fnac, Amazon, Decathlon). KDO interroge la page et remplit automatiquement le nom, la photo et le prix !</li>
+                        <li><strong>Priorités :</strong> choisissez un niveau d'envie (<em>Faible</em>, <em>Moyen</em>, <em>Élevé</em>, <em>Coup de cœur</em>) pour aider vos proches à prioriser.</li>
+                        <li><strong>Partage de liste :</strong> partagez votre liste avec vos contacts KDO ou générez un lien privé pour les proches qui n'ont pas encore de compte.</li>
+                        <li><strong>Réservation secrète :</strong> vos amis peuvent cocher qu'ils vous offrent un cadeau précis. <em>Vous ne voyez jamais cette information</em> : la surprise reste garantie pour le jour J !</li>
+                    </ul>
+
+                    <a href="{{ path('app_wish_index') }}" class="button is-light is-small">
+                        <span class="icon">{{ ux_icon('material-symbols:list') }}</span>
+                        <span>Accéder à Ma Liste</span>
+                    </a>
+                </div>
+
+                {# Section 3: Contacts #}
+                <div id="section-contacts" class="box mb-5 p-5">
+                    <div class="is-flex is-align-items-center mb-3" style="gap: 0.75rem;">
+                        <span class="kpi-icon is-link">{{ ux_icon('material-symbols:contacts') }}</span>
+                        <div>
+                            <h2 class="title is-4 mb-0">3. Contacts & Entourage</h2>
+                            <p class="is-size-7 has-text-grey">Connectez-vous pour ne plus jamais manquer d'idées de cadeaux</p>
+                        </div>
+                    </div>
+
+                    <p class="mb-3">
+                        L'annuaire de contacts réunit votre famille et votre cercle d'amis :
+                    </p>
+
+                    <ul class="mb-4" style="line-height: 1.8;">
+                        <li><strong>Ajouter un contact :</strong> saisissez l'email de votre ami. Dès qu'il accepte l'invitation, vous pouvez interagir.</li>
+                        <li><strong>Voir les souhaits d'un ami :</strong> cliquez sur un contact pour consulter sa liste de souhaits à jour.</li>
+                        <li><strong>Réserver ou créer un projet :</strong> depuis la liste d'un ami, vous pouvez réserver un cadeau individuellement ou lancer un <em>Projet Cadeau commun</em> pour cotiser à plusieurs !</li>
+                    </ul>
+
+                    <a href="{{ path('app_contact_index') }}" class="button is-light is-small">
+                        <span class="icon">{{ ux_icon('material-symbols:contacts') }}</span>
+                        <span>Gérer mes contacts</span>
+                    </a>
+                </div>
+
+                {# Section 4: Projects #}
+                <div id="section-projects" class="box mb-5 p-5">
+                    <div class="is-flex is-align-items-center mb-3" style="gap: 0.75rem;">
+                        <span class="kpi-icon is-danger">{{ ux_icon('material-symbols:group') }}</span>
+                        <div>
+                            <h2 class="title is-4 mb-0">4. Projets Cadeaux Collaboratifs</h2>
+                            <p class="is-size-7 has-text-grey">L'organisation de cadeaux de groupe en secret absolu</p>
+                        </div>
+                    </div>
+
+                    <p class="mb-3">
+                        Les projets cadeaux permettent d'organiser facilement un cadeau commun pour une occasion spéciale :
+                    </p>
+
+                    <div class="notification is-danger is-light is-size-7 p-3 mb-4">
+                        <strong>Règle d'or anti-spoilers :</strong> Si le bénéficiaire du cadeau possède un compte KDO, l'application lui masque complètement le projet ! Il ne verra absolument rien dans ses listes ou notifications.
+                    </div>
+
+                    <h3 class="title is-6 mb-2">Les fonctionnalités dans un projet :</h3>
+                    <ul class="mb-4" style="line-height: 1.8;">
+                        <li><strong>Boîte à idées collaborative :</strong> chaque participant peut suggérer des idées avec photo, description, prix et lien web.</li>
+                        <li><strong>Système de vote démocratique :</strong> votez pour ou contre les propositions pour dégager l'idée favorite.</li>
+                        <li><strong>Discussion intégrée :</strong> échangez librement par commentaires entre complices.</li>
+                        <li><strong>Choix & Verrouillage :</strong> l'organisateur sélectionne l'idée retenue dès que la décision est prise.</li>
+                    </ul>
+
+                    <a href="{{ path('app_project_index') }}" class="button is-light is-small">
+                        <span class="icon">{{ ux_icon('material-symbols:redeem') }}</span>
+                        <span>Voir les projets en cours</span>
+                    </a>
+                </div>
+
+                {# Section 5: Finance #}
+                <div id="section-finance" class="box mb-5 p-5">
+                    <div class="is-flex is-align-items-center mb-3" style="gap: 0.75rem;">
+                        <span class="kpi-icon is-success">{{ ux_icon('material-symbols:euro') }}</span>
+                        <div>
+                            <h2 class="title is-4 mb-0">5. Cagnotte & Bilan Financier</h2>
+                            <p class="is-size-7 has-text-grey">Comptes limpides et remboursements automatisés</p>
+                        </div>
+                    </div>
+
+                    <p class="mb-3">
+                        Plus besoin de calculer qui doit quoi à qui :
+                    </p>
+
+                    <ul class="mb-4" style="line-height: 1.8;">
+                        <li><strong>Déclaration d'achat :</strong> la personne qui avance l'argent saisit le montant réel du cadeau.</li>
+                        <li><strong>Contributions :</strong> chaque participant enregistre sa participation (parts égales ou montants personnalisés).</li>
+                        <li><strong>Algorithme de simplification des remboursements :</strong> KDO calcule automatiquement le chemin le plus court pour rembourser tout le monde avec le minimum de virements.</li>
+                        <li><strong>Validation rapide :</strong> dès qu'un remboursement est reçu, cliquez sur « Marquer comme remboursé » pour solder la dette.</li>
+                        <li><strong>Page Finances globale :</strong> retrouvez l'ensemble de vos créances et dettes consolidées sur tous vos projets.</li>
+                    </ul>
+
+                    <a href="{{ path('app_financial_index') }}" class="button is-light is-small">
+                        <span class="icon">{{ ux_icon('material-symbols:euro') }}</span>
+                        <span>Consulter mon bilan financier</span>
+                    </a>
+                </div>
+
+                {# Section 6: Notifications & Profile #}
+                <div id="section-notifications" class="box mb-5 p-5">
+                    <div class="is-flex is-align-items-center mb-3" style="gap: 0.75rem;">
+                        <span class="kpi-icon is-warning">{{ ux_icon('material-symbols:notifications') }}</span>
+                        <div>
+                            <h2 class="title is-4 mb-0">6. Notifications & Profil</h2>
+                            <p class="is-size-7 has-text-grey">Restez informé et personnalisez votre expérience</p>
+                        </div>
+                    </div>
+
+                    <ul class="mb-4" style="line-height: 1.8;">
+                        <li><strong>Cloche de notifications :</strong> une pastille rouge vous prévient des nouvelles idées, commentaires, invitations et remboursements.</li>
+                        <li><strong>Thème clair / sombre :</strong> cliquez sur l'icône de lune/soleil dans la barre de navigation pour adapter le thème à vos yeux.</li>
+                        <li><strong>Mon Profil :</strong> modifiez vos nom, prénom, email, mot de passe et préférences de visite guidée.</li>
+                    </ul>
+
+                    <a href="{{ path('app_profile') }}" class="button is-light is-small">
+                        <span class="icon">{{ ux_icon('material-symbols:person') }}</span>
+                        <span>Mon Profil</span>
+                    </a>
+                </div>
+
+                {# Section 7: FAQ #}
+                <div id="section-faq" class="box p-5">
+                    <div class="is-flex is-align-items-center mb-4" style="gap: 0.75rem;">
+                        <span class="kpi-icon is-sm is-light">{{ ux_icon('material-symbols:help') }}</span>
+                        <h2 class="title is-4 mb-0">Foire aux questions (FAQ)</h2>
+                    </div>
+
+                    <div class="mb-4">
+                        <h3 class="title is-6 mb-1">Le bénéficiaire d'un cadeau peut-il voir le projet qui lui est destiné ?</h3>
+                        <p class="is-size-7 has-text-grey">
+                            Non, absolument jamais ! L'application masque automatiquement le projet au bénéficiaire désigné, tant dans ses listes que dans ses notifications et son fil d'activité.
+                        </p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h3 class="title is-6 mb-1">Puis-je voir qui a réservé un cadeau sur ma propre liste de souhaits ?</h3>
+                        <p class="is-size-7 has-text-grey">
+                            Non. Vous ne voyez ni qui a réservé, ni quels cadeaux de votre liste sont réservés. Seuls vos amis connectés voient ces réservations afin d'éviter les doublons.
+                        </p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h3 class="title is-6 mb-1">Comment relancer la visite guidée pas-à-pas ?</h3>
+                        <p class="is-size-7 has-text-grey">
+                            Vous pouvez cliquer sur l'icône d'aide dans la barre de navigation supérieure à tout moment, ou vous rendre sur votre page Profil pour relancer la visite guidée interactive.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

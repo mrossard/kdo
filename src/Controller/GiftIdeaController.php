@@ -6,7 +6,9 @@ namespace App\Controller;
 
 use App\Entity\Activity;
 use App\Entity\GiftIdea;
+use App\Entity\GiftIdeaContribution;
 use App\Entity\GiftProject;
+use App\Entity\ManagedPerson;
 use App\Entity\User;
 use App\Entity\Vote;
 use App\Entity\Wish;
@@ -465,11 +467,70 @@ final class GiftIdeaController extends AbstractProjectController
             throw $this->createAccessDeniedException("Vous n'avez pas accès à la liste de souhaits de ce contact.");
         }
 
+        return $this->handleCreateProjectFromWish(
+            $user,
+            $wish,
+            $recipient,
+            $this->generateUrl('app_contact_view', ['id' => $recipient->getId()]),
+            $request,
+        );
+    }
+
+    #[Route(
+        '/create-from-managed-wish/{managedPersonId}/{wishId}',
+        name: 'app_project_create_from_managed_wish',
+        methods: ['POST'],
+    )]
+    public function createProjectFromManagedWish(
+        #[MapEntity(id: 'managedPersonId')]
+        ManagedPerson $managedPerson,
+        #[MapEntity(id: 'wishId')]
+        Wish $wish,
+        WishlistShareRepository $wishlistShareRepository,
+        Request $request,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if ($wish->getManagedPerson() !== $managedPerson) {
+            throw $this->createAccessDeniedException('Ce souhait n\'appartient pas à cette liste.');
+        }
+
+        $hasAccess = $managedPerson->isManagedBy($user);
+        if (!$hasAccess) {
+            foreach ($managedPerson->getAllManagers() as $manager) {
+                if ($wishlistShareRepository->findOneBy(['owner' => $manager, 'recipient' => $user]) === null) {
+                    continue;
+                }
+                $hasAccess = true;
+                break;
+            }
+        }
+        if (!$hasAccess) {
+            throw $this->createAccessDeniedException("Vous n'avez pas accès à la liste de souhaits de ce proche.");
+        }
+
+        return $this->handleCreateProjectFromWish(
+            $user,
+            $wish,
+            $managedPerson,
+            $this->generateUrl('app_contact_managed_view', ['id' => $managedPerson->getId()]),
+            $request,
+        );
+    }
+
+    private function handleCreateProjectFromWish(
+        User $user,
+        Wish $wish,
+        User|ManagedPerson $recipient,
+        string $fallbackRedirectUrl,
+        Request $request,
+    ): Response {
         $reservedBy = $wish->getReservedBy();
         if ($reservedBy !== null && $reservedBy !== $user || $wish->getActiveProject() !== null) {
             $this->addFlash('warning', 'Ce souhait est déjà réservé ou pris en charge dans un projet.');
 
-            return $this->redirectToRoute('app_contact_view', ['id' => $recipient->getId()]);
+            return $this->redirect($fallbackRedirectUrl);
         }
 
         if ($this->isCsrfTokenValid(
@@ -480,12 +541,19 @@ final class GiftIdeaController extends AbstractProjectController
                 $wish->setReservedBy(null);
                 $wish->setReservedAt(null);
             }
+
+            $recipientDisplayName = $recipient->getDisplayName();
             $project = new GiftProject();
             $project->setOwner($user);
-            $project->setRecipient($recipient);
-            $project->setName("Cadeau pour {$recipient->getDisplayName()} - {$wish->getName()}");
+            if ($recipient instanceof ManagedPerson) {
+                $project->setManagedRecipient($recipient);
+            }
+            if ($recipient instanceof User) {
+                $project->setRecipient($recipient);
+            }
+            $project->setName("Cadeau pour {$recipientDisplayName} - {$wish->getName()}");
             $project->setDescription(
-                "Projet cadeau créé à partir du souhait de {$recipient->getDisplayName()}: '{$wish->getName()}'.",
+                "Projet cadeau créé à partir du souhait de {$recipientDisplayName}: '{$wish->getName()}'.",
             );
             $this->entityManager->persist($project);
 
@@ -510,7 +578,7 @@ final class GiftIdeaController extends AbstractProjectController
 
             $this->addFlash(
                 'success',
-                "Projet cadeau créé pour {$recipient->getDisplayName()} avec le souhait '{$wish->getName()}'.",
+                "Projet cadeau créé pour {$recipientDisplayName} avec le souhait '{$wish->getName()}'.",
             );
 
             if ($request->headers->get('HX-Request')) {
@@ -520,7 +588,7 @@ final class GiftIdeaController extends AbstractProjectController
             }
         }
 
-        return $this->redirectToRoute('app_contact_view', ['id' => $recipient->getId()]);
+        return $this->redirect($fallbackRedirectUrl);
     }
 
     #[Route('/idea/{id}/vote', name: 'app_gift_idea_vote', methods: ['POST'])]
@@ -566,6 +634,137 @@ final class GiftIdeaController extends AbstractProjectController
                 'gift_ideas' => $sortedGiftIdeas,
                 'comment_forms' => $commentForms,
                 'current_sort' => $sort,
+            ]);
+        }
+
+        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+    }
+
+    #[Route('/idea/{id}/toggle-crowdfund', name: 'app_gift_idea_toggle_crowdfund', methods: ['POST'])]
+    public function toggleCrowdfund(GiftIdea $giftIdea, Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $project = $this->requireIdeaProject($giftIdea);
+        $this->denyUnlessCanViewProject($project, $user);
+
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        if ($project->isLocked()) {
+            throw $this->createAccessDeniedException(
+                'Impossible de modifier le mode cagnotte sur un projet verrouillé.',
+            );
+        }
+
+        if ($this->isCsrfTokenValid(
+            'toggle_crowdfund' . (string) $giftIdea->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            $giftIdea->setIsCrowdfunded(!$giftIdea->isCrowdfunded());
+            $this->entityManager->flush();
+
+            $msg = $giftIdea->isCrowdfunded()
+                ? 'Mode cagnotte activé pour cette idée.'
+                : 'Mode cagnotte désactivé pour cette idée.';
+            $this->addFlash('info', $msg);
+        }
+
+        if ($request->headers->get('HX-Request')) {
+            return $this->render('gift_project/_idea_display.html.twig', [
+                'project' => $project,
+                'idea' => $giftIdea,
+                'user' => $user,
+                'comment_forms' => $this->buildCommentForms([$giftIdea]),
+            ]);
+        }
+
+        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+    }
+
+    #[Route('/idea/{id}/contribute', name: 'app_gift_idea_contribute', methods: ['POST'])]
+    public function contribute(GiftIdea $giftIdea, Request $request): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $project = $this->requireIdeaProject($giftIdea);
+        $this->denyUnlessCanViewProject($project, $user);
+
+        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        if ($giftIdea->getPurchasedBy() !== null) {
+            $this->addFlash('warning', 'Cette idée a déjà été achetée : la cagnotte est clôturée.');
+
+            return $this->renderIdeaDisplayOrRedirect($project, $giftIdea, $user, $request);
+        }
+
+        if ($this->isCsrfTokenValid(
+            'contribute_idea' . (string) $giftIdea->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            $this->processContribution($giftIdea, $user, $project, $request);
+        }
+
+        return $this->renderIdeaDisplayOrRedirect($project, $giftIdea, $user, $request);
+    }
+
+    private function processContribution(GiftIdea $giftIdea, User $user, GiftProject $project, Request $request): void
+    {
+        $action = $request->getPayload()->getString('action');
+        $rawAmount = trim($request->getPayload()->getString('amount'));
+        $amount = is_numeric($rawAmount) ? (float) $rawAmount : 0.0;
+        $existing = $giftIdea->getContributionForUser($user);
+
+        if ($action === 'cancel' || $amount <= 0.0) {
+            if ($existing !== null) {
+                $giftIdea->removeContribution($existing);
+                $this->entityManager->remove($existing);
+                $this->entityManager->flush();
+                $this->addFlash('info', "Votre participation pour « {$giftIdea->getName()} » a été retirée.");
+            }
+        }
+
+        if ($action !== 'cancel' && $amount > 0.0) {
+            $formattedAmount = number_format($amount, 2, '.', '');
+            $contrib = $existing ?? new GiftIdeaContribution();
+            if ($existing === null) {
+                $contrib->setUser($user);
+                $contrib->setGiftIdea($giftIdea);
+                $giftIdea->addContribution($contrib);
+                $this->entityManager->persist($contrib);
+            }
+            if ($existing !== null) {
+                $contrib->setUpdatedAt(new \DateTimeImmutable());
+            }
+            $contrib->setAmount($formattedAmount);
+
+            $this->activityLogger->log($project, Activity::TYPE_CROWDFUND_CONTRIBUTED, $user, [
+                'idea_name' => $giftIdea->getName(),
+                'amount' => $formattedAmount,
+            ]);
+
+            $this->entityManager->flush();
+            $this->addFlash('success', "Votre participation de {$formattedAmount} € a été enregistrée !");
+        }
+    }
+
+    private function renderIdeaDisplayOrRedirect(
+        GiftProject $project,
+        GiftIdea $giftIdea,
+        User $user,
+        Request $request,
+    ): Response {
+        if ($request->headers->get('HX-Request')) {
+            return $this->render('gift_project/_idea_display.html.twig', [
+                'project' => $project,
+                'idea' => $giftIdea,
+                'user' => $user,
+                'comment_forms' => $this->buildCommentForms([$giftIdea]),
             ]);
         }
 

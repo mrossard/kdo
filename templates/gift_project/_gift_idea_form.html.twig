@@ -88,6 +88,17 @@
             </div>
             {{ form_errors(gift_idea_form.description) }}
         </div>
+
+        <div class="field mb-4">
+            <div class="control">
+                <label class="checkbox is-flex is-align-items-center" style="gap: 0.5rem;">
+                    {{ form_widget(gift_idea_form.isCrowdfunded) }}
+                    <span class="has-text-weight-medium">Activer le mode cagnotte (financement participatif libre)</span>
+                </label>
+            </div>
+            <p class="help">Permet aux participants de s'engager librement sur un montant de leur choix avec jauge d'avancement.</p>
+            {{ form_errors(gift_idea_form.isCrowdfunded) }}
+        </div>
         
         <div class="field is-grouped">
             <div class="control">

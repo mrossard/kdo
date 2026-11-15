@@ -125,6 +125,26 @@
                         </tfoot>
                     </table>
 
+                    {% set crowdfunded_ideas = project.giftIdeas|filter(i => i.isCrowdfunded and i.status == constant('App\\Entity\\GiftIdea::STATUS_SELECTED')) %}
+                    {% if crowdfunded_ideas is not empty %}
+                        <div class="notification is-light is-info mt-3 p-3">
+                            <p class="is-size-7 has-text-weight-bold mb-1 is-flex is-align-items-center" style="gap: 0.35rem;">
+                                <span class="icon is-small">{{ ux_icon('material-symbols:savings') }}</span>
+                                <span>Cagnottes participatives prises en compte :</span>
+                            </p>
+                            <ul class="is-size-7 ml-4 mb-0" style="list-style-type: disc;">
+                                {% for c_idea in crowdfunded_ideas %}
+                                    <li>
+                                        <strong>{{ c_idea.name }}</strong> : {{ c_idea.totalContributed|number_format(2, ',', ' ') }} € collecté{{ c_idea.totalContributed > 1 ? 's' : '' }}
+                                        {% if c_idea.purchasePrice or c_idea.price %}
+                                            sur {{ (c_idea.purchasePrice|default(c_idea.price))|number_format(2, ',', ' ') }} €
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
                     {% if can_edit_shares %}
                         <div class="has-text-right mt-3">
                             <button type="submit" class="button is-small is-primary is-light">

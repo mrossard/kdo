@@ -89,6 +89,44 @@
                         </div>
                     {{ form_end(password_form) }}
                 </div>
+
+                {# Visite guidée & Aide #}
+                <div class="box mt-5 p-5">
+                    <h2 class="title is-5 mb-3 is-flex is-align-items-center" style="gap: 0.5rem;">
+                        <span class="icon has-text-primary">{{ ux_icon('material-symbols:help') }}</span>
+                        <span>Visite guidée & Découverte</span>
+                    </h2>
+                    <p class="is-size-7 has-text-grey mb-4">
+                        Revisitez le fonctionnement complet de l'application ou consultez le guide de référence à tout moment.
+                    </p>
+
+                    <div class="buttons mb-3">
+                        <button type="button"
+                                class="button is-primary is-light is-fullwidth"
+                                hx-get="{{ path('app_tour_modal', {'step': 1}) }}"
+                                hx-target="#kdo-tour-modal-container"
+                                hx-swap="innerHTML">
+                            <span class="icon">{{ ux_icon('material-symbols:redeem') }}</span>
+                            <span>Relancer la visite guidée</span>
+                        </button>
+                    </div>
+
+                    <div class="level is-mobile mb-0 pt-2" style="border-top: 1px solid var(--bulma-border-weak);">
+                        <div class="level-left">
+                            <a href="{{ path('app_tour_guide') }}" class="button is-ghost is-small p-0 has-text-link">
+                                <span class="icon is-small">{{ ux_icon('material-symbols:open-in-new') }}</span>
+                                <span>Consulter le guide complet</span>
+                            </a>
+                        </div>
+                        <div class="level-right">
+                            <form method="post" action="{{ path('app_tour_reset') }}">
+                                <button type="submit" class="button is-ghost is-small p-0 has-text-grey">
+                                    <span>Réafficher à l'accueil</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

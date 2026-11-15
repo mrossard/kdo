@@ -285,4 +285,117 @@ final class FinancialServiceTest extends TestCase
         self::assertSame($alice, $result['transfers'][0]['to']);
         self::assertEqualsWithDelta(30.0, $result['transfers'][0]['amount'], 0.001);
     }
+
+    public function testCalculateWithCrowdfundedIdeaExactFunding(): void
+    {
+        $repo = $this->createStub(GiftProjectRepository::class);
+        $service = new FinancialService($repo);
+
+        $alice = $this->createUserWithId(1, 'Alice');
+        $bob = $this->createUserWithId(2, 'Bob');
+        $charlie = $this->createUserWithId(3, 'Charlie');
+
+        $project = new GiftProject();
+        $project->setOwner($alice);
+        $project->addParticipant($bob);
+        $project->addParticipant($charlie);
+
+        // Crowdfunded bike for 300 €, purchased by Alice
+        $bike = new GiftIdea();
+        $bike
+            ->setName('Vélo électrique')
+            ->setStatus(GiftIdea::STATUS_SELECTED)
+            ->setPurchasedBy($alice)
+            ->setPurchasePrice('300.00')
+            ->setIsCrowdfunded(true);
+
+        $contribAlice = new \App\Entity\GiftIdeaContribution();
+        $contribAlice->setUser($alice)->setAmount('50.00');
+        $bike->addContribution($contribAlice);
+
+        $contribBob = new \App\Entity\GiftIdeaContribution();
+        $contribBob->setUser($bob)->setAmount('100.00');
+        $bike->addContribution($contribBob);
+
+        $contribCharlie = new \App\Entity\GiftIdeaContribution();
+        $contribCharlie->setUser($charlie)->setAmount('150.00');
+        $bike->addContribution($contribCharlie);
+
+        $project->addGiftIdea($bike);
+
+        $result = $service->calculate($project);
+
+        self::assertSame(300.0, $result['total_cost']);
+        // Summary targets should match exact contributions
+        $targetsByUser = [];
+        foreach ($result['summary'] as $row) {
+            $targetsByUser[$row['user']->getId()] = $row['target'];
+        }
+        self::assertEqualsWithDelta(50.0, $targetsByUser[1], 0.001);
+        self::assertEqualsWithDelta(100.0, $targetsByUser[2], 0.001);
+        self::assertEqualsWithDelta(150.0, $targetsByUser[3], 0.001);
+
+        // Bob owes 100 € to Alice, Charlie owes 150 € to Alice
+        self::assertCount(2, $result['transfers']);
+        $transfersByFrom = [];
+        foreach ($result['transfers'] as $transfer) {
+            self::assertSame($alice, $transfer['to']);
+            $transfersByFrom[$transfer['from']->getId()] = $transfer['amount'];
+        }
+        self::assertEqualsWithDelta(100.0, $transfersByFrom[2], 0.001);
+        self::assertEqualsWithDelta(150.0, $transfersByFrom[3], 0.001);
+    }
+
+    public function testCalculateWithCrowdfundedIdeaUnderfundedSplitsRemainder(): void
+    {
+        $repo = $this->createStub(GiftProjectRepository::class);
+        $service = new FinancialService($repo);
+
+        $alice = $this->createUserWithId(1, 'Alice');
+        $bob = $this->createUserWithId(2, 'Bob');
+        $charlie = $this->createUserWithId(3, 'Charlie');
+
+        $project = new GiftProject();
+        $project->setOwner($alice);
+        $project->addParticipant($bob);
+        $project->addParticipant($charlie);
+
+        // Bike cost 300 €, but only 240 € contributed (Alice 40, Bob 100, Charlie 100).
+        // Remaining 60 € is split across 3 participants (20 € each).
+        $bike = new GiftIdea();
+        $bike
+            ->setName('Vélo')
+            ->setStatus(GiftIdea::STATUS_SELECTED)
+            ->setPurchasedBy($alice)
+            ->setPurchasePrice('300.00')
+            ->setIsCrowdfunded(true);
+
+        $contribAlice = new \App\Entity\GiftIdeaContribution();
+        $contribAlice->setUser($alice)->setAmount('40.00');
+        $bike->addContribution($contribAlice);
+
+        $contribBob = new \App\Entity\GiftIdeaContribution();
+        $contribBob->setUser($bob)->setAmount('100.00');
+        $bike->addContribution($contribBob);
+
+        $contribCharlie = new \App\Entity\GiftIdeaContribution();
+        $contribCharlie->setUser($charlie)->setAmount('100.00');
+        $bike->addContribution($contribCharlie);
+
+        $project->addGiftIdea($bike);
+
+        $result = $service->calculate($project);
+
+        self::assertSame(300.0, $result['total_cost']);
+        $targetsByUser = [];
+        foreach ($result['summary'] as $row) {
+            $targetsByUser[$row['user']->getId()] = $row['target'];
+        }
+        // Alice: 40 + 20 = 60
+        // Bob: 100 + 20 = 120
+        // Charlie: 100 + 20 = 120
+        self::assertEqualsWithDelta(60.0, $targetsByUser[1], 0.001);
+        self::assertEqualsWithDelta(120.0, $targetsByUser[2], 0.001);
+        self::assertEqualsWithDelta(120.0, $targetsByUser[3], 0.001);
+    }
 }

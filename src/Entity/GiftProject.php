@@ -51,6 +51,10 @@ class GiftProject
     #[ORM\JoinColumn(nullable: true)]
     private ?User $recipient = null;
 
+    #[ORM\ManyToOne(inversedBy: 'targetedGiftProjects')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?ManagedPerson $managedRecipient = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $recipientName = null;
 
@@ -218,6 +222,18 @@ class GiftProject
         return $this;
     }
 
+    public function getManagedRecipient(): ?ManagedPerson
+    {
+        return $this->managedRecipient;
+    }
+
+    public function setManagedRecipient(?ManagedPerson $managedRecipient): static
+    {
+        $this->managedRecipient = $managedRecipient;
+
+        return $this;
+    }
+
     public function getRecipientName(): ?string
     {
         return $this->recipientName;
@@ -232,11 +248,36 @@ class GiftProject
 
     public function getRecipientDisplayName(): string
     {
-        if ($this->recipient) {
+        if ($this->recipient !== null) {
             return $this->recipient->getDisplayName();
         }
 
+        if ($this->managedRecipient !== null) {
+            return $this->managedRecipient->getDisplayName();
+        }
+
         return $this->recipientName ?? 'Anonyme';
+    }
+
+    public function hasWishlistRecipient(): bool
+    {
+        return $this->recipient !== null || $this->managedRecipient !== null;
+    }
+
+    /**
+     * @return Collection<int, Wish>
+     */
+    public function getRecipientWishes(): Collection
+    {
+        if ($this->recipient !== null) {
+            return $this->recipient->getWishes();
+        }
+
+        if ($this->managedRecipient !== null) {
+            return $this->managedRecipient->getWishes();
+        }
+
+        return new ArrayCollection();
     }
 
     /**

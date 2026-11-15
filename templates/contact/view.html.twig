@@ -1,6 +1,9 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Liste de {{ owner.displayName }}{% endblock %}
+{% set is_managed = managed_person is defined and managed_person is not null %}
+{% set display_owner_name = is_managed ? managed_person.displayName : owner.displayName %}
+
+{% block title %}Liste de {{ display_owner_name }}{% endblock %}
 
 {% block body %}
 <section class="section">
@@ -8,10 +11,14 @@
         <div class="level mb-5">
             <div class="level-left">
                 <div class="is-flex is-align-items-center" style="gap: 1rem;">
-                    {{ include('_components/_avatar.html.twig', {name: owner.displayName, size: 'lg'}) }}
+                    {{ include('_components/_avatar.html.twig', {name: display_owner_name, size: 'lg'}) }}
                     <div>
-                        <h1 class="title is-3 mb-1">Liste de souhaits de {{ owner.displayName }}</h1>
-                        <p class="subtitle is-6 mb-0">Réservez un cadeau en solo ou lancez un projet commun ({{ owner.displayName }} ne verra rien !).</p>
+                        <h1 class="title is-3 mb-1">Liste de souhaits de {{ display_owner_name }}</h1>
+                        {% if is_managed %}
+                            <p class="subtitle is-6 mb-0">Liste gérée par {{ managed_person.allManagers|map(m => m.displayName)|join(', ') }} · Réservez un cadeau en solo ou lancez un projet commun.</p>
+                        {% else %}
+                            <p class="subtitle is-6 mb-0">Réservez un cadeau en solo ou lancez un projet commun ({{ owner.displayName }} ne verra rien !).</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -22,6 +29,27 @@
                 </a>
             </div>
         </div>
+
+        {% if managed_persons|default([]) is not empty %}
+            <div class="tabs is-boxed mb-5">
+                <ul>
+                    <li class="{{ not is_managed ? 'is-active' : '' }}">
+                        <a href="{{ path('app_contact_view', {'id': owner.id}) }}">
+                            <span class="icon is-small">{{ ux_icon('material-symbols:person') }}</span>
+                            <span>{{ owner.displayName }}</span>
+                        </a>
+                    </li>
+                    {% for person in managed_persons %}
+                        <li class="{{ (is_managed and managed_person.id == person.id) ? 'is-active' : '' }}">
+                            <a href="{{ path('app_contact_managed_view', {'id': person.id}) }}">
+                                <span class="icon is-small">{{ ux_icon('material-symbols:face') }}</span>
+                                <span>{{ person.displayName }}</span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
 
         <div class="columns is-multiline">
         {% for wish in wishes %}
@@ -105,8 +133,12 @@
                                         <span>Libérer</span>
                                     </button>
                                 </form>
-                                <form class="card-footer-item p-1" method="post" action="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
-                                      hx-post="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
+                                {% set create_project_url = is_managed
+                                    ? path('app_project_create_from_managed_wish', {'managedPersonId': managed_person.id, 'wishId': wish.id})
+                                    : path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id})
+                                %}
+                                <form class="card-footer-item p-1" method="post" action="{{ create_project_url }}"
+                                      hx-post="{{ create_project_url }}"
                                       hx-confirm="Voulez-vous convertir votre réservation en projet cadeau groupé ?"
                                       hx-target="body">
                                     <input type="hidden" name="_token" value="{{ csrf_token('create_project_from_wish' ~ wish.id) }}">
@@ -131,8 +163,12 @@
                                     <span>Réserver (solo)</span>
                                 </button>
                             </form>
-                            <form class="card-footer-item p-1" method="post" action="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
-                                  hx-post="{{ path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id}) }}"
+                            {% set create_project_url = is_managed
+                                ? path('app_project_create_from_managed_wish', {'managedPersonId': managed_person.id, 'wishId': wish.id})
+                                : path('app_project_create_from_wish', {'contactId': owner.id, 'wishId': wish.id})
+                            %}
+                            <form class="card-footer-item p-1" method="post" action="{{ create_project_url }}"
+                                  hx-post="{{ create_project_url }}"
                                   hx-confirm="Voulez-vous créer un projet cadeau avec ce souhait ?"
                                   hx-target="body">
                                 <input type="hidden" name="_token" value="{{ csrf_token('create_project_from_wish' ~ wish.id) }}">

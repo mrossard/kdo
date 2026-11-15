@@ -129,6 +129,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Vote::class, orphanRemoval: true)]
     private Collection $votes;
 
+    /**
+     * @var Collection<int, ManagedPerson>
+     */
+    #[ORM\OneToMany(mappedBy: 'manager', targetEntity: ManagedPerson::class, orphanRemoval: true)]
+    private Collection $managedPersons;
+
+    /**
+     * @var Collection<int, ManagedPerson>
+     */
+    #[ORM\ManyToMany(targetEntity: ManagedPerson::class, mappedBy: 'coManagers')]
+    private Collection $coManagedPersons;
+
     public function __construct()
     {
         $this->wishes = new ArrayCollection();
@@ -144,6 +156,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->receivedContactRequests = new ArrayCollection();
         $this->activities = new ArrayCollection();
         $this->votes = new ArrayCollection();
+        $this->managedPersons = new ArrayCollection();
+        $this->coManagedPersons = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -595,5 +609,42 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, ManagedPerson>
+     */
+    public function getManagedPersons(): Collection
+    {
+        return $this->managedPersons;
+    }
+
+    public function addManagedPerson(ManagedPerson $managedPerson): static
+    {
+        if (!$this->managedPersons->contains($managedPerson)) {
+            $this->managedPersons->add($managedPerson);
+            $managedPerson->setManager($this);
+        }
+
+        return $this;
+    }
+
+    public function removeManagedPerson(ManagedPerson $managedPerson): static
+    {
+        if ($this->managedPersons->removeElement($managedPerson)) {
+            if ($managedPerson->getManager() === $this) {
+                $managedPerson->setManager(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ManagedPerson>
+     */
+    public function getCoManagedPersons(): Collection
+    {
+        return $this->coManagedPersons;
     }
 }

@@ -14,14 +14,22 @@
                                 <span class="kpi-icon is-sm is-primary">
                                     {{ ux_icon('material-symbols:add') }}
                                 </span>
-                                <h1 class="title is-5 mb-0">Nouveau souhait</h1>
+                                <h1 class="title is-5 mb-0">
+                                    {% if managed_person is defined and managed_person is not null %}
+                                        Nouveau souhait pour {{ managed_person.displayName }}
+                                    {% else %}
+                                        Nouveau souhait
+                                    {% endif %}
+                                </h1>
                             </div>
                             <button type="button" class="delete" aria-label="Fermer" data-modal-close></button>
                         </div>
 
                         {{ include('wish/_form.html.twig', {
                             'button_label': 'Créer',
-                            'form_action': path('app_wish_new')
+                            'form_action': (managed_person is defined and managed_person is not null)
+                                ? path('app_wish_new', {'managedPerson': managed_person.id})
+                                : path('app_wish_new')
                         }) }}
                     </div>
                 </div>

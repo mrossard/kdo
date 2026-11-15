@@ -1,22 +1,94 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Ma Liste de souhaits{% endblock %}
+{% set is_managed = current_managed_person is defined and current_managed_person is not null %}
+{% set list_route = is_managed ? 'app_wish_managed_index' : 'app_wish_index' %}
+{% set list_base_params = is_managed ? {'id': current_managed_person.id} : {} %}
+{% set new_wish_url = is_managed ? path('app_wish_new', {'managedPerson': current_managed_person.id}) : path('app_wish_new') %}
+
+{% block title %}{{ is_managed ? 'Liste de ' ~ current_managed_person.displayName : 'Ma Liste de souhaits' }}{% endblock %}
 
 {% block body %}
     <section class="section">
         <div class="container" id="wish-list-container">
+            <div class="tabs is-boxed mb-4">
+                <ul>
+                    <li class="{{ not is_managed ? 'is-active' : '' }}">
+                        <a href="{{ path('app_wish_index') }}"
+                           hx-get="{{ path('app_wish_index') }}"
+                           hx-target="#wish-list-container"
+                           hx-select="#wish-list-container"
+                           hx-swap="outerHTML"
+                           hx-push-url="true">
+                            <span class="icon is-small">{{ ux_icon('material-symbols:person') }}</span>
+                            <span>Ma liste</span>
+                        </a>
+                    </li>
+                    {% for person in managed_persons|default([]) %}
+                        <li class="{{ (is_managed and current_managed_person.id == person.id) ? 'is-active' : '' }}">
+                            <a href="{{ path('app_wish_managed_index', {'id': person.id}) }}"
+                               hx-get="{{ path('app_wish_managed_index', {'id': person.id}) }}"
+                               hx-target="#wish-list-container"
+                               hx-select="#wish-list-container"
+                               hx-swap="outerHTML"
+                               hx-push-url="true">
+                                <span class="icon is-small">{{ ux_icon('material-symbols:face') }}</span>
+                                <span>{{ person.displayName }}</span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                    <li>
+                        <a href="{{ path('app_managed_person_new') }}"
+                           hx-get="{{ path('app_managed_person_new') }}"
+                           hx-target="#kdo-dynamic-modal-body"
+                           hx-select="#managed-person-modal-content"
+                           hx-swap="innerHTML">
+                            <span class="icon is-small">{{ ux_icon('material-symbols:person-add') }}</span>
+                            <span>Ajouter un proche</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
             <div class="level mb-5">
                 <div class="level-left">
                     <div>
-                        <h1 class="title is-3 mb-1">Ma Liste de souhaits</h1>
-                        <p class="subtitle is-6 mb-0">Vos envies partagées avec vos contacts (sans spoiler sur ce qui est réservé).</p>
+                        {% if is_managed %}
+                            <div class="is-flex is-align-items-center" style="gap: 0.75rem;">
+                                <h1 class="title is-3 mb-1">Liste de {{ current_managed_person.displayName }}</h1>
+                                <a href="{{ path('app_managed_person_edit', {'id': current_managed_person.id}) }}"
+                                   hx-get="{{ path('app_managed_person_edit', {'id': current_managed_person.id}) }}"
+                                   hx-target="#kdo-dynamic-modal-body"
+                                   hx-select="#managed-person-modal-content"
+                                   hx-swap="innerHTML"
+                                   class="button is-small is-light"
+                                   title="Modifier / Co-gestionnaires">
+                                    <span class="icon is-small">{{ ux_icon('material-symbols:edit') }}</span>
+                                </a>
+                                {% if current_managed_person.manager == app.user %}
+                                    <form method="post"
+                                          action="{{ path('app_managed_person_delete', {'id': current_managed_person.id}) }}"
+                                          onsubmit="return confirm('Supprimer la liste de {{ current_managed_person.displayName|e('js') }} et tous ses souhaits ?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete_managed_person' ~ current_managed_person.id) }}">
+                                        <button type="submit" class="button is-small is-danger is-light" title="Supprimer cette liste">
+                                            <span class="icon is-small">{{ ux_icon('material-symbols:delete') }}</span>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                            <p class="subtitle is-6 mb-0">
+                                Liste gérée par {{ current_managed_person.allManagers|map(m => m.displayName)|join(', ') }} · Partagée automatiquement avec vos contacts.
+                            </p>
+                        {% else %}
+                            <h1 class="title is-3 mb-1">Ma Liste de souhaits</h1>
+                            <p class="subtitle is-6 mb-0">Vos envies partagées avec vos contacts (sans spoiler sur ce qui est réservé).</p>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="level-right">
                     <div class="buttons">
                         {% if show_delivered %}
-                            <a href="{{ path('app_wish_index') }}"
-                               hx-get="{{ path('app_wish_index') }}"
+                            <a href="{{ path(list_route, list_base_params) }}"
+                               hx-get="{{ path(list_route, list_base_params) }}"
                                hx-target="#wish-list-container"
                                hx-select="#wish-list-container"
                                hx-swap="outerHTML"
@@ -26,8 +98,8 @@
                                 <span>Non reçus uniquement</span>
                             </a>
                         {% else %}
-                            <a href="{{ path('app_wish_index', {'showDelivered': true}) }}"
-                               hx-get="{{ path('app_wish_index', {'showDelivered': true}) }}"
+                            <a href="{{ path(list_route, list_base_params|merge({'showDelivered': true})) }}"
+                               hx-get="{{ path(list_route, list_base_params|merge({'showDelivered': true})) }}"
                                hx-target="#wish-list-container"
                                hx-select="#wish-list-container"
                                hx-swap="outerHTML"
@@ -37,8 +109,8 @@
                                 <span>Inclure les cadeaux reçus</span>
                             </a>
                         {% endif %}
-                        <a href="{{ path('app_wish_new') }}"
-                           hx-get="{{ path('app_wish_new') }}"
+                        <a href="{{ new_wish_url }}"
+                           hx-get="{{ new_wish_url }}"
                            hx-target="#kdo-dynamic-modal-body"
                            hx-select="#wish-modal-content"
                            hx-swap="innerHTML"
@@ -55,11 +127,11 @@
                     <thead>
                     <tr>
                         <th>
-                            {% set name_sort_url = path('app_wish_index', {
+                            {% set name_sort_url = path(list_route, list_base_params|merge({
                                 'sort': 'name',
                                 'direction': (current_sort == 'name' and current_direction == 'ASC') ? 'DESC' : 'ASC',
                                 'showDelivered': show_delivered
-                            }) %}
+                            })) %}
                             <a href="{{ name_sort_url }}"
                                hx-get="{{ name_sort_url }}"
                                hx-target="#wish-list-container"
@@ -75,11 +147,11 @@
                             </a>
                         </th>
                         <th>
-                            {% set price_sort_url = path('app_wish_index', {
+                            {% set price_sort_url = path(list_route, list_base_params|merge({
                                 'sort': 'price',
                                 'direction': (current_sort == 'price' and current_direction == 'ASC') ? 'DESC' : 'ASC',
                                 'showDelivered': show_delivered
-                            }) %}
+                            })) %}
                             <a href="{{ price_sort_url }}"
                                hx-get="{{ price_sort_url }}"
                                hx-target="#wish-list-container"
@@ -95,11 +167,11 @@
                             </a>
                         </th>
                         <th>
-                            {% set priority_sort_url = path('app_wish_index', {
+                            {% set priority_sort_url = path(list_route, list_base_params|merge({
                                 'sort': 'priority',
                                 'direction': (current_sort == 'priority' and current_direction == 'DESC') ? 'ASC' : 'DESC',
                                 'showDelivered': show_delivered
-                            }) %}
+                            })) %}
                             <a href="{{ priority_sort_url }}"
                                hx-get="{{ priority_sort_url }}"
                                hx-target="#wish-list-container"
@@ -182,6 +254,19 @@
                                         </span>
                                     {% elseif is_selected %}
                                         <span class="tag is-info is-light">Sélectionné dans projet</span>
+                                    {% elseif is_managed %}
+                                        {% set activeProject = wish.activeProject %}
+                                        {% if activeProject is not null %}
+                                            <span class="tag is-info is-light">
+                                                <span class="icon is-small mr-1">{{ ux_icon('material-symbols:group') }}</span>
+                                                <span>Dans un projet ({{ activeProject.owner.displayName }})</span>
+                                            </span>
+                                        {% elseif wish.reservedBy is not null %}
+                                            <span class="tag is-warning is-light">
+                                                <span class="icon is-small mr-1">{{ ux_icon('material-symbols:lock') }}</span>
+                                                <span>Réservé par {{ wish.reservedBy.displayName }}</span>
+                                            </span>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                             </td>
@@ -220,10 +305,14 @@
                     <span class="kpi-icon is-primary mx-auto mb-3">
                         {{ ux_icon('material-symbols:redeem', {height: '1.75rem', width: '1.75rem'}) }}
                     </span>
-                    <p class="title is-5 mb-2">Votre liste de souhaits est vide</p>
-                    <p class="subtitle is-6 mb-4">Ajoutez votre premier souhait pour guider vos proches !</p>
-                    <a href="{{ path('app_wish_new') }}"
-                       hx-get="{{ path('app_wish_new') }}"
+                    <p class="title is-5 mb-2">
+                        {{ is_managed ? 'La liste de ' ~ current_managed_person.displayName ~ ' est vide' : 'Votre liste de souhaits est vide' }}
+                    </p>
+                    <p class="subtitle is-6 mb-4">
+                        {{ is_managed ? 'Ajoutez un premier souhait pour aider vos contacts à lui faire plaisir !' : 'Ajoutez votre premier souhait pour guider vos proches !' }}
+                    </p>
+                    <a href="{{ new_wish_url }}"
+                       hx-get="{{ new_wish_url }}"
                        hx-target="#kdo-dynamic-modal-body"
                        hx-select="#wish-modal-content"
                        hx-swap="innerHTML"

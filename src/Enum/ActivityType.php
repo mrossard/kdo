@@ -17,6 +17,7 @@ enum ActivityType: string
     case PROJECT_UNLOCKED = 'project_unlocked';
     case PROJECT_DELIVERED = 'project_delivered';
     case REIMBURSEMENT_CREATED = 'reimbursement_created';
+    case CROWDFUND_CONTRIBUTED = 'crowdfund_contributed';
 
     /**
      * @param array<string, string|int|float|null> $meta
@@ -39,6 +40,7 @@ enum ActivityType: string
             self::PROJECT_UNLOCKED => "{$userName} a déverrouillé le projet",
             self::PROJECT_DELIVERED => "{$userName} a marqué le projet comme remis",
             self::REIMBURSEMENT_CREATED => "{$userName} a enregistré un remboursement de {$amount} €",
+            self::CROWDFUND_CONTRIBUTED => "{$userName} a participé à la cagnotte pour « {$ideaName} » ({$amount} €)",
         };
     }
 
@@ -56,6 +58,7 @@ enum ActivityType: string
             self::PROJECT_UNLOCKED => 'material-symbols:lock-open',
             self::PROJECT_DELIVERED => 'material-symbols:redeem',
             self::REIMBURSEMENT_CREATED => 'material-symbols:euro',
+            self::CROWDFUND_CONTRIBUTED => 'material-symbols:savings',
         };
     }
 }

@@ -25,6 +25,12 @@ Expected variables:
                     <span class="icon is-small mr-1">{{ ux_icon(idea.priorityEnum.icon) }}</span>
                     <span>{{ idea.priorityEnum.label }}</span>
                 </span>
+                {% if idea.isCrowdfunded %}
+                    <span class="tag is-warning is-light has-text-weight-semibold">
+                        <span class="icon is-small mr-1">{{ ux_icon('material-symbols:savings') }}</span>
+                        <span>Cagnotte</span>
+                    </span>
+                {% endif %}
                 {% if idea.price %}
                     <span class="tag is-primary is-light has-text-weight-bold tabular-nums">
                         {{ idea.price|format_currency('EUR') }}
@@ -84,6 +90,11 @@ Expected variables:
 
         {% if idea.description %}
             <div class="content is-size-7 has-text-grey mb-3 p-3 box has-background-light rounded">{{ idea.description|nl2br }}</div>
+        {% endif %}
+
+        {# Crowdfunding Section #}
+        {% if idea.isCrowdfunded %}
+            {% include 'gift_project/_crowdfund_section.html.twig' %}
         {% endif %}
 
         {# Purchased indicator & form #}
@@ -156,6 +167,34 @@ Expected variables:
         {# Proposer / Owner action buttons #}
         {% if (app.user == idea.proposer or app.user == project.owner) and not project.locked and project.deliveredAt is null %}
             <div class="buttons is-small mt-3 is-right">
+                {% if not idea.isCrowdfunded %}
+                    <form method="post"
+                          action="{{ path('app_gift_idea_toggle_crowdfund', {'id': idea.id}) }}"
+                          hx-post="{{ path('app_gift_idea_toggle_crowdfund', {'id': idea.id}) }}"
+                          hx-target="#gift-idea-{{ idea.id }}"
+                          hx-swap="outerHTML"
+                          class="is-inline">
+                        <input type="hidden" name="_token" value="{{ csrf_token('toggle_crowdfund' ~ idea.id) }}">
+                        <button type="submit" class="button is-warning is-light" title="Lancer une cagnotte participative pour ce cadeau">
+                            <span class="icon is-small">{{ ux_icon('material-symbols:savings') }}</span>
+                            <span>Lancer cagnotte</span>
+                        </button>
+                    </form>
+                {% elseif idea.isCrowdfunded and idea.contributions is empty %}
+                    <form method="post"
+                          action="{{ path('app_gift_idea_toggle_crowdfund', {'id': idea.id}) }}"
+                          hx-post="{{ path('app_gift_idea_toggle_crowdfund', {'id': idea.id}) }}"
+                          hx-target="#gift-idea-{{ idea.id }}"
+                          hx-swap="outerHTML"
+                          class="is-inline">
+                        <input type="hidden" name="_token" value="{{ csrf_token('toggle_crowdfund' ~ idea.id) }}">
+                        <button type="submit" class="button is-light has-text-grey" title="Désactiver la cagnotte">
+                            <span class="icon is-small">{{ ux_icon('material-symbols:cancel') }}</span>
+                            <span>Arrêter cagnotte</span>
+                        </button>
+                    </form>
+                {% endif %}
+
                 <button class="button is-link is-light"
                         hx-get="{{ path('app_gift_idea_edit', {'id': idea.id}) }}"
                         hx-target="#gift-idea-{{ idea.id }}"

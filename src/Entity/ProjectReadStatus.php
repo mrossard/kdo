@@ -8,6 +8,8 @@ use App\Repository\ProjectReadStatusRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProjectReadStatusRepository::class)]
+#[ORM\Table(name: 'project_read_status')]
+#[ORM\UniqueConstraint(name: 'uniq_project_read_status_user_project', columns: ['user_id', 'project_id'])]
 class ProjectReadStatus
 {
     #[ORM\Id]

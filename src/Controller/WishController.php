@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\ManagedPerson;
 use App\Entity\User;
 use App\Entity\Wish;
 use App\Form\WishType;
+use App\Repository\ManagedPersonRepository;
 use App\Repository\WishRepository;
 use App\Service\UrlMetadataFetcher;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,8 +23,11 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class WishController extends AbstractController
 {
     #[Route(name: 'app_wish_index', methods: ['GET'])]
-    public function index(WishRepository $wishRepository, Request $request): Response
-    {
+    public function index(
+        WishRepository $wishRepository,
+        ManagedPersonRepository $managedPersonRepository,
+        Request $request,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
         $showDelivered = $request->query->getBoolean('showDelivered', false);
@@ -38,30 +43,45 @@ final class WishController extends AbstractController
             'show_delivered' => $showDelivered,
             'current_sort' => $sort,
             'current_direction' => $direction,
+            'managed_persons' => $managedPersonRepository->findByManager($user),
+            'current_managed_person' => null,
         ]);
     }
 
     #[Route('/new', name: 'app_wish_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ManagedPersonRepository $managedPersonRepository,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
+
+        $managedPerson = null;
+        $managedPersonId = $request->query->getInt('managedPerson');
+        if ($managedPersonId > 0) {
+            $managedPerson = $managedPersonRepository->find($managedPersonId);
+            if ($managedPerson === null || !$managedPerson->isManagedBy($user)) {
+                throw $this->createAccessDeniedException('Vous ne pouvez pas ajouter un souhait à cette liste.');
+            }
+        }
 
         $wish = new Wish();
         $form = $this->createForm(WishType::class, $wish);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $wish->setUser($user);
+            $managedPerson !== null ? $wish->setManagedPerson($managedPerson) : $wish->setUser($user);
             $entityManager->persist($wish);
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_wish_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToWishList($managedPerson);
         }
 
         return $this->render('wish/new.html.twig', [
             'wish' => $wish,
             'form' => $form,
+            'managed_person' => $managedPerson,
         ]);
     }
 
@@ -108,7 +128,8 @@ final class WishController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_wish_index', [], Response::HTTP_SEE_OTHER);
+            $managedPerson = $wish->getManagedPerson();
+            return $this->redirectToWishList($managedPerson);
         }
 
         return $this->render('wish/edit.html.twig', [
@@ -121,6 +142,7 @@ final class WishController extends AbstractController
     public function delete(Request $request, Wish $wish, EntityManagerInterface $entityManager): Response
     {
         $this->denyAccessUnlessOwner($wish);
+        $managedPerson = $wish->getManagedPerson();
 
         if ($this->isCsrfTokenValid('delete' . (string) $wish->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($wish);
@@ -132,12 +154,27 @@ final class WishController extends AbstractController
             }
         }
 
+        return $this->redirectToWishList($managedPerson);
+    }
+
+    private function redirectToWishList(?ManagedPerson $managedPerson): Response
+    {
+        if ($managedPerson !== null) {
+            return $this->redirectToRoute(
+                'app_wish_managed_index',
+                ['id' => $managedPerson->getId()],
+                Response::HTTP_SEE_OTHER,
+            );
+        }
+
         return $this->redirectToRoute('app_wish_index', [], Response::HTTP_SEE_OTHER);
     }
 
     private function denyAccessUnlessOwner(Wish $wish): void
     {
-        if ($wish->getUser() !== $this->getUser()) {
+        /** @var User|null $user */
+        $user = $this->getUser();
+        if (!$wish->isManagedBy($user)) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas accéder à ce souhait.');
         }
     }

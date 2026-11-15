@@ -31,10 +31,12 @@ final class UserThemeController extends AbstractController
 
         $entityManager->flush();
 
-        // If HTMX request, we can return a partial or just a 200 OK with headers
-        // But to update the button icon, returning the new button HTML is best.
-        return $this->render('theme/_toggle_button.html.twig', [
+        // Return updated button HTML and set X-Kdo-Theme header for instant HTMX sync
+        $response = $this->render('theme/_toggle_button.html.twig', [
             'theme' => $newTheme,
         ]);
+        $response->headers->set('X-Kdo-Theme', $newTheme);
+
+        return $response;
     }
 }

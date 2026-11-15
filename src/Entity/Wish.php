@@ -39,8 +39,12 @@ class Wish
     private int $priority = WishPriority::NORMAL->value;
 
     #[ORM\ManyToOne(inversedBy: 'wishes')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?User $user = null;
+
+    #[ORM\ManyToOne(inversedBy: 'wishes')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
+    private ?ManagedPerson $managedPerson = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -152,6 +156,45 @@ class Wish
         $this->user = $user;
 
         return $this;
+    }
+
+    public function getManagedPerson(): ?ManagedPerson
+    {
+        return $this->managedPerson;
+    }
+
+    public function setManagedPerson(?ManagedPerson $managedPerson): static
+    {
+        $this->managedPerson = $managedPerson;
+
+        return $this;
+    }
+
+    public function getManager(): ?User
+    {
+        return $this->user ?? $this->managedPerson?->getManager();
+    }
+
+    public function isManagedBy(?User $user): bool
+    {
+        return $user !== null && in_array($user, $this->getAllManagers(), true);
+    }
+
+    /**
+     * @return list<User>
+     */
+    public function getAllManagers(): array
+    {
+        if ($this->user !== null) {
+            return [$this->user];
+        }
+
+        return $this->managedPerson?->getAllManagers() ?? [];
+    }
+
+    public function getOwnerDisplayName(): string
+    {
+        return $this->managedPerson?->getDisplayName() ?? $this->user?->getDisplayName() ?? '';
     }
 
     public function getReservedBy(): ?User

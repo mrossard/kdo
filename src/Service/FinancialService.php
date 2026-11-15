@@ -13,7 +13,7 @@ use App\Repository\GiftProjectRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 
-// @mago-expect lint:cyclomatic-complexity,kan-defect
+// @mago-expect lint:cyclomatic-complexity,kan-defect,halstead
 class FinancialService
 {
     private GiftProjectRepository $giftProjectRepository;
@@ -78,6 +78,8 @@ class FinancialService
         $sharesBy = [];
         /** @var array<int, User> $userMap */
         $userMap = [];
+        /** @var array<int, float> $directTargets */
+        $directTargets = [];
         $totalShares = 0.0;
 
         foreach ($participants as $p) {
@@ -86,6 +88,7 @@ class FinancialService
                 continue;
             }
             $paidBy[$pid] = 0.0;
+            $directTargets[$pid] = 0.0;
             $share = $project->getParticipantShare($p);
             $sharesBy[$pid] = $share;
             $totalShares += $share;
@@ -99,17 +102,20 @@ class FinancialService
             $totalShares = (float) count($sharesBy);
         }
 
-        $totalCost = $this->accumulatePaidIdeas($project, $paidBy);
+        $costs = $this->accumulatePaidIdeas($project, $paidBy, $directTargets);
+        $totalCost = $costs['total'];
+        $sharedPoolCost = $costs['shared'];
         $count = count($participants);
         $averageCost = $count > 0 ? $totalCost / $count : 0.0;
         $costPerShare = $totalShares > 0.0 ? $totalCost / $totalShares : 0.0;
+        $sharedCostPerShare = $totalShares > 0.0 ? $sharedPoolCost / $totalShares : 0.0;
 
         /** @var array<int, float> $targets */
         $targets = [];
         /** @var array<int, float> $balances */
         $balances = [];
         foreach ($paidBy as $uid => $amount) {
-            $target = $costPerShare * $sharesBy[$uid];
+            $target = $directTargets[$uid] + ($sharedCostPerShare * $sharesBy[$uid]);
             $targets[$uid] = $target;
             $balances[$uid] = $amount - $target;
         }
@@ -185,10 +191,14 @@ class FinancialService
 
     /**
      * @param array<int, float> $paidBy
+     * @param array<int, float> $directTargets
+     * @return array{total: float, shared: float}
      */
-    private function accumulatePaidIdeas(GiftProject $project, array &$paidBy): float
+    private function accumulatePaidIdeas(GiftProject $project, array &$paidBy, array &$directTargets): array
     {
         $totalCost = 0.0;
+        $sharedCost = 0.0;
+
         foreach ($project->getGiftIdeas() as $idea) {
             $purchaser = $idea->getPurchasedBy();
             $price = $idea->getPurchasePrice();
@@ -204,9 +214,27 @@ class FinancialService
             $amount = is_numeric($price) ? (float) $price : 0.0;
             $paidBy[$uid] += $amount;
             $totalCost += $amount;
+
+            $totalContributed = $idea->isCrowdfunded() ? $idea->getTotalContributed() : 0.0;
+            if ($totalContributed > 0.0) {
+                $scale = min(1.0, $amount / $totalContributed);
+                foreach ($idea->getContributions() as $contrib) {
+                    $cUser = $contrib->getUser();
+                    $cUid = $cUser?->getId();
+                    if ($cUid !== null && array_key_exists($cUid, $directTargets)) {
+                        $directTargets[$cUid] += $contrib->getAmountAsFloat() * $scale;
+                    }
+                }
+                $covered = $totalContributed * $scale;
+                $remainder = max(0.0, $amount - $covered);
+                $sharedCost += $remainder;
+                continue;
+            }
+
+            $sharedCost += $amount;
         }
 
-        return $totalCost;
+        return ['total' => $totalCost, 'shared' => $sharedCost];
     }
 
     /**

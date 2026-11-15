@@ -1,0 +1,451 @@
+{% set step_icons = {
+    1: 'material-symbols:redeem',
+    2: 'material-symbols:list',
+    3: 'material-symbols:contacts',
+    4: 'material-symbols:group',
+    5: 'material-symbols:euro',
+    6: 'material-symbols:check'
+} %}
+
+{% set step_titles = {
+    1: 'Bienvenue & Vue d\'ensemble',
+    2: 'Ma Liste de souhaits',
+    3: 'Contacts & Entourage',
+    4: 'Projets Cadeaux Secrets',
+    5: 'Cagnotte & Bilan Financier',
+    6: 'Notifications & Prêt à démarrer'
+} %}
+
+<header class="modal-card-head p-4">
+    <div class="is-flex is-align-items-center is-justify-content-space-between w-100">
+        <div class="is-flex is-align-items-center" style="gap: 0.75rem;">
+            <span class="kpi-icon is-primary is-sm is-flex-shrink-0">
+                {{ ux_icon(step_icons[step]|default('material-symbols:redeem')) }}
+            </span>
+            <div>
+                <p id="kdo-tour-title" class="modal-card-title is-size-5 mb-0 has-text-weight-bold">
+                    Visite guidée KDO
+                </p>
+                <p class="is-size-7 has-text-grey mb-0">
+                    {{ step_titles[step]|default('') }}
+                </p>
+            </div>
+        </div>
+        <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+            <span class="tag is-primary is-light is-rounded has-text-weight-medium">
+                Étape {{ step }} / {{ total_steps }}
+            </span>
+            <button class="delete" aria-label="close" data-modal-close></button>
+        </div>
+    </div>
+</header>
+
+<div class="px-4 pt-3 pb-1" style="background: var(--bulma-scheme-main-bis);">
+    <progress class="progress is-primary is-small mb-3" value="{{ step }}" max="{{ total_steps }}" style="height: 6px;">
+        {{ (step / total_steps * 100)|round }}%
+    </progress>
+
+    {# Direct Step Pills #}
+    <div class="buttons are-small is-centered mb-2" style="gap: 0.35rem;">
+        {% for s in 1..total_steps %}
+            <button type="button"
+                    class="button is-rounded {{ s == step ? 'is-primary has-text-weight-bold' : (s < step ? 'is-light has-text-primary' : 'is-ghost has-text-grey') }}"
+                    hx-get="{{ path('app_tour_modal', {'step': s, 'content_only': 1}) }}"
+                    hx-target="#kdo-tour-modal-content"
+                    hx-swap="innerHTML"
+                    title="{{ step_titles[s] }}">
+                <span>{{ s }}. {{ step_titles[s]|split(' ')|first }}</span>
+            </button>
+        {% endfor %}
+    </div>
+</div>
+
+<section class="modal-card-body p-5">
+    {% if step == 1 %}
+        {# Étape 1 : Accueil & Tableau de bord #}
+        <div class="content mb-4">
+            <h2 class="title is-5 mb-2">Bienvenue sur KDO ! 🎁</h2>
+            <p class="has-text-grey is-size-6">
+                KDO est l'application pensée pour gérer facilement vos listes de cadeaux et organiser des cadeaux communs entre proches <strong>sans jamais gâcher la surprise</strong>.
+            </p>
+        </div>
+
+        <div class="columns is-multiline is-variable is-3 mb-4">
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-info is-sm">{{ ux_icon('material-symbols:list') }}</span>
+                        <strong>Indicateurs clés (KPIs)</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Suivez en un coup d'œil le nombre de souhaits actifs, vos projets en cours, le solde financier et vos contacts.
+                    </p>
+                </div>
+            </div>
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-primary is-sm">{{ ux_icon('material-symbols:history') }}</span>
+                        <strong>Activité en temps réel</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Le flux d'activité récente vous prévient dès qu'une idée est ajoutée, votée ou qu'un remboursement est validé.
+                    </p>
+                </div>
+            </div>
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-success is-sm">{{ ux_icon('material-symbols:add') }}</span>
+                        <strong>Actions rapides</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Ajoutez un souhait personnel ou lancez un projet cadeau d'un clic grâce aux boutons d'accès rapide.
+                    </p>
+                </div>
+            </div>
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-warning is-sm">{{ ux_icon('material-symbols:dark-mode') }}</span>
+                        <strong>Mode clair & sombre</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Basculez entre thème sombre et thème clair à tout moment depuis la barre de navigation.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="notification is-info is-light p-3 is-flex is-align-items-center is-size-7" style="gap: 0.75rem;">
+            <span class="icon is-medium has-text-info">{{ ux_icon('material-symbols:info') }}</span>
+            <span>
+                <strong>Astuce :</strong> Le tableau de bord s'actualise automatiquement au fil de vos activités et de celles de vos proches.
+            </span>
+        </div>
+
+    {% elseif step == 2 %}
+        {# Étape 2 : Ma Liste de souhaits #}
+        <div class="content mb-4">
+            <h2 class="title is-5 mb-2">Ma Liste de souhaits (Wishlist) 📝</h2>
+            <p class="has-text-grey is-size-6">
+                Fini les cadeaux décevants ou en double : rassemblez toutes vos envies pour Noël, anniversaires ou toute occasion.
+            </p>
+        </div>
+
+        <div class="box p-4 mb-4" style="background: var(--bulma-scheme-main-bis); border-left: 4px solid var(--bulma-info);">
+            <div class="is-flex is-align-items-flex-start mb-3" style="gap: 0.75rem;">
+                <span class="kpi-icon is-info is-sm is-flex-shrink-0">{{ ux_icon('material-symbols:open-in-new') }}</span>
+                <div>
+                    <h3 class="title is-6 mb-1">Remplissage automatique par URL</h3>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Collez l'adresse web d'un produit (Fnac, Amazon, Decathlon...) : KDO extrait automatiquement le titre, l'image et le prix indicatif !
+                    </p>
+                </div>
+            </div>
+
+            <div class="is-flex is-align-items-flex-start mb-3" style="gap: 0.75rem;">
+                <span class="kpi-icon is-warning is-sm is-flex-shrink-0">{{ ux_icon('material-symbols:sort') }}</span>
+                <div>
+                    <h3 class="title is-6 mb-1">Niveaux de priorité & Coup de cœur</h3>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Attribuez une priorité à vos souhaits : <em>Faible</em>, <em>Moyen</em>, <em>Élevé</em> ou <em>Coup de cœur</em> pour orienter vos proches.
+                    </p>
+                </div>
+            </div>
+
+            <div class="is-flex is-align-items-flex-start" style="gap: 0.75rem;">
+                <span class="kpi-icon is-success is-sm is-flex-shrink-0">{{ ux_icon('material-symbols:visibility-off') }}</span>
+                <div>
+                    <h3 class="title is-6 mb-1">Réservation secrète anti-spoilers</h3>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Vos proches peuvent réserver un cadeau pour éviter les doublons. De votre côté, <strong>vous ne voyez rien</strong> pour garder la surprise intacte le jour J !
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <span class="is-size-7 has-text-grey">Partagez votre liste par lien secret ou directement avec vos contacts.</span>
+            <a href="{{ path('app_wish_index') }}" class="button is-light is-small" target="_blank">
+                <span class="icon">{{ ux_icon('material-symbols:open-in-new') }}</span>
+                <span>Ouvrir Ma Liste</span>
+            </a>
+        </div>
+
+    {% elseif step == 3 %}
+        {# Étape 3 : Contacts & Entourage #}
+        <div class="content mb-4">
+            <h2 class="title is-5 mb-2">Contacts & Entourage 👥</h2>
+            <p class="has-text-grey is-size-6">
+                Créez votre réseau de proches pour découvrir leurs envies et participer à leurs fêtes.
+            </p>
+        </div>
+
+        <div class="columns is-multiline is-variable is-3 mb-4">
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-link is-sm">{{ ux_icon('material-symbols:person-add') }}</span>
+                        <strong>Invitations simples</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Invitez vos amis ou votre famille par leur email. Dès qu'ils acceptent, vous êtes connectés.
+                    </p>
+                </div>
+            </div>
+
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-info is-sm">{{ ux_icon('material-symbols:visibility') }}</span>
+                        <strong>Consultez leurs listes</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Ouvrez la liste d'un ami pour voir exactement ce dont il rêve pour son anniversaire ou Noël.
+                    </p>
+                </div>
+            </div>
+
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-success is-sm">{{ ux_icon('material-symbols:check') }}</span>
+                        <strong>Réservez en 1 clic</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Cochez un cadeau pour avertir les autres que vous l'offrez, sans que le destinataire ne s'en doute.
+                    </p>
+                </div>
+            </div>
+
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-primary is-sm">{{ ux_icon('material-symbols:redeem') }}</span>
+                        <strong>Transformez en projet</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Un cadeau trop onéreux ? Transformez le souhait d'un proche en projet cadeau commun pour cotiser à plusieurs !
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <span class="is-size-7 has-text-grey">Gérez vos relations depuis la page Contacts.</span>
+            <a href="{{ path('app_contact_index') }}" class="button is-light is-small" target="_blank">
+                <span class="icon">{{ ux_icon('material-symbols:open-in-new') }}</span>
+                <span>Ouvrir Contacts</span>
+            </a>
+        </div>
+
+    {% elseif step == 4 %}
+        {# Étape 4 : Projets Cadeaux Collaboratifs #}
+        <div class="content mb-4">
+            <h2 class="title is-5 mb-2">Projets Cadeaux Collaboratifs 🎁</h2>
+            <p class="has-text-grey is-size-6">
+                Organisez un cadeau de groupe pour un anniversaire, un mariage ou un pot de départ sans spoilers !
+            </p>
+        </div>
+
+        <div class="box p-4 mb-4" style="background: var(--bulma-scheme-main-bis); border-left: 4px solid var(--bulma-primary);">
+            <div class="is-flex is-align-items-flex-start mb-3" style="gap: 0.75rem;">
+                <span class="kpi-icon is-danger is-sm is-flex-shrink-0">{{ ux_icon('material-symbols:lock') }}</span>
+                <div>
+                    <h3 class="title is-6 mb-1">La règle d'or : le bénéficiaire ne voit RIEN !</h3>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Si le destinataire du cadeau est inscrit sur KDO, l'application lui masque entièrement le projet. Aucun risque de fuite d'information.
+                    </p>
+                </div>
+            </div>
+
+            <div class="is-flex is-align-items-flex-start mb-3" style="gap: 0.75rem;">
+                <span class="kpi-icon is-primary is-sm is-flex-shrink-0">{{ ux_icon('material-symbols:redeem') }}</span>
+                <div>
+                    <h3 class="title is-6 mb-1">Boîte à idées collaborative & Votes</h3>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Tous les participants peuvent proposer des idées avec photos, prix et liens web. Votez pour vos options préférées pour vous mettre d'accord.
+                    </p>
+                </div>
+            </div>
+
+            <div class="is-flex is-align-items-flex-start" style="gap: 0.75rem;">
+                <span class="kpi-icon is-info is-sm is-flex-shrink-0">{{ ux_icon('material-symbols:checklist') }}</span>
+                <div>
+                    <h3 class="title is-6 mb-1">Discussion privée & Choix final</h3>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Échangez via le fil de commentaires intégré. L'organisateur verrouille l'idée retenue dès que la décision est arrêtée.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <span class="is-size-7 has-text-grey">Retrouvez tous vos projets en cours et archives.</span>
+            <a href="{{ path('app_project_index') }}" class="button is-light is-small" target="_blank">
+                <span class="icon">{{ ux_icon('material-symbols:open-in-new') }}</span>
+                <span>Voir les projets</span>
+            </a>
+        </div>
+
+    {% elseif step == 5 %}
+        {# Étape 5 : Cagnotte & Bilan Financier #}
+        <div class="content mb-4">
+            <h2 class="title is-5 mb-2">Cagnotte & Bilan Financier 💶</h2>
+            <p class="has-text-grey is-size-6">
+                Fini les tableaux Excel et les calculs de dettes interminables entre amis.
+            </p>
+        </div>
+
+        <div class="columns is-multiline is-variable is-3 mb-4">
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-primary is-sm">{{ ux_icon('material-symbols:shopping-bag') }}</span>
+                        <strong>Déclaration de l'achat</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        L'acheteur indique le montant réel payé pour le cadeau retenu.
+                    </p>
+                </div>
+            </div>
+
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-info is-sm">{{ ux_icon('material-symbols:savings') }}</span>
+                        <strong>Contributions libres ou égales</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Chaque participant enregistre sa part ou répartit équitablement le budget.
+                    </p>
+                </div>
+            </div>
+
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-success is-sm">{{ ux_icon('material-symbols:payments') }}</span>
+                        <strong>Remboursements optimisés</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        L'algorithme KDO calcule qui doit rembourser qui en minimisant le nombre total de virements.
+                    </p>
+                </div>
+            </div>
+
+            <div class="column is-6">
+                <div class="box p-3 h-100" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+                    <div class="is-flex is-align-items-center mb-2" style="gap: 0.5rem;">
+                        <span class="kpi-icon is-warning is-sm">{{ ux_icon('material-symbols:account-balance-wallet') }}</span>
+                        <strong>Vue globale à 360°</strong>
+                    </div>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        L'onglet Finances centralise toutes vos créances et dettes sur l'ensemble de vos projets.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <span class="is-size-7 has-text-grey">Chaque remboursement peut être validé d'un clic.</span>
+            <a href="{{ path('app_financial_index') }}" class="button is-light is-small" target="_blank">
+                <span class="icon">{{ ux_icon('material-symbols:open-in-new') }}</span>
+                <span>Ouvrir Finances</span>
+            </a>
+        </div>
+
+    {% elseif step == 6 %}
+        {# Étape 6 : Notifications & Prêt à démarrer #}
+        <div class="content mb-4">
+            <h2 class="title is-5 mb-2">Notifications & C'est parti ! 🚀</h2>
+            <p class="has-text-grey is-size-6">
+                Vous connaissez désormais toutes les facettes de KDO. Voici comment bien démarrer :
+            </p>
+        </div>
+
+        <div class="box p-4 mb-4" style="background: var(--bulma-scheme-main-bis); border: 1px solid var(--bulma-border-weak);">
+            <div class="is-flex is-align-items-center mb-3" style="gap: 0.75rem;">
+                <span class="kpi-icon is-danger is-sm is-flex-shrink-0">{{ ux_icon('material-symbols:notifications') }}</span>
+                <div>
+                    <h3 class="title is-6 mb-1">Le centre de notifications</h3>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        La pastille rouge dans la barre de navigation vous informe en direct de chaque activité : nouveau commentaire, invitation reçue, virement confirmé.
+                    </p>
+                </div>
+            </div>
+
+            <div class="is-flex is-align-items-center" style="gap: 0.75rem;">
+                <span class="kpi-icon is-primary is-sm is-flex-shrink-0">{{ ux_icon('material-symbols:person') }}</span>
+                <div>
+                    <h3 class="title is-6 mb-1">Mon Profil & Aide permanente</h3>
+                    <p class="is-size-7 has-text-grey mb-0">
+                        Gérez vos coordonnées, changez votre mot de passe, et relancez cette visite guidée à tout instant depuis votre profil.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="has-text-centered p-3 mb-2">
+            <p class="has-text-weight-semibold mb-3">Par quoi souhaitez-vous commencer ?</p>
+            <div class="buttons is-centered">
+                <a href="{{ path('app_wish_new') }}" class="button is-primary is-small">
+                    <span class="icon">{{ ux_icon('material-symbols:add') }}</span>
+                    <span>Ajouter mon 1er souhait</span>
+                </a>
+                <a href="{{ path('app_project_new') }}" class="button is-light is-small">
+                    <span class="icon">{{ ux_icon('material-symbols:redeem') }}</span>
+                    <span>Créer un projet</span>
+                </a>
+                <a href="{{ path('app_contact_index') }}" class="button is-light is-small">
+                    <span class="icon">{{ ux_icon('material-symbols:person-add') }}</span>
+                    <span>Inviter un contact</span>
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</section>
+
+<footer class="modal-card-foot p-4 is-flex is-justify-content-space-between is-align-items-center">
+    <div>
+        <a href="{{ path('app_tour_guide') }}" class="button is-ghost is-small has-text-grey p-0" target="_blank">
+            <span class="icon is-small">{{ ux_icon('material-symbols:open-in-new') }}</span>
+            <span>Guide complet</span>
+        </a>
+    </div>
+
+    <div class="buttons is-right mb-0">
+        {% if step > 1 %}
+            <button type="button"
+                    class="button is-light is-small"
+                    hx-get="{{ path('app_tour_modal', {'step': step - 1, 'content_only': 1}) }}"
+                    hx-target="#kdo-tour-modal-content"
+                    hx-swap="innerHTML">
+                <span class="icon">{{ ux_icon('material-symbols:arrow-back') }}</span>
+                <span>Précédent</span>
+            </button>
+        {% endif %}
+
+        {% if step < total_steps %}
+            <button type="button"
+                    class="button is-primary is-small"
+                    hx-get="{{ path('app_tour_modal', {'step': step + 1, 'content_only': 1}) }}"
+                    hx-target="#kdo-tour-modal-content"
+                    hx-swap="innerHTML">
+                <span>Suivant</span>
+                <span class="icon">{{ ux_icon('material-symbols:arrow-forward') }}</span>
+            </button>
+        {% else %}
+            <button type="button"
+                    class="button is-success is-small"
+                    hx-post="{{ path('app_tour_complete') }}"
+                    hx-target="#kdo-tour-modal-container"
+                    hx-swap="innerHTML"
+                    data-modal-close>
+                <span class="icon">{{ ux_icon('material-symbols:check') }}</span>
+                <span>Terminer la visite</span>
+            </button>
+        {% endif %}
+    </div>
+</footer>

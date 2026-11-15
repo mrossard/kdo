@@ -7,6 +7,7 @@ namespace App\Form;
 use App\Entity\GiftIdea;
 use App\Enum\WishPriority;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -56,6 +57,10 @@ class GiftIdeaType extends AbstractType
                 'required' => false,
                 'currency' => 'EUR',
                 'attr' => ['placeholder' => '29.99'],
+            ])
+            ->add('isCrowdfunded', CheckboxType::class, [
+                'label' => 'Mode cagnotte (financement participatif libre)',
+                'required' => false,
             ]);
     }
 

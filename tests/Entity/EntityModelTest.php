@@ -9,8 +9,10 @@ use App\Entity\Comment;
 use App\Entity\ContactRequest;
 use App\Entity\GiftIdea;
 use App\Entity\GiftProject;
+use App\Entity\ManagedPerson;
 use App\Entity\User;
 use App\Entity\Vote;
+use App\Entity\Wish;
 use App\Enum\GiftIdeaStatus;
 use App\Security\Voter\CommentVoter;
 use App\Security\Voter\GiftIdeaVoter;
@@ -279,5 +281,42 @@ final class EntityModelTest extends TestCase
         self::assertSame(VoterInterface::ACCESS_GRANTED, $commentVoter->vote($participantToken, $comment, [CommentVoter::EDIT]));
         self::assertSame(VoterInterface::ACCESS_DENIED, $commentVoter->vote($ownerToken, $comment, [CommentVoter::EDIT]));
         self::assertSame(VoterInterface::ACCESS_GRANTED, $commentVoter->vote($ownerToken, $comment, [CommentVoter::DELETE]));
+    }
+
+    public function testManagedPersonAndWishAndGiftProject(): void
+    {
+        $parent = new User();
+        $parent->setEmail('parent@example.com')->setFirstname('Alice');
+
+        $child = new ManagedPerson();
+        $child->setName('Léo')->setManager($parent);
+
+        self::assertSame('Léo', $child->getDisplayName());
+        self::assertSame($parent, $child->getManager());
+
+        $wish = new Wish();
+        $wish->setName('Lego Technic');
+        $child->addWish($wish);
+
+        self::assertSame($child, $wish->getManagedPerson());
+        self::assertSame($parent, $wish->getManager());
+        self::assertSame('Léo', $wish->getOwnerDisplayName());
+        self::assertCount(1, $child->getWishes());
+
+        $project = new GiftProject();
+        $project->setName('Anniversaire Léo')->setOwner($parent)->setManagedRecipient($child);
+
+        self::assertTrue($project->hasWishlistRecipient());
+        self::assertSame('Léo', $project->getRecipientDisplayName());
+        self::assertCount(1, $project->getRecipientWishes());
+
+        $coParent = new User();
+        $coParent->setEmail('coparent@example.com')->setFirstname('Bob');
+        $child->addCoManager($coParent);
+
+        self::assertTrue($child->isManagedBy($parent));
+        self::assertTrue($child->isManagedBy($coParent));
+        self::assertTrue($wish->isManagedBy($coParent));
+        self::assertCount(2, $child->getAllManagers());
     }
 }

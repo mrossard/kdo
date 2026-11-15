@@ -1,0 +1,69 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block body %}
+<section class="section">
+    <div class="container">
+        <div class="columns is-centered">
+            <div class="column is-6-tablet is-5-desktop">
+                <div class="box p-5">
+                    <div id="managed-person-modal-content">
+                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+                            <div class="is-flex is-align-items-center" style="gap: 0.65rem;">
+                                <span class="kpi-icon is-sm is-primary">
+                                    {{ ux_icon('material-symbols:face') }}
+                                </span>
+                                <h1 class="title is-5 mb-0">{{ title }}</h1>
+                            </div>
+                            <button type="button" class="delete" aria-label="Fermer" data-modal-close></button>
+                        </div>
+
+                        {{ form_start(form, {'action': form_action}) }}
+                            {{ form_row(form.name) }}
+
+                            {% if form.coManagers is defined %}
+                                <div class="field mt-4">
+                                    {{ form_label(form.coManagers, null, {'label_attr': {'class': 'label'}}) }}
+                                    {% if form.coManagers|length > 0 %}
+                                        <div class="box has-background-light p-3 mb-1">
+                                            {% for child in form.coManagers %}
+                                                <div class="field mb-1">
+                                                    <label class="checkbox">
+                                                        {{ form_widget(child) }}
+                                                        <span>{{ child.vars.label }}</span>
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <p class="is-size-7 has-text-grey">Aucun contact mutuel disponible pour le moment.</p>
+                                    {% endif %}
+                                    <p class="help">{{ form.coManagers.vars.help }}</p>
+                                    {{ form_errors(form.coManagers) }}
+                                </div>
+                            {% endif %}
+
+                            <div class="field mt-5">
+                                <div class="control">
+                                    <button class="button is-primary is-fullwidth">
+                                        <span class="icon">{{ ux_icon('material-symbols:save') }}</span>
+                                        <span>{{ button_label }}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        {{ form_end(form) }}
+                    </div>
+                </div>
+
+                <div class="has-text-centered mt-4">
+                    <a href="{{ path('app_wish_index') }}" class="button is-ghost">
+                        <span class="icon">{{ ux_icon('material-symbols:arrow-back') }}</span>
+                        <span>Retour aux listes</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

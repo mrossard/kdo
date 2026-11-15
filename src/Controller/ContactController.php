@@ -10,6 +10,7 @@ use App\Entity\Wish;
 use App\Entity\WishlistShare;
 use App\Form\AddContactFormType;
 use App\Repository\ContactRequestRepository;
+use App\Repository\ManagedPersonRepository;
 use App\Repository\UserRepository;
 use App\Repository\WishlistShareRepository;
 use App\Repository\WishRepository;
@@ -39,8 +40,12 @@ final class ContactController extends AbstractController
     ) {}
 
     #[Route('/', name: 'app_contact_index', methods: ['GET', 'POST'])]
-    public function index(Request $request, UserRepository $userRepository, MailerInterface $mailer): Response
-    {
+    public function index(
+        Request $request,
+        UserRepository $userRepository,
+        ManagedPersonRepository $managedPersonRepository,
+        MailerInterface $mailer,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
 
@@ -91,6 +96,7 @@ final class ContactController extends AbstractController
         return $this->render('contact/index.html.twig', [
             'add_contact_form' => $addContactForm,
             'my_contacts' => $myContacts,
+            'managed_persons_by_manager' => $managedPersonRepository->findByManagersGrouped($myContacts),
             'sent_requests' => $sentRequests,
             'received_requests' => $receivedRequests,
             'contact_balances' => $contactBalances,
@@ -247,8 +253,11 @@ final class ContactController extends AbstractController
     }
 
     #[Route('/view/{id}', name: 'app_contact_view', methods: ['GET'])]
-    public function viewContactListeDeSouhaits(User $owner, WishRepository $wishRepository): Response
-    {
+    public function viewContactListeDeSouhaits(
+        User $owner,
+        WishRepository $wishRepository,
+        ManagedPersonRepository $managedPersonRepository,
+    ): Response {
         /** @var User $me */
         $me = $this->getUser();
 
@@ -263,6 +272,8 @@ final class ContactController extends AbstractController
 
         return $this->render('contact/view.html.twig', [
             'owner' => $owner,
+            'managed_person' => null,
+            'managed_persons' => $managedPersonRepository->findByManager($owner),
             'wishes' => $wishRepository->findUndeliveredUserWishesWithGiftIdeaDetails($owner),
         ]);
     }
@@ -272,17 +283,22 @@ final class ContactController extends AbstractController
     {
         /** @var User $me */
         $me = $this->getUser();
-        $owner = $wish->getUser();
+        $managers = $wish->getAllManagers();
+        $managedPerson = $wish->getManagedPerson();
 
-        if ($owner === null || $owner === $me) {
+        if ($managers === [] || $wish->isManagedBy($me)) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas réserver votre propre souhait.');
         }
 
-        $share = $this->wishlistShareRepository->findOneBy([
-            'owner' => $owner,
-            'recipient' => $me,
-        ]);
-        if ($share === null) {
+        $hasShare = false;
+        foreach ($managers as $manager) {
+            if ($this->wishlistShareRepository->findOneBy(['owner' => $manager, 'recipient' => $me]) === null) {
+                continue;
+            }
+            $hasShare = true;
+            break;
+        }
+        if (!$hasShare) {
             throw $this->createAccessDeniedException("Vous n'avez pas accès à la liste de souhaits de ce contact.");
         }
 
@@ -316,13 +332,17 @@ final class ContactController extends AbstractController
             }
         }
 
+        $redirectUrl = $managedPerson !== null
+            ? $this->generateUrl('app_contact_managed_view', ['id' => $managedPerson->getId()])
+            : $this->generateUrl('app_contact_view', ['id' => $managers[0]->getId()]);
+
         if ($request->headers->get('HX-Request')) {
             return new Response(null, 204, [
-                'HX-Redirect' => $this->generateUrl('app_contact_view', ['id' => $owner->getId()]),
+                'HX-Redirect' => $redirectUrl,
             ]);
         }
 
-        return $this->redirectToRoute('app_contact_view', ['id' => $owner->getId()]);
+        return $this->redirect($redirectUrl);
     }
 
     private function handleAddContactSubmission(

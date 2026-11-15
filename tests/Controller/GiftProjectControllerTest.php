@@ -10,7 +10,6 @@ use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 final class GiftProjectControllerTest extends WebTestCase
 {
@@ -25,7 +24,7 @@ final class GiftProjectControllerTest extends WebTestCase
         // Clean database tables before each test
         $connection = $this->em->getConnection();
         $connection->executeStatement(
-            'TRUNCATE TABLE vote, comment, activity, project_read_status, reimbursement, gift_idea, gift_project_user, gift_project, wish, wishlist_share, contact_request, reset_password_request, "user" RESTART IDENTITY CASCADE',
+            'TRUNCATE TABLE gift_idea_contribution, vote, comment, activity, project_read_status, reimbursement, gift_idea, gift_project_user, gift_project, wish, wishlist_share, contact_request, reset_password_request, "user" RESTART IDENTITY CASCADE',
         );
     }
 
@@ -38,14 +37,6 @@ final class GiftProjectControllerTest extends WebTestCase
         $this->em->persist($user);
 
         return $user;
-    }
-
-    private function getCsrfToken(string $tokenId): string
-    {
-        /** @var CsrfTokenManagerInterface $tokenManager */
-        $tokenManager = static::getContainer()->get(CsrfTokenManagerInterface::class);
-
-        return $tokenManager->getToken($tokenId)->getValue();
     }
 
     public function testRecipientCannotViewSurpriseProject(): void
@@ -471,5 +462,77 @@ final class GiftProjectControllerTest extends WebTestCase
             '_token' => $createFromWishToken,
         ], [], ['HTTP_HX-Request' => 'true']);
         self::assertResponseStatusCodeSame(204);
+    }
+
+    public function testCrowdfundingToggleContributeAndCancel(): void
+    {
+        $owner = $this->createUser('owner_crowd@example.com', 'OwnerCrowd');
+        $participant = $this->createUser('participant_crowd@example.com', 'ParticipantCrowd');
+
+        $project = new GiftProject();
+        $project->setName('Cagnotte Vélo')->setOwner($owner)->addParticipant($participant);
+        $this->em->persist($project);
+
+        $idea = new GiftIdea();
+        $idea
+            ->setName('Vélo Urbain')
+            ->setPrice('300.00')
+            ->setGiftProject($project)
+            ->setProposer($owner);
+        $project->addGiftIdea($idea);
+        $this->em->persist($idea);
+        $this->em->flush();
+
+        // 1. Toggle crowdfunding on as owner
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/project/' . $project->getId() . '?tab=ideas');
+        self::assertResponseIsSuccessful();
+        $token = $crawler->filter("form[action*='/toggle-crowdfund'] input[name='_token']")->attr('value');
+
+        $this->client->request('POST', "/project/idea/{$idea->getId()}/toggle-crowdfund", [
+            '_token' => $token,
+        ], [], ['HTTP_HX-Request' => 'true']);
+        self::assertResponseIsSuccessful();
+
+        $this->em->clear();
+        $reloaded = $this->em->getRepository(GiftIdea::class)->find($idea->getId());
+        self::assertNotNull($reloaded);
+        self::assertTrue($reloaded->isCrowdfunded());
+
+        // 2. Participant contributes 100 €
+        $this->client->loginUser($participant);
+        $participantCrawler = $this->client->request('GET', '/project/' . $project->getId() . '?tab=ideas');
+        self::assertResponseIsSuccessful();
+        $contribToken = $participantCrawler->filter("form[action*='/contribute'] input[name='_token']")->attr('value');
+
+        $contribCrawler = $this->client->request('POST', "/project/idea/{$idea->getId()}/contribute", [
+            '_token' => $contribToken,
+            'amount' => '100.00',
+        ], [], ['HTTP_HX-Request' => 'true']);
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Cagnotte participative', (string) $this->client->getResponse()->getContent());
+
+        $this->em->clear();
+        $reloaded = $this->em->getRepository(GiftIdea::class)->find($idea->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame(100.0, $reloaded->getTotalContributed());
+        self::assertSame(200.0, $reloaded->getRemainingAmount());
+        self::assertSame(33.3, $reloaded->getProgressPercentage());
+
+        // 3. Participant cancels contribution
+        $cancelForm = $contribCrawler->filter("form[action*='/contribute'] input[name='action'][value='cancel']")->closest('form');
+        $cancelToken = $cancelForm->filter("input[name='_token']")->attr('value');
+
+        $this->client->request('POST', "/project/idea/{$idea->getId()}/contribute", [
+            '_token' => $cancelToken,
+            'action' => 'cancel',
+        ], [], ['HTTP_HX-Request' => 'true']);
+        self::assertResponseIsSuccessful();
+
+        $this->em->clear();
+        $reloaded = $this->em->getRepository(GiftIdea::class)->find($idea->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame(0.0, $reloaded->getTotalContributed());
+        self::assertCount(0, $reloaded->getContributions());
     }
 }

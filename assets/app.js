@@ -71,6 +71,13 @@ document.addEventListener('htmx:before:request', (e) => {
 
 document.addEventListener('htmx:after:request', (e) => {
     const rawHeaders = e.detail?.ctx?.response?.headers;
+
+    // Instant theme synchronization from backend response
+    const themeHeader = rawHeaders?.get?.('X-Kdo-Theme') || rawHeaders?.get?.('x-kdo-theme');
+    if (themeHeader) {
+        document.documentElement.setAttribute('data-theme', themeHeader);
+    }
+
     const flashHeader = rawHeaders?.get?.('X-Kdo-Flashes') || rawHeaders?.get?.('x-kdo-flashes');
     if (!flashHeader) {
         return;
@@ -118,15 +125,31 @@ document.addEventListener('htmx:after:settle', (e) => {
 
 document.addEventListener('click', (e) => {
     const target = e.target;
-    if (target instanceof Element && target.closest('[data-modal-close]')) {
+    if (!(target instanceof Element)) {
+        return;
+    }
+
+    const closeBtn = target.closest('[data-modal-close]');
+    if (closeBtn) {
         e.preventDefault();
-        document.getElementById('kdo-dynamic-modal')?.classList.remove('is-active');
+        const modal = closeBtn.closest('.modal') || document.getElementById('kdo-dynamic-modal');
+        modal?.classList.remove('is-active');
+        return;
+    }
+
+    const themeBtn = target.closest('#kdo-theme-toggle');
+    if (themeBtn) {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', nextTheme);
     }
 });
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-        document.getElementById('kdo-dynamic-modal')?.classList.remove('is-active');
+        document.querySelectorAll('.modal.is-active').forEach((modal) => {
+            modal.classList.remove('is-active');
+        });
     }
 });
 

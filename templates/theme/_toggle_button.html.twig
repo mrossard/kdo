@@ -1,10 +1,11 @@
 <button class="button is-ghost"
+        id="kdo-theme-toggle"
         hx-post="{{ path('app_theme_toggle') }}"
         hx-swap="outerHTML"
         hx-target="this"
-        hx-on::after:settle="document.documentElement.setAttribute('data-theme', this.dataset.newTheme)"
-        data-new-theme="{{ theme }}"
-        title="Changer de thème">
+        data-theme="{{ theme }}"
+        title="Changer de thème"
+        aria-label="Changer de thème">
     {% if theme == 'dark' %}
         <span class="icon">{{ ux_icon('material-symbols:light-mode') }}</span>
     {% else %}

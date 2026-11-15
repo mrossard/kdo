@@ -26,7 +26,7 @@ final class WishAndContactControllerTest extends WebTestCase
 
         $connection = $this->em->getConnection();
         $connection->executeStatement(
-            'TRUNCATE TABLE vote, comment, activity, project_read_status, reimbursement, gift_idea, gift_project_user, gift_project, wish, wishlist_share, contact_request, reset_password_request, "user" RESTART IDENTITY CASCADE',
+            'TRUNCATE TABLE gift_idea_contribution, vote, comment, activity, project_read_status, reimbursement, gift_idea, gift_project_user, gift_project, wish, wishlist_share, contact_request, reset_password_request, "user" RESTART IDENTITY CASCADE',
         );
     }
 

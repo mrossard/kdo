@@ -37,7 +37,7 @@
                         <span class="tag is-rounded ml-2">{{ project.giftIdeas|length }}</span>
                     </a>
                 </li>
-                {% if project.recipient %}
+                {% if project.hasWishlistRecipient %}
                 <li class="{{ current_tab == 'liste_souhaits' ? 'is-active' : '' }}">
                     <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'liste_souhaits'}) }}"
                        hx-target="#project-content"
@@ -46,7 +46,7 @@
                        onclick="changeTab(this)">
                         <span class="icon is-small">{{ ux_icon('material-symbols:list') }}</span>
                         <span>Liste de souhaits</span>
-                        <span class="tag is-rounded ml-2">{{ project.recipient.wishes|length }}</span>
+                        <span class="tag is-rounded ml-2">{{ project.recipientWishes|length }}</span>
                     </a>
                 </li>
                 {% endif %}

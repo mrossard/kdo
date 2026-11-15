@@ -24,6 +24,7 @@ class Activity
     public const string TYPE_PROJECT_UNLOCKED = ActivityType::PROJECT_UNLOCKED->value;
     public const string TYPE_PROJECT_DELIVERED = ActivityType::PROJECT_DELIVERED->value;
     public const string TYPE_REIMBURSEMENT_CREATED = ActivityType::REIMBURSEMENT_CREATED->value;
+    public const string TYPE_CROWDFUND_CONTRIBUTED = ActivityType::CROWDFUND_CONTRIBUTED->value;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

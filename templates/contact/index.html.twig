@@ -36,7 +36,21 @@
                                 <td>
                                     <div class="is-flex is-align-items-center" style="gap: 0.65rem;">
                                         {{ include('_components/_avatar.html.twig', {name: contact.displayName, size: 'sm'}) }}
-                                        <span class="has-text-weight-medium">{{ contact.displayName }}</span>
+                                        <div>
+                                            <span class="has-text-weight-medium">{{ contact.displayName }}</span>
+                                            {% set contact_managed = managed_persons_by_manager[contact.id]|default([]) %}
+                                            {% if contact_managed is not empty %}
+                                                <div class="tags mt-1 mb-0">
+                                                    {% for person in contact_managed %}
+                                                        <a href="{{ path('app_contact_managed_view', {'id': person.id}) }}"
+                                                           class="tag is-info is-light">
+                                                            <span class="icon is-small mr-1">{{ ux_icon('material-symbols:face') }}</span>
+                                                            <span>{{ person.displayName }}</span>
+                                                        </a>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="tabular-nums">
