@@ -110,6 +110,16 @@ html[data-theme="dark"] {
     --bulma-success-invert-l: 100%;
     --bulma-danger-invert-l: 100%;
 
+    /* Adapt Bulma .is-light base tokens to dark surfaces */
+    --bulma-light-l: 20%;
+    --bulma-light-invert-l: 88%;
+    --bulma-primary-light-invert-l: 80%;
+    --bulma-link-light-invert-l: 80%;
+    --bulma-info-light-invert-l: 76%;
+    --bulma-success-light-invert-l: 74%;
+    --bulma-warning-light-invert-l: 76%;
+    --bulma-danger-light-invert-l: 80%;
+
     /* Replace Bulma 1.0's default white glow shadow in dark mode with dark depth + hairline border */
     --bulma-shadow:
         0 4px 12px -2px rgba(0, 0, 0, 0.45),
@@ -388,6 +398,99 @@ html[data-theme="dark"] .navbar-link.is-active {
     border-radius: 9999px;
 }
 
+/* Dark mode: soften .is-light buttons & tags (Bulma 1.0 keeps light-l at 96%) */
+html[data-theme="dark"] .button.is-light {
+    background-color: var(--kdo-surface-subtle);
+    color: var(--bulma-text);
+    border: 1px solid var(--bulma-border);
+    box-shadow: none;
+}
+
+html[data-theme="dark"] .button.is-light:hover:not(:disabled) {
+    background-color: hsl(222, 20%, 21%);
+    color: var(--bulma-text-strong);
+    border-color: hsl(222, 22%, 30%);
+}
+
+html[data-theme="dark"] .button.is-light:active:not(:disabled) {
+    background-color: hsl(222, 20%, 24%);
+}
+
+html[data-theme="dark"] :is(.button, .tag, .notification).is-primary.is-light {
+    --kdo-soft-h: var(--bulma-primary-h);
+    --kdo-soft-s: var(--bulma-primary-s);
+    --kdo-soft-l: var(--bulma-primary-l);
+    --kdo-soft-text-l: 80%;
+}
+
+html[data-theme="dark"] :is(.button, .tag, .notification).is-link.is-light {
+    --kdo-soft-h: var(--bulma-link-h);
+    --kdo-soft-s: var(--bulma-link-s);
+    --kdo-soft-l: var(--bulma-link-l);
+    --kdo-soft-text-l: 80%;
+}
+
+html[data-theme="dark"] :is(.button, .tag, .notification).is-info.is-light {
+    --kdo-soft-h: var(--bulma-info-h);
+    --kdo-soft-s: var(--bulma-info-s);
+    --kdo-soft-l: var(--bulma-info-l);
+    --kdo-soft-text-l: 76%;
+}
+
+html[data-theme="dark"] :is(.button, .tag, .notification).is-success.is-light {
+    --kdo-soft-h: var(--bulma-success-h);
+    --kdo-soft-s: var(--bulma-success-s);
+    --kdo-soft-l: var(--bulma-success-l);
+    --kdo-soft-text-l: 74%;
+}
+
+html[data-theme="dark"] :is(.button, .tag, .notification).is-warning.is-light {
+    --kdo-soft-h: var(--bulma-warning-h);
+    --kdo-soft-s: var(--bulma-warning-s);
+    --kdo-soft-l: var(--bulma-warning-l);
+    --kdo-soft-text-l: 76%;
+}
+
+html[data-theme="dark"] :is(.button, .tag, .notification).is-danger.is-light {
+    --kdo-soft-h: var(--bulma-danger-h);
+    --kdo-soft-s: var(--bulma-danger-s);
+    --kdo-soft-l: var(--bulma-danger-l);
+    --kdo-soft-text-l: 80%;
+}
+
+html[data-theme="dark"] .button.is-light:is(.is-primary, .is-link, .is-info, .is-success, .is-warning, .is-danger) {
+    background-color: hsla(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-l), 0.16);
+    color: hsl(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-text-l));
+    border-color: hsla(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-l), 0.28);
+}
+
+html[data-theme="dark"] .button.is-light:is(.is-primary, .is-link, .is-info, .is-success, .is-warning, .is-danger):hover:not(:disabled) {
+    background-color: hsla(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-l), 0.24);
+    color: hsl(var(--kdo-soft-h), var(--kdo-soft-s), 88%);
+    border-color: hsla(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-l), 0.44);
+}
+
+html[data-theme="dark"] .button.is-light:is(.is-primary, .is-link, .is-info, .is-success, .is-warning, .is-danger):active:not(:disabled) {
+    background-color: hsla(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-l), 0.3);
+}
+
+html[data-theme="dark"] .tag.is-light,
+html[data-theme="dark"] .tag.is-white {
+    background-color: var(--kdo-surface-subtle);
+    color: var(--bulma-text);
+    border: 1px solid var(--bulma-border-weak);
+}
+
+html[data-theme="dark"] .tag.is-light:is(.is-primary, .is-link, .is-info, .is-success, .is-warning, .is-danger) {
+    background-color: hsla(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-l), 0.16);
+    color: hsl(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-text-l));
+    border-color: hsla(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-l), 0.25);
+}
+
+html[data-theme="dark"] .has-text-grey-dark {
+    color: var(--bulma-text) !important;
+}
+
 /* ==========================================================================
    Tables
    ========================================================================== */
@@ -525,6 +628,22 @@ html[data-theme="dark"] .navbar-link.is-active {
 .notification {
     border-radius: var(--bulma-radius-medium);
     border: 1px solid hsla(0, 0%, 0%, 0.06);
+}
+
+html[data-theme="dark"] .notification {
+    border-color: var(--bulma-border-weak);
+}
+
+html[data-theme="dark"] .notification.is-light {
+    background-color: var(--kdo-surface-subtle);
+    color: var(--bulma-text);
+    border-color: var(--bulma-border);
+}
+
+html[data-theme="dark"] .notification.is-light:is(.is-primary, .is-link, .is-info, .is-success, .is-warning, .is-danger) {
+    background-color: hsla(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-l), 0.14);
+    color: hsl(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-text-l));
+    border-color: hsla(var(--kdo-soft-h), var(--kdo-soft-s), var(--kdo-soft-l), 0.28);
 }
 
 body > .notification {
