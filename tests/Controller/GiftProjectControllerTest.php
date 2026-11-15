@@ -542,4 +542,55 @@ final class GiftProjectControllerTest extends WebTestCase
         self::assertSame(0.0, $reloaded->getTotalContributed());
         self::assertCount(0, $reloaded->getContributions());
     }
+
+    public function testReimburseRejectsUndueOrExcessiveAmount(): void
+    {
+        $owner = $this->createUser('owner@example.com', 'Owner');
+        $participant = $this->createUser('participant@example.com', 'Participant');
+        $recipient = $this->createUser('recipient@example.com', 'Recipient');
+
+        $project = new GiftProject();
+        $project->setName('Projet Remboursement')->setOwner($owner)->setRecipient($recipient)->addParticipant($participant)->setLocked(true);
+        $this->em->persist($project);
+
+        $idea = new GiftIdea();
+        $idea
+            ->setName('Cadeau')
+            ->setGiftProject($project)
+            ->setProposer($owner)
+            ->setStatus(GiftIdea::STATUS_SELECTED)
+            ->setPurchasedBy($owner)
+            ->setPurchasePrice('40.00');
+        $this->em->persist($idea);
+        $this->em->flush();
+        $this->em->clear();
+
+        // Participant owes 20.00 to Owner. Owner tries to record 50.00 -> rejected.
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/project/' . $project->getId() . '?tab=financial', [], [], [
+            'HTTP_HX-Request' => 'true',
+        ]);
+        self::assertResponseIsSuccessful();
+        $token = $crawler->filter("form[action*='/reimburse'] input[name='_token']")->first()->attr('value');
+
+        $this->client->request('POST', '/project/' . $project->getId() . '/reimburse', [
+            'debtor_id' => $participant->getId(),
+            'amount' => '50.00',
+            '_token' => $token,
+        ]);
+        self::assertResponseRedirects('/project/' . $project->getId() . '?tab=financial');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.notification.is-danger', 'Aucune dette correspondante pour ce montant.');
+
+        // Participant tries to record reimbursement from Owner (who owes nothing) -> rejected.
+        $this->client->loginUser($participant);
+        $this->client->request('POST', '/project/' . $project->getId() . '/reimburse', [
+            'debtor_id' => $owner->getId(),
+            'amount' => '10.00',
+            '_token' => $token,
+        ]);
+        self::assertResponseRedirects('/project/' . $project->getId() . '?tab=financial');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.notification.is-danger', 'Aucune dette correspondante pour ce montant.');
+    }
 }

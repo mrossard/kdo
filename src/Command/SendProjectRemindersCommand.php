@@ -71,21 +71,7 @@ final class SendProjectRemindersCommand extends Command
 
     private function sendRemindersForProject(GiftProject $project, int $days, \DateTimeImmutable $targetDate): int
     {
-        $proposedCount = 0;
-        $selectedCount = 0;
-        $purchasedCount = 0;
-
-        foreach ($project->getGiftIdeas() as $idea) {
-            if ($idea->getStatus() === GiftIdea::STATUS_PROPOSED) {
-                $proposedCount++;
-            }
-            if ($idea->getStatus() === GiftIdea::STATUS_SELECTED) {
-                $selectedCount++;
-                if ($idea->getPurchasedBy() !== null) {
-                    $purchasedCount++;
-                }
-            }
-        }
+        [$proposedCount, $selectedCount, $purchasedCount] = $this->countIdeaStatuses($project);
 
         $projectUrl = $this->urlGenerator->generate(
             'app_project_show',
@@ -154,5 +140,31 @@ final class SendProjectRemindersCommand extends Command
         }
 
         return array_values($membersById);
+    }
+
+    /**
+     * @return array{int, int, int}
+     */
+    private function countIdeaStatuses(GiftProject $project): array
+    {
+        $proposed = 0;
+        $selected = 0;
+        $purchased = 0;
+
+        foreach ($project->getGiftIdeas() as $idea) {
+            if ($idea->getStatus() === GiftIdea::STATUS_PROPOSED) {
+                $proposed++;
+                continue;
+            }
+            if ($idea->getStatus() !== GiftIdea::STATUS_SELECTED) {
+                continue;
+            }
+            $selected++;
+            if ($idea->getPurchasedBy() !== null) {
+                $purchased++;
+            }
+        }
+
+        return [$proposed, $selected, $purchased];
     }
 }

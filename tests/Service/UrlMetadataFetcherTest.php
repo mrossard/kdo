@@ -79,6 +79,11 @@ final class UrlMetadataFetcherTest extends TestCase
         self::assertTrue($fetcher->fetch('http://127.0.0.1:8080/secret')->isEmpty());
         self::assertTrue($fetcher->fetch('http://[::1]:8080/secret')->isEmpty());
         self::assertTrue($fetcher->fetch('http://[fc00::1]/secret')->isEmpty());
+        self::assertTrue($fetcher->fetch('http://169.254.169.254/latest/meta-data/')->isEmpty());
+        self::assertTrue($fetcher->fetch('http://10.0.0.1/admin')->isEmpty());
+        self::assertTrue($fetcher->fetch('http://172.16.0.1/admin')->isEmpty());
+        self::assertTrue($fetcher->fetch('http://192.168.1.1/admin')->isEmpty());
+        self::assertTrue($fetcher->fetch('http://0.0.0.0/')->isEmpty());
     }
 
     public function testPopulateFromFormDataFillsEmptyFieldsOnly(): void

@@ -129,8 +129,6 @@ class CreateUserCommand extends Command
             return $value;
         }
 
-        $asked = $io->ask($prompt, null);
-
-        return is_string($asked) ? $asked : null;
+        return (static fn(mixed $asked): ?string => is_string($asked) ? $asked : null)($io->ask($prompt, null));
     }
 }

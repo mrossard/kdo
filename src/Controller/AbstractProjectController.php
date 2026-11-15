@@ -69,18 +69,11 @@ abstract class AbstractProjectController extends AbstractHtmxController
     protected function sortGiftIdeas(GiftProject $project, string $sort): array
     {
         $sortedGiftIdeas = array_values($project->getGiftIdeas()->toArray());
-        usort($sortedGiftIdeas, static function (GiftIdea $a, GiftIdea $b) use ($sort): int {
-            if ($sort === 'price_asc') {
-                return self::parseIdeaPrice($a) <=> self::parseIdeaPrice($b);
-            }
-            if ($sort === 'price_desc') {
-                return self::parseIdeaPrice($b) <=> self::parseIdeaPrice($a);
-            }
-            if ($sort === 'priority_desc') {
-                return $b->getPriority() <=> $a->getPriority();
-            }
-
-            return self::compareIdeaByStatus($a, $b);
+        usort($sortedGiftIdeas, static fn(GiftIdea $a, GiftIdea $b): int => match ($sort) {
+            'price_asc' => self::parseIdeaPrice($a) <=> self::parseIdeaPrice($b),
+            'price_desc' => self::parseIdeaPrice($b) <=> self::parseIdeaPrice($a),
+            'priority_desc' => $b->getPriority() <=> $a->getPriority(),
+            default => self::compareIdeaByStatus($a, $b),
         });
 
         return $sortedGiftIdeas;

@@ -357,32 +357,12 @@ final class GiftProjectController extends AbstractProjectController
         $currentUser = $this->getUser();
         $this->denyUnlessCanViewProject($project, $currentUser);
 
-        $debtorId = $request->getPayload()->getInt('debtor_id');
+        $debtor = $userRepository->find($request->getPayload()->getInt('debtor_id'));
         $amount = $request->getPayload()->getString('amount');
-        $debtor = $userRepository->find($debtorId);
-
-        if (!$debtor || !$project->getParticipants()->contains($debtor) && $project->getOwner() !== $debtor) {
-            $this->addFlash('danger', 'Utilisateur payeur invalide.');
-
+        $requestedCents = $this->resolveValidReimbursementCents($project, $debtor, $currentUser, $amount);
+        if ($requestedCents === null) {
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
         }
-
-        if ($amount === '' || !is_numeric($amount) || (float) $amount <= 0) {
-            $this->addFlash('danger', 'Montant de remboursement invalide.');
-
-            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
-        }
-
-        $requestedCents = (int) round((float) $amount * 100);
-        $owedCents = $this->computeOwedCents($project, $debtor, $currentUser);
-
-        if ($requestedCents <= 0 || $owedCents <= 0 || $requestedCents > $owedCents) {
-            $this->addFlash('danger', 'Aucune dette correspondante pour ce montant.');
-
-            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
-        }
-
-        $formattedAmount = number_format($requestedCents / 100, 2, '.', '');
 
         if (!$this->isCsrfTokenValid(
             'reimburse_' . (string) $project->getId(),
@@ -393,11 +373,13 @@ final class GiftProjectController extends AbstractProjectController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
         }
 
-        $reimbursement = new Reimbursement();
-        $reimbursement->setProject($project);
-        $reimbursement->setFromUser($debtor);
-        $reimbursement->setToUser($currentUser);
-        $reimbursement->setAmount($formattedAmount);
+        /** @var User $debtor */
+        $formattedAmount = number_format($requestedCents / 100, 2, '.', '');
+        $reimbursement = new Reimbursement()
+            ->setProject($project)
+            ->setFromUser($debtor)
+            ->setToUser($currentUser)
+            ->setAmount($formattedAmount);
 
         $this->activityLogger->log($project, Activity::TYPE_REIMBURSEMENT_CREATED, $currentUser, [
             'amount' => $formattedAmount,
@@ -405,19 +387,41 @@ final class GiftProjectController extends AbstractProjectController
 
         $this->entityManager->persist($reimbursement);
         $this->entityManager->flush();
-
         $this->addFlash('success', 'Remboursement confirmé.');
 
-        if ($request->headers->get('HX-Request')) {
-            return new Response(null, 204, [
-                'HX-Redirect' => $this->generateUrl('app_project_show', [
-                    'id' => $project->getId(),
-                    'tab' => 'financial',
-                ]),
-            ]);
+        return $this->redirectOrHtmx($request, 'app_project_show', [
+            'id' => $project->getId(),
+            'tab' => 'financial',
+        ]);
+    }
+
+    private function resolveValidReimbursementCents(
+        GiftProject $project,
+        ?User $debtor,
+        User $currentUser,
+        string $amount,
+    ): ?int {
+        if ($debtor === null || !$project->getParticipants()->contains($debtor) && $project->getOwner() !== $debtor) {
+            $this->addFlash('danger', 'Utilisateur payeur invalide.');
+
+            return null;
         }
 
-        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
+        if ($amount === '' || !is_numeric($amount) || (float) $amount <= 0) {
+            $this->addFlash('danger', 'Montant de remboursement invalide.');
+
+            return null;
+        }
+
+        $requestedCents = (int) round((float) $amount * 100);
+        $owedCents = $this->computeOwedCents($project, $debtor, $currentUser);
+        if ($requestedCents <= 0 || $owedCents <= 0 || $requestedCents > $owedCents) {
+            $this->addFlash('danger', 'Aucune dette correspondante pour ce montant.');
+
+            return null;
+        }
+
+        return $requestedCents;
     }
 
     private function computeOwedCents(GiftProject $project, User $debtor, User $creditor): int

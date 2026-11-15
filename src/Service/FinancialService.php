@@ -213,9 +213,9 @@ class FinancialService
             if ($pid === null) {
                 continue;
             }
-            $rawShare = $sharesInput[(string) $pid] ?? $sharesInput[$pid] ?? null;
-            $share = (is_string($rawShare) || is_int($rawShare) || is_float($rawShare)) && is_numeric($rawShare)
-                ? max(0.0, (float) $rawShare)
+            $key = array_key_exists((string) $pid, $sharesInput) ? (string) $pid : $pid;
+            $share = array_key_exists($key, $sharesInput) && is_numeric($sharesInput[$key])
+                ? max(0.0, (float) $sharesInput[$key])
                 : 1.0;
             $newShares[$pid] = $share;
             $totalShares += $share;

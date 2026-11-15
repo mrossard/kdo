@@ -178,33 +178,10 @@ final class GiftIdeaController extends AbstractProjectController
             return $denied;
         }
 
-        if (!$project->isLocked()) {
-            $this->addFlash('warning', 'Le projet doit être verrouillé pour marquer des achats.');
-
+        $formattedPrice = $this->validateMarkPurchasedRequest($project, $giftIdea, $user, $request);
+        if ($formattedPrice === null) {
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
         }
-
-        if ($giftIdea->getStatus() !== GiftIdea::STATUS_SELECTED) {
-            $this->addFlash('warning', 'Seules les idées validées peuvent être achetées.');
-
-            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
-        }
-
-        $existingBuyer = $giftIdea->getPurchasedBy();
-        if ($existingBuyer !== null && $existingBuyer !== $user && $project->getOwner() !== $user) {
-            $this->addFlash('warning', 'Ce cadeau a déjà été acheté.');
-
-            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
-        }
-
-        $price = $request->getPayload()->getString('price');
-        if ($price === '' || !is_numeric($price) || (float) $price <= 0) {
-            $this->addFlash('warning', 'Le prix est obligatoire et doit être supérieur à 0.');
-
-            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
-        }
-
-        $formattedPrice = number_format((float) $price, 2, '.', '');
 
         if (!$this->isCsrfTokenValid(
             'mark_purchased' . (string) $giftIdea->getId(),
@@ -215,6 +192,7 @@ final class GiftIdeaController extends AbstractProjectController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
         }
 
+        $existingBuyer = $giftIdea->getPurchasedBy();
         if ($existingBuyer === null) {
             $giftIdea->setPurchasedBy($user);
             $giftIdea->setPurchasedAt(new \DateTimeImmutable());
@@ -230,16 +208,45 @@ final class GiftIdeaController extends AbstractProjectController
             $existingBuyer === null ? 'Cadeau marqué comme acheté !' : 'Prix d\'achat mis à jour.',
         );
 
-        if ($request->headers->get('HX-Request')) {
-            return new Response(null, 204, [
-                'HX-Redirect' => $this->generateUrl('app_project_show', [
-                    'id' => $project->getId(),
-                    'tab' => 'ideas',
-                ]),
-            ]);
+        return $this->redirectOrHtmx($request, 'app_project_show', [
+            'id' => $project->getId(),
+            'tab' => 'ideas',
+        ]);
+    }
+
+    private function validateMarkPurchasedRequest(
+        GiftProject $project,
+        GiftIdea $giftIdea,
+        User $user,
+        Request $request,
+    ): ?string {
+        if (!$project->isLocked()) {
+            $this->addFlash('warning', 'Le projet doit être verrouillé pour marquer des achats.');
+
+            return null;
         }
 
-        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+        if ($giftIdea->getStatus() !== GiftIdea::STATUS_SELECTED) {
+            $this->addFlash('warning', 'Seules les idées validées peuvent être achetées.');
+
+            return null;
+        }
+
+        $existingBuyer = $giftIdea->getPurchasedBy();
+        if ($existingBuyer !== null && $existingBuyer !== $user && $project->getOwner() !== $user) {
+            $this->addFlash('warning', 'Ce cadeau a déjà été acheté.');
+
+            return null;
+        }
+
+        $price = $request->getPayload()->getString('price');
+        if ($price === '' || !is_numeric($price) || (float) $price <= 0) {
+            $this->addFlash('warning', 'Le prix est obligatoire et doit être supérieur à 0.');
+
+            return null;
+        }
+
+        return number_format((float) $price, 2, '.', '');
     }
 
     #[Route('/idea/{id}/unmark-purchased', name: 'app_gift_idea_unmark_purchased', methods: ['POST'])]
