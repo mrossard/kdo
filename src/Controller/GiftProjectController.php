@@ -252,23 +252,27 @@ final class GiftProjectController extends AbstractProjectController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'lock_project' . (string) $project->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $project->setLocked(true);
-            $this->activityLogger->log($project, Activity::TYPE_PROJECT_LOCKED, $user);
-            $this->entityManager->flush();
-            $this->addFlash('success', 'Projet verrouillé ! Les idées sont figées.');
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            if ($request->headers->get('HX-Request')) {
-                return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', [
-                        'id' => $project->getId(),
-                        'tab' => 'ideas',
-                    ]),
-                ]);
-            }
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+        }
+
+        $project->setLocked(true);
+        $this->activityLogger->log($project, Activity::TYPE_PROJECT_LOCKED, $user);
+        $this->entityManager->flush();
+        $this->addFlash('success', 'Projet verrouillé ! Les idées sont figées.');
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response(null, 204, [
+                'HX-Redirect' => $this->generateUrl('app_project_show', [
+                    'id' => $project->getId(),
+                    'tab' => 'ideas',
+                ]),
+            ]);
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
@@ -295,23 +299,27 @@ final class GiftProjectController extends AbstractProjectController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'unlock_project' . (string) $project->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $project->setLocked(false);
-            $this->activityLogger->log($project, Activity::TYPE_PROJECT_UNLOCKED, $user);
-            $this->entityManager->flush();
-            $this->addFlash('success', 'Projet déverrouillé.');
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            if ($request->headers->get('HX-Request')) {
-                return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', [
-                        'id' => $project->getId(),
-                        'tab' => 'ideas',
-                    ]),
-                ]);
-            }
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+        }
+
+        $project->setLocked(false);
+        $this->activityLogger->log($project, Activity::TYPE_PROJECT_UNLOCKED, $user);
+        $this->entityManager->flush();
+        $this->addFlash('success', 'Projet déverrouillé.');
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response(null, 204, [
+                'HX-Redirect' => $this->generateUrl('app_project_show', [
+                    'id' => $project->getId(),
+                    'tab' => 'ideas',
+                ]),
+            ]);
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
@@ -324,17 +332,21 @@ final class GiftProjectController extends AbstractProjectController
             throw $this->createAccessDeniedException("Seul l'organisateur peut archiver le projet.");
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'archive_project' . (string) $project->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $newState = !$project->isArchived();
-            $project->setArchived($newState);
-            $this->entityManager->flush();
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            $status = $newState ? 'archivé' : 'désarchivé';
-            $this->addFlash('success', "Projet {$status}.");
+            return $this->redirectToRoute('app_project_index', ['archived' => $project->isArchived() ? 1 : 0]);
         }
+
+        $newState = !$project->isArchived();
+        $project->setArchived($newState);
+        $this->entityManager->flush();
+
+        $status = $newState ? 'archivé' : 'désarchivé';
+        $this->addFlash('success', "Projet {$status}.");
 
         return $this->redirectToRoute('app_project_index', ['archived' => $project->isArchived() ? 1 : 0]);
     }
@@ -373,33 +385,37 @@ final class GiftProjectController extends AbstractProjectController
 
         $formattedAmount = number_format($requestedCents / 100, 2, '.', '');
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'reimburse_' . (string) $project->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $reimbursement = new Reimbursement();
-            $reimbursement->setProject($project);
-            $reimbursement->setFromUser($debtor);
-            $reimbursement->setToUser($currentUser);
-            $reimbursement->setAmount($formattedAmount);
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            $this->activityLogger->log($project, Activity::TYPE_REIMBURSEMENT_CREATED, $currentUser, [
-                'amount' => $formattedAmount,
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
+        }
+
+        $reimbursement = new Reimbursement();
+        $reimbursement->setProject($project);
+        $reimbursement->setFromUser($debtor);
+        $reimbursement->setToUser($currentUser);
+        $reimbursement->setAmount($formattedAmount);
+
+        $this->activityLogger->log($project, Activity::TYPE_REIMBURSEMENT_CREATED, $currentUser, [
+            'amount' => $formattedAmount,
+        ]);
+
+        $this->entityManager->persist($reimbursement);
+        $this->entityManager->flush();
+
+        $this->addFlash('success', 'Remboursement confirmé.');
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response(null, 204, [
+                'HX-Redirect' => $this->generateUrl('app_project_show', [
+                    'id' => $project->getId(),
+                    'tab' => 'financial',
+                ]),
             ]);
-
-            $this->entityManager->persist($reimbursement);
-            $this->entityManager->flush();
-
-            $this->addFlash('success', 'Remboursement confirmé.');
-
-            if ($request->headers->get('HX-Request')) {
-                return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', [
-                        'id' => $project->getId(),
-                        'tab' => 'financial',
-                    ]),
-                ]);
-            }
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
@@ -456,20 +472,24 @@ final class GiftProjectController extends AbstractProjectController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'leave_project' . (string) $project->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $project->removeParticipant($user);
-            $this->activityLogger->log($project, Activity::TYPE_PARTICIPANT_REMOVED, $user);
-            $this->entityManager->flush();
-            $this->addFlash('success', 'Vous avez quitté le projet.');
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            if ($request->headers->get('HX-Request')) {
-                return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_index'),
-                ]);
-            }
+            return $this->redirectToRoute('app_project_index');
+        }
+
+        $project->removeParticipant($user);
+        $this->activityLogger->log($project, Activity::TYPE_PARTICIPANT_REMOVED, $user);
+        $this->entityManager->flush();
+        $this->addFlash('success', 'Vous avez quitté le projet.');
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response(null, 204, [
+                'HX-Redirect' => $this->generateUrl('app_project_index'),
+            ]);
         }
 
         return $this->redirectToRoute('app_project_index');
@@ -538,20 +558,24 @@ final class GiftProjectController extends AbstractProjectController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'remove_participant' . (string) $participant->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $project->removeParticipant($participant);
-            $this->activityLogger->log($project, Activity::TYPE_PARTICIPANT_REMOVED, $currentUser);
-            $this->entityManager->flush();
-            $this->addFlash('success', $participant->getDisplayName() . ' a été retiré du projet.');
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            if ($request->headers->get('HX-Request')) {
-                return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
-                ]);
-            }
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
+        }
+
+        $project->removeParticipant($participant);
+        $this->activityLogger->log($project, Activity::TYPE_PARTICIPANT_REMOVED, $currentUser);
+        $this->entityManager->flush();
+        $this->addFlash('success', $participant->getDisplayName() . ' a été retiré du projet.');
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response(null, 204, [
+                'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
+            ]);
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
@@ -576,6 +600,13 @@ final class GiftProjectController extends AbstractProjectController
             }
 
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
+        }
+
+        if (!$this->isCsrfTokenValid(
+            'mark_delivered' . (string) $project->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
         }
 
         if ($this->isCsrfTokenValid(
@@ -608,13 +639,17 @@ final class GiftProjectController extends AbstractProjectController
         $user = $this->getUser();
         $this->denyUnlessCanViewProject($project, $user);
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'mark_read' . (string) $project->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $readStatusRepository->markAsRead($user, $project);
-            $this->entityManager->flush();
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
+
+            return $this->redirectOrHtmx($request, 'app_project_show', ['id' => $project->getId()]);
         }
+
+        $readStatusRepository->markAsRead($user, $project);
+        $this->entityManager->flush();
 
         return $this->redirectOrHtmx($request, 'app_project_show', ['id' => $project->getId()]);
     }
@@ -629,6 +664,13 @@ final class GiftProjectController extends AbstractProjectController
         $denied = $this->denyWhenDelivered($project, $request, 'financial');
         if ($denied !== null) {
             return $denied;
+        }
+
+        if (!$this->isCsrfTokenValid(
+            'update_shares_' . (string) $project->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
         }
 
         if ($this->isCsrfTokenValid(

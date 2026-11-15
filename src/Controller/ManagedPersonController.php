@@ -159,16 +159,20 @@ final class ManagedPersonController extends AbstractController
             throw $this->createAccessDeniedException('Seul le créateur de cette liste peut la supprimer.');
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'delete_managed_person' . (string) $managedPerson->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $name = $managedPerson->getDisplayName();
-            $entityManager->remove($managedPerson);
-            $entityManager->flush();
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            $this->addFlash('info', "La liste de {$name} a été supprimée.");
+            return $this->redirectToRoute('app_wish_index', [], Response::HTTP_SEE_OTHER);
         }
+
+        $name = $managedPerson->getDisplayName();
+        $entityManager->remove($managedPerson);
+        $entityManager->flush();
+
+        $this->addFlash('info', "La liste de {$name} a été supprimée.");
 
         return $this->redirectToRoute('app_wish_index', [], Response::HTTP_SEE_OTHER);
     }

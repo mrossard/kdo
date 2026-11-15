@@ -7,6 +7,7 @@ namespace App\Entity;
 use App\Repository\ReimbursementRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ReimbursementRepository::class)]
 class Reimbursement
@@ -29,6 +30,8 @@ class Reimbursement
     private ?User $toUser = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[Assert\NotBlank]
+    #[Assert\Positive(message: 'Le montant doit être positif.')]
     private ?string $amount = null;
 
     #[ORM\Column]

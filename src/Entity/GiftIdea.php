@@ -11,6 +11,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 // @mago-expect lint:too-many-properties,too-many-methods,cyclomatic-complexity
 #[ORM\Entity(repositoryClass: GiftIdeaRepository::class)]
@@ -22,18 +23,25 @@ class GiftIdea
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'Le nom de l\'idée est obligatoire.')]
+    #[Assert\Length(max: 255)]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Assert\Url(message: 'L\'URL n\'est pas valide.')]
     private ?string $url = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    #[Assert\PositiveOrZero(message: 'Le prix ne peut pas être négatif.')]
     private ?string $price = null; // Stored as string to avoid float precision issues
 
     #[ORM\Column(length: 500, nullable: true)]
+    #[Assert\Length(max: 500)]
+    #[Assert\Url(message: 'L\'URL de l\'image n\'est pas valide.')]
     private ?string $imageUrl = null;
 
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => WishPriority::NORMAL->value])]
@@ -59,6 +67,7 @@ class GiftIdea
     private ?User $purchasedBy = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    #[Assert\PositiveOrZero(message: 'Le prix d\'achat ne peut pas être négatif.')]
     private ?string $purchasePrice = null;
 
     #[ORM\Column(nullable: true)]

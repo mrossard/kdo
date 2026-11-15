@@ -102,28 +102,32 @@ final class ContactController extends AbstractHtmxController
             );
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'accept_request' . (string) $contactRequest->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $contactRequest->setStatus(ContactRequest::STATUS_ACCEPTED);
-            $contactRequest->setUpdatedAt(new \DateTimeImmutable());
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            $share1 = new WishlistShare();
-            $share1->setOwner($contactRequest->getSender());
-            $share1->setRecipient($contactRequest->getRecipient());
-            $this->entityManager->persist($share1);
-
-            $share2 = new WishlistShare();
-            $share2->setOwner($contactRequest->getRecipient());
-            $share2->setRecipient($contactRequest->getSender());
-            $this->entityManager->persist($share2);
-
-            $this->entityManager->flush();
-
-            $senderName = $contactRequest->getSender()?->getDisplayName() ?? '';
-            $this->addFlash('success', 'Demande de contact acceptée avec ' . $senderName . '.');
+            return $this->redirectToRoute('app_contact_index');
         }
+
+        $contactRequest->setStatus(ContactRequest::STATUS_ACCEPTED);
+        $contactRequest->setUpdatedAt(new \DateTimeImmutable());
+
+        $share1 = new WishlistShare();
+        $share1->setOwner($contactRequest->getSender());
+        $share1->setRecipient($contactRequest->getRecipient());
+        $this->entityManager->persist($share1);
+
+        $share2 = new WishlistShare();
+        $share2->setOwner($contactRequest->getRecipient());
+        $share2->setRecipient($contactRequest->getSender());
+        $this->entityManager->persist($share2);
+
+        $this->entityManager->flush();
+
+        $senderName = $contactRequest->getSender()?->getDisplayName() ?? '';
+        $this->addFlash('success', 'Demande de contact acceptée avec ' . $senderName . '.');
 
         return $this->redirectToRoute('app_contact_index');
     }
@@ -141,16 +145,20 @@ final class ContactController extends AbstractHtmxController
             throw $this->createAccessDeniedException('Impossible de refuser cette demande.');
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'decline_request' . (string) $contactRequest->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $contactRequest->setStatus(ContactRequest::STATUS_DECLINED);
-            $contactRequest->setUpdatedAt(new \DateTimeImmutable());
-            $this->entityManager->flush();
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            $this->addFlash('info', 'Demande de contact refusée.');
+            return $this->redirectToRoute('app_contact_index');
         }
+
+        $contactRequest->setStatus(ContactRequest::STATUS_DECLINED);
+        $contactRequest->setUpdatedAt(new \DateTimeImmutable());
+        $this->entityManager->flush();
+
+        $this->addFlash('info', 'Demande de contact refusée.');
 
         return $this->redirectToRoute('app_contact_index');
     }
@@ -168,27 +176,31 @@ final class ContactController extends AbstractHtmxController
             throw $this->createAccessDeniedException('Ce contact n´existe pas ou n´est pas mutuel.');
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'remove_contact' . (string) $contactUser->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            if ($share1 !== null) {
-                $this->entityManager->remove($share1);
-            }
-            if ($share2 !== null) {
-                $this->entityManager->remove($share2);
-            }
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            $requests = $this->contactRequestRepository->findBetweenUsers($user, $contactUser);
-
-            foreach ($requests as $req) {
-                $this->entityManager->remove($req);
-            }
-
-            $this->entityManager->flush();
-
-            $this->addFlash('success', 'Contact ' . $contactUser->getDisplayName() . ' supprimé.');
+            return $this->redirectToRoute('app_contact_index');
         }
+
+        if ($share1 !== null) {
+            $this->entityManager->remove($share1);
+        }
+        if ($share2 !== null) {
+            $this->entityManager->remove($share2);
+        }
+
+        $requests = $this->contactRequestRepository->findBetweenUsers($user, $contactUser);
+
+        foreach ($requests as $req) {
+            $this->entityManager->remove($req);
+        }
+
+        $this->entityManager->flush();
+
+        $this->addFlash('success', 'Contact ' . $contactUser->getDisplayName() . ' supprimé.');
 
         return $this->redirectToRoute('app_contact_index');
     }
@@ -199,10 +211,18 @@ final class ContactController extends AbstractHtmxController
         /** @var User $currentUser */
         $currentUser = $this->getUser();
 
+        $share1 = $this->wishlistShareRepository->findOneBy(['owner' => $currentUser, 'recipient' => $contactUser]);
+        $share2 = $this->wishlistShareRepository->findOneBy(['owner' => $contactUser, 'recipient' => $currentUser]);
+        if ($share1 === null || $share2 === null) {
+            throw $this->createAccessDeniedException('Ce contact n´est pas mutuel.');
+        }
+
         if (!$this->isCsrfTokenValid(
             'settle_debt' . (string) $contactUser->getId(),
             $request->getPayload()->getString('_token'),
         )) {
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
+
             return $this->redirectToRoute('app_contact_index');
         }
 
@@ -266,6 +286,13 @@ final class ContactController extends AbstractHtmxController
             : $this->wishlistShareRepository->findOneBy(['owner' => $managers[0], 'recipient' => $me]) !== null;
         if (!$hasShare) {
             throw $this->createAccessDeniedException("Vous n'avez pas accès à la liste de souhaits de ce contact.");
+        }
+
+        if (!$this->isCsrfTokenValid(
+            'toggle_reserve_wish' . (string) $wish->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
         }
 
         if ($this->isCsrfTokenValid(

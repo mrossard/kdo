@@ -135,32 +135,34 @@ final class GiftIdeaController extends AbstractProjectController
             ]);
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'copy_wish' . (string) $wish->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            if ($reservedBy === $user) {
-                $wish->setReservedBy(null);
-                $wish->setReservedAt(null);
-            }
-            $giftIdea = GiftIdea::createFromWish($wish, $project, $user);
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, [
-                'idea_name' => $giftIdea->getName(),
-            ]);
-
-            $this->entityManager->persist($giftIdea);
-            $this->entityManager->flush();
-
-            $this->addFlash('success', 'Souhait copié en idée cadeau !');
-
-            return $this->redirectOrHtmx($request, 'app_project_show', [
-                'id' => $project->getId(),
-                'tab' => 'ideas',
-            ]);
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
         }
 
-        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+        if ($reservedBy === $user) {
+            $wish->setReservedBy(null);
+            $wish->setReservedAt(null);
+        }
+        $giftIdea = GiftIdea::createFromWish($wish, $project, $user);
+
+        $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, [
+            'idea_name' => $giftIdea->getName(),
+        ]);
+
+        $this->entityManager->persist($giftIdea);
+        $this->entityManager->flush();
+
+        $this->addFlash('success', 'Souhait copié en idée cadeau !');
+
+        return $this->redirectOrHtmx($request, 'app_project_show', [
+            'id' => $project->getId(),
+            'tab' => 'ideas',
+        ]);
     }
 
     #[Route('/idea/{id}/mark-purchased', name: 'app_gift_idea_mark_purchased', methods: ['POST'])]
@@ -204,33 +206,37 @@ final class GiftIdeaController extends AbstractProjectController
 
         $formattedPrice = number_format((float) $price, 2, '.', '');
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'mark_purchased' . (string) $giftIdea->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            if ($existingBuyer === null) {
-                $giftIdea->setPurchasedBy($user);
-                $giftIdea->setPurchasedAt(new \DateTimeImmutable());
-            }
-            $giftIdea->setPurchasePrice($formattedPrice);
-            $this->activityLogger->log($project, Activity::TYPE_IDEA_PURCHASED, $user, [
-                'idea_name' => $giftIdea->getName(),
-                'price' => $formattedPrice,
-            ]);
-            $this->entityManager->flush();
-            $this->addFlash(
-                'success',
-                $existingBuyer === null ? 'Cadeau marqué comme acheté !' : 'Prix d\'achat mis à jour.',
-            );
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            if ($request->headers->get('HX-Request')) {
-                return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', [
-                        'id' => $project->getId(),
-                        'tab' => 'ideas',
-                    ]),
-                ]);
-            }
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+        }
+
+        if ($existingBuyer === null) {
+            $giftIdea->setPurchasedBy($user);
+            $giftIdea->setPurchasedAt(new \DateTimeImmutable());
+        }
+        $giftIdea->setPurchasePrice($formattedPrice);
+        $this->activityLogger->log($project, Activity::TYPE_IDEA_PURCHASED, $user, [
+            'idea_name' => $giftIdea->getName(),
+            'price' => $formattedPrice,
+        ]);
+        $this->entityManager->flush();
+        $this->addFlash(
+            'success',
+            $existingBuyer === null ? 'Cadeau marqué comme acheté !' : 'Prix d\'achat mis à jour.',
+        );
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response(null, 204, [
+                'HX-Redirect' => $this->generateUrl('app_project_show', [
+                    'id' => $project->getId(),
+                    'tab' => 'ideas',
+                ]),
+            ]);
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
@@ -253,24 +259,28 @@ final class GiftIdeaController extends AbstractProjectController
             throw $this->createAccessDeniedException('Seul l\'acheteur ou l\'organisateur peut annuler cet achat.');
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'unmark_purchased' . (string) $giftIdea->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $giftIdea->setPurchasedBy(null);
-            $giftIdea->setPurchasePrice(null);
-            $giftIdea->setPurchasedAt(null);
-            $this->entityManager->flush();
-            $this->addFlash('info', 'Achat annulé.');
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            if ($request->headers->get('HX-Request')) {
-                return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', [
-                        'id' => $project->getId(),
-                        'tab' => 'ideas',
-                    ]),
-                ]);
-            }
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+        }
+
+        $giftIdea->setPurchasedBy(null);
+        $giftIdea->setPurchasePrice(null);
+        $giftIdea->setPurchasedAt(null);
+        $this->entityManager->flush();
+        $this->addFlash('info', 'Achat annulé.');
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response(null, 204, [
+                'HX-Redirect' => $this->generateUrl('app_project_show', [
+                    'id' => $project->getId(),
+                    'tab' => 'ideas',
+                ]),
+            ]);
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
@@ -292,14 +302,18 @@ final class GiftIdeaController extends AbstractProjectController
 
         $payloadToken = $request->getPayload()->getString('_token');
         $token = $payloadToken !== '' ? $payloadToken : $request->query->getString('_token');
-        if ($this->isCsrfTokenValid('delete_idea' . (string) $giftIdea->getId(), $token)) {
-            $this->entityManager->remove($giftIdea);
-            $this->entityManager->flush();
-            $this->addFlash('success', 'Idée supprimée.');
+        if (!$this->isCsrfTokenValid('delete_idea' . (string) $giftIdea->getId(), $token)) {
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            if ($request->headers->get('HX-Request')) {
-                return new Response('', Response::HTTP_OK);
-            }
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+        }
+
+        $this->entityManager->remove($giftIdea);
+        $this->entityManager->flush();
+        $this->addFlash('success', 'Idée supprimée.');
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response('', Response::HTTP_OK);
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
@@ -324,6 +338,13 @@ final class GiftIdeaController extends AbstractProjectController
         $statusEnum = GiftIdeaStatus::tryFrom($status);
         if ($statusEnum === null) {
             throw $this->createNotFoundException('Statut invalide.');
+        }
+
+        if (!$this->isCsrfTokenValid(
+            'status_idea' . (string) $giftIdea->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
         }
 
         if ($this->isCsrfTokenValid(
@@ -508,49 +529,53 @@ final class GiftIdeaController extends AbstractProjectController
             return $this->redirect($fallbackRedirectUrl);
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'create_project_from_wish' . (string) $wish->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            if ($reservedBy === $user) {
-                $wish->setReservedBy(null);
-                $wish->setReservedAt(null);
-            }
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            $recipientDisplayName = $recipient->getDisplayName();
-            $project = new GiftProject();
-            $project->setOwner($user);
-            if ($recipient instanceof ManagedPerson) {
-                $project->setManagedRecipient($recipient);
-            }
-            if ($recipient instanceof User) {
-                $project->setRecipient($recipient);
-            }
-            $project->setName("Cadeau pour {$recipientDisplayName} - {$wish->getName()}");
-            $project->setDescription(
-                "Projet cadeau créé à partir du souhait de {$recipientDisplayName}: '{$wish->getName()}'.",
-            );
-            $this->entityManager->persist($project);
+            return $this->redirect($fallbackRedirectUrl);
+        }
 
-            $giftIdea = GiftIdea::createFromWish($wish, $project, $user);
-            $this->entityManager->persist($giftIdea);
+        if ($reservedBy === $user) {
+            $wish->setReservedBy(null);
+            $wish->setReservedAt(null);
+        }
 
-            $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, [
-                'idea_name' => $giftIdea->getName(),
+        $recipientDisplayName = $recipient->getDisplayName();
+        $project = new GiftProject();
+        $project->setOwner($user);
+        if ($recipient instanceof ManagedPerson) {
+            $project->setManagedRecipient($recipient);
+        }
+        if ($recipient instanceof User) {
+            $project->setRecipient($recipient);
+        }
+        $project->setName("Cadeau pour {$recipientDisplayName} - {$wish->getName()}");
+        $project->setDescription(
+            "Projet cadeau créé à partir du souhait de {$recipientDisplayName}: '{$wish->getName()}'.",
+        );
+        $this->entityManager->persist($project);
+
+        $giftIdea = GiftIdea::createFromWish($wish, $project, $user);
+        $this->entityManager->persist($giftIdea);
+
+        $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, [
+            'idea_name' => $giftIdea->getName(),
+        ]);
+
+        $this->entityManager->flush();
+
+        $this->addFlash(
+            'success',
+            "Projet cadeau créé pour {$recipientDisplayName} avec le souhait '{$wish->getName()}'.",
+        );
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response(null, 204, [
+                'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
             ]);
-
-            $this->entityManager->flush();
-
-            $this->addFlash(
-                'success',
-                "Projet cadeau créé pour {$recipientDisplayName} avec le souhait '{$wish->getName()}'.",
-            );
-
-            if ($request->headers->get('HX-Request')) {
-                return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
-                ]);
-            }
         }
 
         return $this->redirect($fallbackRedirectUrl);
@@ -566,6 +591,13 @@ final class GiftIdeaController extends AbstractProjectController
 
         if ($project->isLocked() || $project->getDeliveredAt() !== null) {
             return new Response(null, 204);
+        }
+
+        if (!$this->isCsrfTokenValid(
+            'vote_idea' . (string) $giftIdea->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
         }
 
         if ($this->isCsrfTokenValid(
@@ -622,6 +654,13 @@ final class GiftIdeaController extends AbstractProjectController
             );
         }
 
+        if (!$this->isCsrfTokenValid(
+            'toggle_crowdfund' . (string) $giftIdea->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
+        }
+
         if ($this->isCsrfTokenValid(
             'toggle_crowdfund' . (string) $giftIdea->getId(),
             $request->getPayload()->getString('_token'),
@@ -665,12 +704,16 @@ final class GiftIdeaController extends AbstractProjectController
             return $this->renderIdeaDisplayOrRedirect($project, $giftIdea, $user, $request);
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'contribute_idea' . (string) $giftIdea->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $this->processContribution($giftIdea, $user, $project, $request);
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
+
+            return $this->renderIdeaDisplayOrRedirect($project, $giftIdea, $user, $request);
         }
+
+        $this->processContribution($giftIdea, $user, $project, $request);
 
         return $this->renderIdeaDisplayOrRedirect($project, $giftIdea, $user, $request);
     }

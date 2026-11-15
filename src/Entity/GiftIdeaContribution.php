@@ -7,6 +7,7 @@ namespace App\Entity;
 use App\Repository\GiftIdeaContributionRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GiftIdeaContributionRepository::class)]
 #[ORM\Table(name: 'gift_idea_contribution')]
@@ -27,6 +28,8 @@ class GiftIdeaContribution
     private ?User $user = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[Assert\NotBlank]
+    #[Assert\Positive(message: 'Le montant doit être positif.')]
     private ?string $amount = null;
 
     #[ORM\Column]

@@ -134,16 +134,23 @@ final class CommentController extends AbstractProjectController
             return $denied;
         }
 
-        if ($this->isCsrfTokenValid(
+        if (!$this->isCsrfTokenValid(
             'delete_comment' . (string) $comment->getId(),
             $request->query->getString('_token'),
         )) {
-            $this->entityManager->remove($comment);
-            $this->entityManager->flush();
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            if ($request->headers->get('HX-Request')) {
-                return new Response('', Response::HTTP_OK);
-            }
+            return $this->redirectToRoute('app_project_show', [
+                'id' => $project->getId(),
+                'tab' => 'discussion',
+            ]);
+        }
+
+        $this->entityManager->remove($comment);
+        $this->entityManager->flush();
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response('', Response::HTTP_OK);
         }
 
         return $this->redirectToRoute('app_project_show', [

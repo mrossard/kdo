@@ -363,4 +363,42 @@ final class WishAndContactControllerTest extends WebTestCase
         self::assertNotNull($wishInProject->getActiveProject());
         self::assertSame($alice->getId(), $wishInProject->getActiveProject()->getOwner()?->getId());
     }
+
+    public function testSettleDebtDeniesNonMutualContact(): void
+    {
+        $alice = $this->createUser('alice@example.com', 'Alice');
+        $stranger = $this->createUser('stranger@example.com', 'Stranger');
+        $this->em->flush();
+
+        $this->client->loginUser($alice);
+        $this->client->request('POST', '/contact/settle/' . $stranger->getId(), [
+            '_token' => 'any_token',
+        ]);
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testInvalidCsrfShowsDangerFlashMessage(): void
+    {
+        $alice = $this->createUser('alice@example.com', 'Alice');
+        $bob = $this->createUser('bob@example.com', 'Bob');
+
+        $share = new WishlistShare();
+        $share->setOwner($bob)->setRecipient($alice);
+        $this->em->persist($share);
+
+        $wish = new Wish();
+        $wish->setName('Livre')->setUser($bob);
+        $this->em->persist($wish);
+        $this->em->flush();
+
+        $this->client->loginUser($alice);
+        $this->client->request('POST', '/contact/wish/' . $wish->getId() . '/toggle-reserve', [
+            '_token' => 'invalid_csrf_token',
+        ]);
+
+        self::assertResponseRedirects('/contact/view/' . $bob->getId());
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.notification.is-danger', 'Jeton de sécurité invalide.');
+    }
 }

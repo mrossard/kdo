@@ -134,8 +134,8 @@ final class AppControllersTest extends WebTestCase
         $profileCrawler = $this->client->request('GET', '/profile');
         $pwdForm = $profileCrawler->selectButton('Changer le mot de passe')->form([
             'change_password_form[currentPassword]' => 'secret123',
-            'change_password_form[plainPassword][first]' => 'newsecret123',
-            'change_password_form[plainPassword][second]' => 'newsecret123',
+            'change_password_form[plainPassword][first]' => 'Kdo!Strong#2026a',
+            'change_password_form[plainPassword][second]' => 'Kdo!Strong#2026a',
         ]);
         $this->client->submit($pwdForm);
         self::assertResponseRedirects('/profile');
@@ -165,8 +165,8 @@ final class AppControllersTest extends WebTestCase
         $formNoInvite = $crawler->filter('form[name="registration_form"]')->form([
             'registration_form[firstname]' => 'Intrus',
             'registration_form[email]' => 'noinvite@example.com',
-            'registration_form[plainPassword][first]' => 'password123',
-            'registration_form[plainPassword][second]' => 'password123',
+            'registration_form[plainPassword][first]' => 'Kdo!Strong#2026b',
+            'registration_form[plainPassword][second]' => 'Kdo!Strong#2026b',
         ]);
         $this->client->submit($formNoInvite);
         self::assertResponseStatusCodeSame(422);
@@ -178,8 +178,8 @@ final class AppControllersTest extends WebTestCase
             'registration_form[firstname]' => 'Invité',
             'registration_form[lastname]' => 'Test',
             'registration_form[email]' => 'invited@example.com',
-            'registration_form[plainPassword][first]' => 'password123',
-            'registration_form[plainPassword][second]' => 'password123',
+            'registration_form[plainPassword][first]' => 'Kdo!Strong#2026b',
+            'registration_form[plainPassword][second]' => 'Kdo!Strong#2026b',
         ]);
         $this->client->submit($formInvite);
         self::assertResponseRedirects('/');
@@ -195,5 +195,50 @@ final class AppControllersTest extends WebTestCase
 
         $this->client->followRedirect();
         self::assertResponseIsSuccessful();
+    }
+
+    public function testPasswordMinimumLengthValidation(): void
+    {
+        $alice = $this->createUser('alice@example.com', 'Alice');
+        $token = Uuid::v4();
+        $invitation = new ContactRequest()
+            ->setSender($alice)
+            ->setRecipientEmail('shortpwd@example.com')
+            ->setInvitationToken($token)
+            ->setStatus(ContactRequest::STATUS_PENDING);
+        $this->em->persist($invitation);
+        $this->em->flush();
+
+        $crawler = $this->client->request('GET', '/register?invitation_token=' . $token->toRfc4122());
+        $form = $crawler->filter('form[name="registration_form"]')->form([
+            'registration_form[firstname]' => 'Test',
+            'registration_form[email]' => 'shortpwd@example.com',
+            'registration_form[plainPassword][first]' => 'Abc123!',
+            'registration_form[plainPassword][second]' => 'Abc123!',
+        ]);
+        $this->client->submit($form);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('body', '8 caractères');
+    }
+
+    public function testLoginThrottlingBlocksAfterTooManyFailedAttempts(): void
+    {
+        $email = 'throttled-' . uniqid('', true) . '@example.com';
+        $this->createUser($email, 'Throttled');
+        $this->em->flush();
+
+        for ($i = 0; $i < 6; ++$i) {
+            $crawler = $this->client->request('GET', '/login');
+            $form = $crawler->selectButton('Se connecter')->form([
+                'email' => $email,
+                'password' => 'wrong-password',
+            ]);
+            $this->client->submit($form);
+            self::assertResponseRedirects('/login');
+            $this->client->followRedirect();
+        }
+
+        self::assertSelectorTextContains('.notification.is-danger', 'Too many failed login attempts');
     }
 }

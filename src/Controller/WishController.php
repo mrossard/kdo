@@ -144,14 +144,18 @@ final class WishController extends AbstractController
         $this->denyAccessUnlessOwner($wish);
         $managedPerson = $wish->getManagedPerson();
 
-        if ($this->isCsrfTokenValid('delete' . (string) $wish->getId(), $request->getPayload()->getString('_token'))) {
-            $entityManager->remove($wish);
-            $entityManager->flush();
-            $this->addFlash('info', 'Souhait supprimé.');
+        if (!$this->isCsrfTokenValid('delete' . (string) $wish->getId(), $request->getPayload()->getString('_token'))) {
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            if ($request->headers->get('HX-Request')) {
-                return new Response('', Response::HTTP_OK);
-            }
+            return $this->redirectToWishList($managedPerson);
+        }
+
+        $entityManager->remove($wish);
+        $entityManager->flush();
+        $this->addFlash('info', 'Souhait supprimé.');
+
+        if ($request->headers->get('HX-Request')) {
+            return new Response('', Response::HTTP_OK);
         }
 
         return $this->redirectToWishList($managedPerson);

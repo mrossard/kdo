@@ -42,14 +42,18 @@ final class NotificationController extends AbstractHtmxController
         /** @var User $user */
         $user = $this->getUser();
 
-        if ($this->isCsrfTokenValid('mark_all_read', $request->getPayload()->getString('_token'))) {
-            $unreadProjects = $activityRepository->findUnreadProjectsForUser($user);
-            $projects = array_values(array_map(static fn(array $data) => $data['project'], $unreadProjects));
+        if (!$this->isCsrfTokenValid('mark_all_read', $request->getPayload()->getString('_token'))) {
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
 
-            if ($projects !== []) {
-                $readStatusRepository->markManyAsRead($user, $projects);
-                $entityManager->flush();
-            }
+            return $this->redirectOrHtmx($request, 'app_notification_index');
+        }
+
+        $unreadProjects = $activityRepository->findUnreadProjectsForUser($user);
+        $projects = array_values(array_map(static fn(array $data) => $data['project'], $unreadProjects));
+
+        if ($projects !== []) {
+            $readStatusRepository->markManyAsRead($user, $projects);
+            $entityManager->flush();
         }
 
         return $this->redirectOrHtmx($request, 'app_notification_index');
