@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\ManagedPerson;
 use App\Entity\User;
 use App\Entity\WishlistShare;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -62,5 +63,25 @@ class WishlistShareRepository extends ServiceEntityRepository
     public function countMutualContactsForUser(User $user): int
     {
         return count($this->findMutualContactsForUser($user));
+    }
+
+    public function hasShareWithAnyManager(User $viewer, ManagedPerson $person): bool
+    {
+        $managers = $person->getAllManagers();
+        if ($managers === []) {
+            return false;
+        }
+
+        return (
+            (int) $this
+                ->createQueryBuilder('ws')
+                ->select('COUNT(ws.id)')
+                ->where('ws.owner IN (:managers)')
+                ->andWhere('ws.recipient = :viewer')
+                ->setParameter('managers', $managers)
+                ->setParameter('viewer', $viewer)
+                ->getQuery()
+                ->getSingleScalarResult() > 0
+        );
     }
 }

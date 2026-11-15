@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\ContactRequest;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
@@ -66,6 +67,55 @@ class ContactRequestRepository extends ServiceEntityRepository
             ->andWhere('cr.recipient IS NULL')
             ->setParameter('email', mb_strtolower(trim($email)))
             ->setParameter('status', ContactRequest::STATUS_PENDING)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return list<ContactRequest>
+     */
+    public function findPendingSentByUser(User $user): array
+    {
+        /** @var list<ContactRequest> */
+        return $this
+            ->createQueryBuilder('cr')
+            ->where('cr.sender = :user')
+            ->andWhere('cr.status = :status')
+            ->setParameter('user', $user)
+            ->setParameter('status', ContactRequest::STATUS_PENDING)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return list<ContactRequest>
+     */
+    public function findPendingReceivedByUser(User $user): array
+    {
+        /** @var list<ContactRequest> */
+        return $this
+            ->createQueryBuilder('cr')
+            ->leftJoin('cr.sender', 's')
+            ->addSelect('s')
+            ->where('cr.recipient = :user')
+            ->andWhere('cr.status = :status')
+            ->setParameter('user', $user)
+            ->setParameter('status', ContactRequest::STATUS_PENDING)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return list<ContactRequest>
+     */
+    public function findBetweenUsers(User $user1, User $user2): array
+    {
+        /** @var list<ContactRequest> */
+        return $this
+            ->createQueryBuilder('cr')
+            ->where('(cr.sender = :user1 AND cr.recipient = :user2) OR (cr.sender = :user2 AND cr.recipient = :user1)')
+            ->setParameter('user1', $user1)
+            ->setParameter('user2', $user2)
             ->getQuery()
             ->getResult();
     }

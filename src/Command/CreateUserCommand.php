@@ -49,8 +49,9 @@ class CreateUserCommand extends Command
             $email = $askedEmail ?? '';
         }
 
-        if ($email === '') {
-            $io->error('Email cannot be empty.');
+        $email = mb_strtolower(trim($email));
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            $io->error('Please provide a valid email address.');
 
             return Command::FAILURE;
         }
@@ -80,17 +81,14 @@ class CreateUserCommand extends Command
             $password = $askedPassword ?? '';
         }
 
-        if ($firstname === null || $firstname === '') {
-            /** @var string|null $askedFirstname */
-            $askedFirstname = $io->ask('Firstname (optional)', null);
-            $firstname = $askedFirstname;
+        if ($password === '') {
+            $io->error('Password cannot be empty.');
+
+            return Command::FAILURE;
         }
 
-        if ($lastname === null || $lastname === '') {
-            /** @var string|null $askedLastname */
-            $askedLastname = $io->ask('Lastname (optional)', null);
-            $lastname = $askedLastname;
-        }
+        $firstname = $this->resolveOptionalOption($io, $firstname, 'Firstname (optional)');
+        $lastname = $this->resolveOptionalOption($io, $lastname, 'Lastname (optional)');
 
         $user = new User();
         $user->setEmail($email);
@@ -123,5 +121,16 @@ class CreateUserCommand extends Command
         $io->success(sprintf('User %s is now an admin.', $email));
 
         return Command::SUCCESS;
+    }
+
+    private function resolveOptionalOption(SymfonyStyle $io, ?string $value, string $prompt): ?string
+    {
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        $asked = $io->ask($prompt, null);
+
+        return is_string($asked) ? $asked : null;
     }
 }

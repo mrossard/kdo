@@ -9,12 +9,11 @@ use App\Entity\GiftProject;
 use App\Entity\User;
 use App\Enum\GiftIdeaStatus;
 use App\Security\Voter\GiftProjectVoter;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 // @mago-expect lint:cyclomatic-complexity
-abstract class AbstractProjectController extends AbstractController
+abstract class AbstractProjectController extends AbstractHtmxController
 {
     /**
      * If the project is delivered, prevent any modification and redirect to show page with a warning.
@@ -27,13 +26,18 @@ abstract class AbstractProjectController extends AbstractController
 
         $this->addFlash('warning', "Le projet a été remis et n'est plus modifiable.");
 
-        if ($request->headers->get('HX-Request')) {
-            return new Response(null, 204, [
-                'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId(), 'tab' => $tab]),
-            ]);
-        }
+        return $this->redirectOrHtmx($request, 'app_project_show', ['id' => $project->getId(), 'tab' => $tab]);
+    }
 
-        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => $tab]);
+    protected function renderIdeasPartial(GiftProject $project, Request $request): Response
+    {
+        $sort = $request->query->getString('sort', $request->request->getString('sort', 'status'));
+
+        return $this->render('gift_project/_ideas.html.twig', [
+            'project' => $project,
+            'gift_ideas' => $this->sortGiftIdeas($project, $sort),
+            'current_sort' => $sort,
+        ]);
     }
 
     protected function denyUnlessCanViewProject(

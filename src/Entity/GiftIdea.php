@@ -386,4 +386,21 @@ class GiftIdea
 
         return null;
     }
+
+    public static function createFromWish(Wish $wish, GiftProject $project, User $proposer): self
+    {
+        $idea = new self();
+        $idea->setName((string) $wish->getName());
+        $idea->setDescription($wish->getDescription());
+        $idea->setUrl($wish->getUrl());
+        $idea->setImageUrl($wish->getImageUrl());
+        $idea->setPrice($wish->getPrice());
+        $idea->setPriority($wish->getPriority());
+        $idea->setGiftProject($project);
+        $idea->setProposer($proposer);
+        $idea->setStatus(self::STATUS_PROPOSED);
+        $idea->setFromWish($wish);
+
+        return $idea;
+    }
 }

@@ -200,13 +200,11 @@ final class UrlMetadataFetcher
         }
 
         if (is_array($records)) {
+            /** @var array<string, string|int|null> $record */
             foreach ($records as $record) {
-                if (!is_array($record)) {
-                    continue;
-                }
-                $ip = $record['ip'] ?? $record['ipv6'] ?? null;
-                if (is_string($ip) && $ip !== '') {
-                    $ips[] = $ip;
+                $rawIp = $record['ip'] ?? $record['ipv6'] ?? null;
+                if (is_string($rawIp) && $rawIp !== '') {
+                    $ips[] = $rawIp;
                 }
             }
         }

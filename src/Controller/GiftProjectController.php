@@ -7,7 +7,6 @@ namespace App\Controller;
 use App\Entity\Activity;
 use App\Entity\GiftIdea;
 use App\Entity\GiftProject;
-use App\Entity\ProjectReadStatus;
 use App\Entity\Reimbursement;
 use App\Entity\User;
 use App\Form\AddParticipantType;
@@ -16,19 +15,18 @@ use App\Form\GiftIdeaType;
 use App\Form\GiftProjectType;
 use App\Repository\ActivityRepository;
 use App\Repository\GiftProjectRepository;
+use App\Repository\ProjectReadStatusRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\GiftProjectVoter;
 use App\Service\ActivityLogger;
 use App\Service\FinancialService;
+use App\Service\ProjectMailer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 // @mago-expect lint:cyclomatic-complexity,kan-defect,too-many-methods
@@ -41,7 +39,7 @@ final class GiftProjectController extends AbstractProjectController
         private readonly EntityManagerInterface $entityManager,
         private readonly FinancialService $financialService,
         private readonly ActivityRepository $activityRepository,
-        private readonly MailerInterface $mailer,
+        private readonly ProjectMailer $projectMailer,
     ) {}
 
     #[Route('/', name: 'app_project_index', methods: ['GET'])]
@@ -140,12 +138,16 @@ final class GiftProjectController extends AbstractProjectController
     }
 
     #[Route('/{id}', name: 'app_project_show', methods: ['GET', 'POST'])]
-    public function show(Request $request, GiftProject $project): Response
-    {
+    public function show(
+        Request $request,
+        GiftProject $project,
+        ProjectReadStatusRepository $readStatusRepository,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
         $this->denyUnlessCanViewProject($project, $user);
-        $this->markProjectRead($project, $user);
+        $readStatusRepository->markAsRead($user, $project);
+        $this->entityManager->flush();
 
         $addParticipantForm = $this->createForm(AddParticipantType::class, null, [
             'current_user' => $user,
@@ -597,8 +599,11 @@ final class GiftProjectController extends AbstractProjectController
     }
 
     #[Route('/{id}/mark-read', name: 'app_project_mark_read', methods: ['POST'])]
-    public function markAsRead(GiftProject $project, Request $request): Response
-    {
+    public function markAsRead(
+        GiftProject $project,
+        Request $request,
+        ProjectReadStatusRepository $readStatusRepository,
+    ): Response {
         /** @var User $user */
         $user = $this->getUser();
         $this->denyUnlessCanViewProject($project, $user);
@@ -607,16 +612,11 @@ final class GiftProjectController extends AbstractProjectController
             'mark_read' . (string) $project->getId(),
             $request->getPayload()->getString('_token'),
         )) {
-            $this->markProjectRead($project, $user);
+            $readStatusRepository->markAsRead($user, $project);
+            $this->entityManager->flush();
         }
 
-        if ($request->headers->get('HX-Request')) {
-            return new Response(null, 204, [
-                'HX-Redirect' => $this->generateUrl('app_project_show', ['id' => $project->getId()]),
-            ]);
-        }
-
-        return $this->redirectToRoute('app_project_show', ['id' => $project->getId()]);
+        return $this->redirectOrHtmx($request, 'app_project_show', ['id' => $project->getId()]);
     }
 
     #[Route('/{id}/shares', name: 'app_project_update_shares', methods: ['POST'])]
@@ -636,39 +636,13 @@ final class GiftProjectController extends AbstractProjectController
             $request->getPayload()->getString('_token'),
         )) {
             $allParams = $request->request->all();
-            /** @var array<int|string, string|int|float> $sharesInput */
             $sharesInput = is_array($allParams['shares'] ?? null) ? $allParams['shares'] : [];
 
-            $participants = array_values($project->getParticipants()->toArray());
-            $owner = $project->getOwner();
-            if ($owner !== null && !$project->getParticipants()->contains($owner)) {
-                $participants[] = $owner;
-            }
-
-            /** @var array<int, float> $newShares */
-            $newShares = [];
-            $totalShares = 0.0;
-            foreach ($participants as $participant) {
-                $pid = $participant->getId();
-                if ($pid === null) {
-                    continue;
-                }
-                $rawShare = $sharesInput[(string) $pid] ?? $sharesInput[$pid] ?? '1';
-                $share = is_numeric($rawShare) ? max(0.0, (float) $rawShare) : 1.0;
-                $newShares[$pid] = $share;
-                $totalShares += $share;
-            }
-
-            if ($totalShares <= 0.0) {
+            $updated = $this->financialService->updateParticipantShares($project, $sharesInput);
+            if (!$updated) {
                 $this->addFlash('warning', 'La somme des parts doit être supérieure à 0.');
             }
-            if ($totalShares > 0.0) {
-                foreach ($participants as $participant) {
-                    $pid = $participant->getId();
-                    if ($pid !== null && array_key_exists($pid, $newShares)) {
-                        $project->setParticipantShare($participant, $newShares[$pid]);
-                    }
-                }
+            if ($updated) {
                 $this->entityManager->flush();
                 $this->addFlash('success', 'Répartition des parts mise à jour.');
             }
@@ -683,23 +657,6 @@ final class GiftProjectController extends AbstractProjectController
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
-    }
-
-    private function markProjectRead(GiftProject $project, User $user): void
-    {
-        $readStatus = $this->entityManager
-            ->getRepository(ProjectReadStatus::class)
-            ->findOneBy(['user' => $user, 'project' => $project]);
-
-        if ($readStatus === null) {
-            $readStatus = new ProjectReadStatus();
-            $readStatus->setUser($user);
-            $readStatus->setProject($project);
-            $this->entityManager->persist($readStatus);
-        }
-
-        $readStatus->setLastReadAt(new \DateTimeImmutable());
-        $this->entityManager->flush();
     }
 
     private function handleAddParticipant(GiftProject $project, User $user, User $newParticipant): void
@@ -720,26 +677,7 @@ final class GiftProjectController extends AbstractProjectController
         $this->activityLogger->log($project, Activity::TYPE_PARTICIPANT_ADDED, $user);
         $this->entityManager->flush();
 
-        $emailAddress = $newParticipant->getEmail();
-        if ($emailAddress !== null && $emailAddress !== '') {
-            $projectUrl = $this->generateUrl(
-                'app_project_show',
-                ['id' => $project->getId()],
-                UrlGeneratorInterface::ABSOLUTE_URL,
-            );
-            $targetDate = $project->getTargetDate();
-            $targetDateInfo = $targetDate !== null ? "\nDate de l'événement : " . $targetDate->format('d/m/Y') : '';
-
-            $emailMessage = new Email()
-                ->to($emailAddress)
-                ->subject("Invitation au projet cadeau « {$project->getName()} » sur KDO")
-                ->text(
-                    "Bonjour {$newParticipant->getDisplayName()},\n\n"
-                    . "{$user->getDisplayName()} vous a ajouté(e) au projet cadeau « {$project->getName()} » pour {$project->getRecipientDisplayName()}.{$targetDateInfo}\n\n"
-                    . "Accédez au projet pour proposer ou voter sur les idées cadeaux :\n{$projectUrl}",
-                );
-            $this->mailer->send($emailMessage);
-        }
+        $this->projectMailer->sendParticipantAddedEmail($project, $user, $newParticipant);
 
         $this->addFlash('success', 'Invitation envoyée à ' . $newParticipant->getDisplayName());
     }
@@ -751,11 +689,9 @@ final class GiftProjectController extends AbstractProjectController
         FormInterface $addParticipantForm,
     ): Response {
         if ($tab === 'ideas') {
-            $sortedGiftIdeas = $this->sortGiftIdeas($project, $sort);
-
             return $this->render('gift_project/_ideas.html.twig', [
                 'project' => $project,
-                'gift_ideas' => $sortedGiftIdeas,
+                'gift_ideas' => $this->sortGiftIdeas($project, $sort),
                 'current_sort' => $sort,
             ]);
         }

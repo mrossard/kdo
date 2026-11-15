@@ -148,4 +148,30 @@ final class CreateUserCommandTest extends KernelTestCase
         self::assertSame(Command::FAILURE, $exitCode);
         self::assertStringContainsString('User existing@example.com already exists.', $commandTester->getDisplay());
     }
+
+    public function testInvalidEmailFails(): void
+    {
+        $commandTester = $this->createCommandTester();
+
+        $exitCode = $commandTester->execute([
+            'email' => 'not-an-email',
+            'password' => 'secret123',
+        ]);
+
+        self::assertSame(Command::FAILURE, $exitCode);
+        self::assertStringContainsString('Please provide a valid email address.', $commandTester->getDisplay());
+    }
+
+    public function testEmptyPasswordFails(): void
+    {
+        $commandTester = $this->createCommandTester();
+        $commandTester->setInputs(['']);
+
+        $exitCode = $commandTester->execute([
+            'email' => 'valid@example.com',
+        ]);
+
+        self::assertSame(Command::FAILURE, $exitCode);
+        self::assertStringContainsString('Password cannot be empty.', $commandTester->getDisplay());
+    }
 }

@@ -143,17 +143,7 @@ final class GiftIdeaController extends AbstractProjectController
                 $wish->setReservedBy(null);
                 $wish->setReservedAt(null);
             }
-            $giftIdea = new GiftIdea();
-            $giftIdea->setName((string) $wish->getName());
-            $giftIdea->setDescription($wish->getDescription());
-            $giftIdea->setUrl($wish->getUrl());
-            $giftIdea->setImageUrl($wish->getImageUrl());
-            $giftIdea->setPrice($wish->getPrice());
-            $giftIdea->setPriority($wish->getPriority());
-            $giftIdea->setGiftProject($project);
-            $giftIdea->setProposer($user);
-            $giftIdea->setStatus(GiftIdea::STATUS_PROPOSED);
-            $giftIdea->setFromWish($wish);
+            $giftIdea = GiftIdea::createFromWish($wish, $project, $user);
 
             $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, [
                 'idea_name' => $giftIdea->getName(),
@@ -164,14 +154,10 @@ final class GiftIdeaController extends AbstractProjectController
 
             $this->addFlash('success', 'Souhait copié en idée cadeau !');
 
-            if ($request->headers->get('HX-Request')) {
-                return new Response(null, 204, [
-                    'HX-Redirect' => $this->generateUrl('app_project_show', [
-                        'id' => $project->getId(),
-                        'tab' => 'ideas',
-                    ]),
-                ]);
-            }
+            return $this->redirectOrHtmx($request, 'app_project_show', [
+                'id' => $project->getId(),
+                'tab' => 'ideas',
+            ]);
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
@@ -492,16 +478,9 @@ final class GiftIdeaController extends AbstractProjectController
             throw $this->createAccessDeniedException('Ce souhait n\'appartient pas à cette liste.');
         }
 
-        $hasAccess = $managedPerson->isManagedBy($user);
-        if (!$hasAccess) {
-            foreach ($managedPerson->getAllManagers() as $manager) {
-                if ($wishlistShareRepository->findOneBy(['owner' => $manager, 'recipient' => $user]) === null) {
-                    continue;
-                }
-                $hasAccess = true;
-                break;
-            }
-        }
+        $hasAccess =
+            $managedPerson->isManagedBy($user)
+            || $wishlistShareRepository->hasShareWithAnyManager($user, $managedPerson);
         if (!$hasAccess) {
             throw $this->createAccessDeniedException("Vous n'avez pas accès à la liste de souhaits de ce proche.");
         }
@@ -553,17 +532,7 @@ final class GiftIdeaController extends AbstractProjectController
             );
             $this->entityManager->persist($project);
 
-            $giftIdea = new GiftIdea();
-            $giftIdea->setName((string) $wish->getName());
-            $giftIdea->setDescription($wish->getDescription());
-            $giftIdea->setUrl($wish->getUrl());
-            $giftIdea->setImageUrl($wish->getImageUrl());
-            $giftIdea->setPrice($wish->getPrice());
-            $giftIdea->setPriority($wish->getPriority());
-            $giftIdea->setGiftProject($project);
-            $giftIdea->setProposer($user);
-            $giftIdea->setStatus(GiftIdea::STATUS_PROPOSED);
-            $giftIdea->setFromWish($wish);
+            $giftIdea = GiftIdea::createFromWish($wish, $project, $user);
             $this->entityManager->persist($giftIdea);
 
             $this->activityLogger->log($project, Activity::TYPE_IDEA_ADDED, $user, [

@@ -61,8 +61,7 @@ final class ManagedPersonController extends AbstractController
         $owner = $managedPerson->getManager();
 
         if (
-            !$managedPerson->isManagedBy($me)
-            && !$this->hasShareWithAnyManager($me, $managedPerson, $wishlistShareRepository)
+            !$managedPerson->isManagedBy($me) && !$wishlistShareRepository->hasShareWithAnyManager($me, $managedPerson)
         ) {
             throw $this->createAccessDeniedException("Vous n'avez pas accès à cette liste.");
         }
@@ -181,19 +180,5 @@ final class ManagedPersonController extends AbstractController
         if (!$managedPerson->isManagedBy($user)) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas gérer cette liste.');
         }
-    }
-
-    private function hasShareWithAnyManager(
-        User $viewer,
-        ManagedPerson $managedPerson,
-        WishlistShareRepository $wishlistShareRepository,
-    ): bool {
-        foreach ($managedPerson->getAllManagers() as $manager) {
-            if ($wishlistShareRepository->findOneBy(['owner' => $manager, 'recipient' => $viewer]) !== null) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

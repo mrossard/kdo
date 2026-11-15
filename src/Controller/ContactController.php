@@ -16,27 +16,25 @@ use App\Repository\WishlistShareRepository;
 use App\Repository\WishRepository;
 use App\Service\ActivityLogger;
 use App\Service\FinancialService;
+use App\Service\ProjectMailer;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Uid\Uuid;
 
 // @mago-expect lint:cyclomatic-complexity,kan-defect
 #[Route('/contact')]
 #[IsGranted('ROLE_USER')]
-final class ContactController extends AbstractController
+final class ContactController extends AbstractHtmxController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly WishlistShareRepository $wishlistShareRepository,
         private readonly ContactRequestRepository $contactRequestRepository,
         private readonly FinancialService $financialService,
+        private readonly ProjectMailer $projectMailer,
     ) {}
 
     #[Route('/', name: 'app_contact_index', methods: ['GET', 'POST'])]
@@ -44,7 +42,6 @@ final class ContactController extends AbstractController
         Request $request,
         UserRepository $userRepository,
         ManagedPersonRepository $managedPersonRepository,
-        MailerInterface $mailer,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -56,7 +53,7 @@ final class ContactController extends AbstractController
             /** @var string|null $rawEmail */
             $rawEmail = $addContactForm->get('email')->getData();
             $email = $rawEmail ?? '';
-            $this->handleAddContactSubmission($user, $email, $userRepository, $mailer);
+            $this->handleAddContactSubmission($user, $email, $userRepository);
 
             return $this->redirectToRoute('app_contact_index');
         }
@@ -73,25 +70,8 @@ final class ContactController extends AbstractController
             $contactBalances[$contactId] = $this->financialService->getContactCumulativeBalance($user, $contact);
         }
 
-        /** @var list<ContactRequest> $sentRequests */
-        $sentRequests = $this->contactRequestRepository
-            ->createQueryBuilder('cr')
-            ->where('cr.sender = :user')
-            ->andWhere('cr.status = :status')
-            ->setParameter('user', $user)
-            ->setParameter('status', ContactRequest::STATUS_PENDING)
-            ->getQuery()
-            ->getResult();
-
-        /** @var list<ContactRequest> $receivedRequests */
-        $receivedRequests = $this->contactRequestRepository
-            ->createQueryBuilder('cr')
-            ->where('cr.recipient = :user')
-            ->andWhere('cr.status = :status')
-            ->setParameter('user', $user)
-            ->setParameter('status', ContactRequest::STATUS_PENDING)
-            ->getQuery()
-            ->getResult();
+        $sentRequests = $this->contactRequestRepository->findPendingSentByUser($user);
+        $receivedRequests = $this->contactRequestRepository->findPendingReceivedByUser($user);
 
         return $this->render('contact/index.html.twig', [
             'add_contact_form' => $addContactForm,
@@ -199,16 +179,7 @@ final class ContactController extends AbstractController
                 $this->entityManager->remove($share2);
             }
 
-            /** @var list<ContactRequest> $requests */
-            $requests = $this->contactRequestRepository
-                ->createQueryBuilder('cr')
-                ->where(
-                    '(cr.sender = :user AND cr.recipient = :contactUser) OR (cr.sender = :contactUser AND cr.recipient = :user)',
-                )
-                ->setParameter('user', $user)
-                ->setParameter('contactUser', $contactUser)
-                ->getQuery()
-                ->getResult();
+            $requests = $this->contactRequestRepository->findBetweenUsers($user, $contactUser);
 
             foreach ($requests as $req) {
                 $this->entityManager->remove($req);
@@ -290,14 +261,9 @@ final class ContactController extends AbstractController
             throw $this->createAccessDeniedException('Vous ne pouvez pas réserver votre propre souhait.');
         }
 
-        $hasShare = false;
-        foreach ($managers as $manager) {
-            if ($this->wishlistShareRepository->findOneBy(['owner' => $manager, 'recipient' => $me]) === null) {
-                continue;
-            }
-            $hasShare = true;
-            break;
-        }
+        $hasShare = $managedPerson !== null
+            ? $this->wishlistShareRepository->hasShareWithAnyManager($me, $managedPerson)
+            : $this->wishlistShareRepository->findOneBy(['owner' => $managers[0], 'recipient' => $me]) !== null;
         if (!$hasShare) {
             throw $this->createAccessDeniedException("Vous n'avez pas accès à la liste de souhaits de ce contact.");
         }
@@ -332,25 +298,15 @@ final class ContactController extends AbstractController
             }
         }
 
-        $redirectUrl = $managedPerson !== null
-            ? $this->generateUrl('app_contact_managed_view', ['id' => $managedPerson->getId()])
-            : $this->generateUrl('app_contact_view', ['id' => $managers[0]->getId()]);
-
-        if ($request->headers->get('HX-Request')) {
-            return new Response(null, 204, [
-                'HX-Redirect' => $redirectUrl,
-            ]);
+        if ($managedPerson !== null) {
+            return $this->redirectOrHtmx($request, 'app_contact_managed_view', ['id' => $managedPerson->getId()]);
         }
 
-        return $this->redirect($redirectUrl);
+        return $this->redirectOrHtmx($request, 'app_contact_view', ['id' => $managers[0]->getId()]);
     }
 
-    private function handleAddContactSubmission(
-        User $user,
-        string $email,
-        UserRepository $userRepository,
-        MailerInterface $mailer,
-    ): void {
+    private function handleAddContactSubmission(User $user, string $email, UserRepository $userRepository): void
+    {
         $recipient = $userRepository->findOneBy(['email' => $email]);
         if ($recipient === $user) {
             $this->addFlash('warning', 'Vous ne pouvez pas vous ajouter vous-même comme contact.');
@@ -392,21 +348,17 @@ final class ContactController extends AbstractController
             }
         }
 
-        $this->sendContactInvitation($user, $email, $recipient, $mailer);
+        $this->sendContactInvitation($user, $email, $recipient);
     }
 
-    private function sendContactInvitation(User $user, string $email, ?User $recipient, MailerInterface $mailer): void
+    private function sendContactInvitation(User $user, string $email, ?User $recipient): void
     {
         $contactRequest = new ContactRequest();
         $contactRequest->setSender($user);
-        $emailMessage = new Email()->to($email)->subject('Nouvelle demande de contact sur KDO');
+        $token = null;
 
         if ($recipient !== null) {
             $contactRequest->setRecipient($recipient);
-            $emailMessage->text(
-                "Bonjour,\n\n{$user->getDisplayName()} souhaite vous ajouter à ses contacts sur KDO.\nConnectez-vous pour accepter la demande : "
-                    . $this->generateUrl('app_login', [], UrlGeneratorInterface::ABSOLUTE_URL),
-            );
             $this->addFlash('success', 'Demande de contact envoyée à ' . $recipient->getDisplayName() . '.');
         }
 
@@ -414,15 +366,6 @@ final class ContactController extends AbstractController
             $contactRequest->setRecipientEmail($email);
             $token = Uuid::v4();
             $contactRequest->setInvitationToken($token);
-
-            $registrationUrl = $this->generateUrl(
-                'app_register',
-                ['invitation_token' => $token],
-                UrlGeneratorInterface::ABSOLUTE_URL,
-            );
-            $emailMessage->text(
-                "Bonjour,\n\n{$user->getDisplayName()} vous invite à rejoindre KDO pour partager vos listes de cadeaux.\n\nCliquez sur le lien suivant pour vous inscrire et accepter la demande :\n{$registrationUrl}",
-            );
             $this->addFlash(
                 'success',
                 'Invitation envoyée à ' . $email . '. Un email a été envoyé pour l´inviter à s´inscrire.',
@@ -431,6 +374,6 @@ final class ContactController extends AbstractController
 
         $this->entityManager->persist($contactRequest);
         $this->entityManager->flush();
-        $mailer->send($emailMessage);
+        $this->projectMailer->sendContactRequestEmail($user, $email, $recipient, $token);
     }
 }

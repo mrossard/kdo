@@ -124,7 +124,7 @@ class FinancialService
         $totalCostCents = $costs['total'];
         $sharedPoolCostCents = $costs['shared'];
         $count = count($participants);
-        $totalCost = $this->fromCents($totalCostCents);
+        $totalCost = round($totalCostCents / 100, 2);
         $averageCost = $count > 0 ? $totalCost / $count : 0.0;
         $costPerShare = $totalShares > 0.0 ? $totalCost / $totalShares : 0.0;
 
@@ -149,10 +149,10 @@ class FinancialService
         foreach ($paidByCents as $uid => $amountCents) {
             $summary[] = [
                 'user' => $userMap[$uid],
-                'paid' => $this->fromCents($amountCents),
+                'paid' => round($amountCents / 100, 2),
                 'share' => $sharesBy[$uid],
-                'target' => $this->fromCents($targetsCents[$uid]),
-                'balance' => $this->fromCents($balancesCents[$uid]),
+                'target' => round($targetsCents[$uid] / 100, 2),
+                'balance' => round($balancesCents[$uid] / 100, 2),
             ];
         }
 
@@ -194,6 +194,45 @@ class FinancialService
         }
 
         return $cumulativeBalance;
+    }
+
+    /**
+     * Updates participant shares on a project from raw form input.
+     *
+     * @param array<int|string, mixed> $sharesInput
+     */
+    public function updateParticipantShares(GiftProject $project, array $sharesInput): bool
+    {
+        $participants = $this->getProjectParticipants($project);
+        /** @var array<int, float> $newShares */
+        $newShares = [];
+        $totalShares = 0.0;
+
+        foreach ($participants as $participant) {
+            $pid = $participant->getId();
+            if ($pid === null) {
+                continue;
+            }
+            $rawShare = $sharesInput[(string) $pid] ?? $sharesInput[$pid] ?? null;
+            $share = (is_string($rawShare) || is_int($rawShare) || is_float($rawShare)) && is_numeric($rawShare)
+                ? max(0.0, (float) $rawShare)
+                : 1.0;
+            $newShares[$pid] = $share;
+            $totalShares += $share;
+        }
+
+        if ($totalShares <= 0.0) {
+            return false;
+        }
+
+        foreach ($participants as $participant) {
+            $pid = $participant->getId();
+            if ($pid !== null && array_key_exists($pid, $newShares)) {
+                $project->setParticipantShare($participant, $newShares[$pid]);
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -311,7 +350,7 @@ class FinancialService
             $transfers[] = [
                 'from' => $userMap[$dUid],
                 'to' => $userMap[$cUid],
-                'amount' => $this->fromCents($amountCents),
+                'amount' => round($amountCents / 100, 2),
             ];
 
             $debtors[$dUid] += $amountCents;
@@ -335,10 +374,5 @@ class FinancialService
         }
 
         return (int) round((float) $amount * 100);
-    }
-
-    private function fromCents(int $cents): float
-    {
-        return round($cents / 100, 2);
     }
 }

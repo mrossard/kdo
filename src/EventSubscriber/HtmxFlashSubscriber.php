@@ -45,7 +45,7 @@ final class HtmxFlashSubscriber implements EventSubscriberInterface
         }
 
         $flashes = $flashBag->all();
-        $encoded = json_encode($flashes, JSON_UNESCAPED_UNICODE);
+        $encoded = json_encode($flashes);
         if (is_string($encoded)) {
             $response->headers->set('X-Kdo-Flashes', $encoded);
         }

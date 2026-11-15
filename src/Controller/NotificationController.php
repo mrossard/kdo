@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Entity\ProjectReadStatus;
 use App\Entity\User;
 use App\Repository\ActivityRepository;
+use App\Repository\ProjectReadStatusRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -16,7 +15,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/notifications')]
 #[IsGranted('ROLE_USER')]
-final class NotificationController extends AbstractController
+final class NotificationController extends AbstractHtmxController
 {
     #[Route('/', name: 'app_notification_index', methods: ['GET'])]
     public function index(ActivityRepository $activityRepository): Response
@@ -37,6 +36,7 @@ final class NotificationController extends AbstractController
     public function markAllRead(
         EntityManagerInterface $entityManager,
         ActivityRepository $activityRepository,
+        ProjectReadStatusRepository $readStatusRepository,
         Request $request,
     ): Response {
         /** @var User $user */
@@ -44,45 +44,14 @@ final class NotificationController extends AbstractController
 
         if ($this->isCsrfTokenValid('mark_all_read', $request->getPayload()->getString('_token'))) {
             $unreadProjects = $activityRepository->findUnreadProjectsForUser($user);
-            $projects = array_map(static fn(array $data) => $data['project'], $unreadProjects);
+            $projects = array_values(array_map(static fn(array $data) => $data['project'], $unreadProjects));
 
             if ($projects !== []) {
-                $existingStatuses = $entityManager
-                    ->getRepository(ProjectReadStatus::class)
-                    ->findBy(['user' => $user, 'project' => $projects]);
-
-                $statusByProjectId = [];
-                foreach ($existingStatuses as $status) {
-                    $pid = $status->getProject()?->getId();
-                    if ($pid !== null) {
-                        $statusByProjectId[$pid] = $status;
-                    }
-                }
-
-                $now = new \DateTimeImmutable();
-                foreach ($projects as $project) {
-                    $pid = $project->getId();
-                    $readStatus = $pid !== null ? $statusByProjectId[$pid] ?? null : null;
-
-                    if (!$readStatus) {
-                        $readStatus = new ProjectReadStatus();
-                        $readStatus->setUser($user);
-                        $readStatus->setProject($project);
-                        $entityManager->persist($readStatus);
-                    }
-                    $readStatus->setLastReadAt($now);
-                }
-
+                $readStatusRepository->markManyAsRead($user, $projects);
                 $entityManager->flush();
             }
         }
 
-        if ($request->headers->get('HX-Request')) {
-            return new Response(null, 204, [
-                'HX-Redirect' => $this->generateUrl('app_notification_index'),
-            ]);
-        }
-
-        return $this->redirectToRoute('app_notification_index');
+        return $this->redirectOrHtmx($request, 'app_notification_index');
     }
 }
