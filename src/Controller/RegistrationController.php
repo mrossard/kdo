@@ -41,7 +41,8 @@ final class RegistrationController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var string|null $rawEmail */
             $rawEmail = $form->get('email')->getData();
-            $email = $rawEmail ?? '';
+            $email = mb_strtolower(trim($rawEmail ?? ''));
+            $user->setEmail($email);
             $invitationToken = $request->query->get('invitation_token');
 
             if (!$this->hasValidInvitation($email, $invitationToken)) {
@@ -80,34 +81,31 @@ final class RegistrationController extends AbstractController
 
     private function hasValidInvitation(string $email, #[\SensitiveParameter] ?string $invitationToken): bool
     {
-        if ($invitationToken !== null && Uuid::isValid($invitationToken)) {
-            $matchingTokenInvitation = $this->contactRequestRepository->findOneBy([
-                'invitationToken' => Uuid::fromString($invitationToken),
-                'recipientEmail' => $email,
-                'status' => ContactRequest::STATUS_PENDING,
-                'recipient' => null,
-            ]);
-            if ($matchingTokenInvitation !== null) {
-                return true;
+        if ($invitationToken !== null && $invitationToken !== '') {
+            if (!Uuid::isValid($invitationToken)) {
+                return false;
             }
+
+            return (
+                $this->contactRequestRepository->findPendingInvitationByTokenAndEmail(
+                    Uuid::fromString($invitationToken),
+                    $email,
+                ) !== null
+            );
         }
 
-        return $this->contactRequestRepository->count([
-            'recipientEmail' => $email,
-            'recipient' => null,
-            'status' => ContactRequest::STATUS_PENDING,
-        ]) > 0;
+        return $this->contactRequestRepository->countPendingInvitationsByEmail($email) > 0;
     }
 
     private function processInvitationsOnRegistration(User $user, #[\SensitiveParameter] ?string $invitationToken): void
     {
+        $userEmail = $user->getEmail() ?? '';
+
         if ($invitationToken !== null && Uuid::isValid($invitationToken)) {
-            $contactRequest = $this->contactRequestRepository->findOneBy([
-                'invitationToken' => Uuid::fromString($invitationToken),
-                'recipientEmail' => $user->getEmail(),
-                'status' => ContactRequest::STATUS_PENDING,
-                'recipient' => null,
-            ]);
+            $contactRequest = $this->contactRequestRepository->findPendingInvitationByTokenAndEmail(
+                Uuid::fromString($invitationToken),
+                $userEmail,
+            );
 
             if ($contactRequest !== null) {
                 $contactRequest->setRecipient($user);
@@ -129,11 +127,7 @@ final class RegistrationController extends AbstractController
             }
         }
 
-        $pendingInvitations = $this->contactRequestRepository->findBy([
-            'recipientEmail' => $user->getEmail(),
-            'recipient' => null,
-            'status' => ContactRequest::STATUS_PENDING,
-        ]);
+        $pendingInvitations = $this->contactRequestRepository->findPendingInvitationsByEmail($userEmail);
 
         if ($pendingInvitations !== []) {
             foreach ($pendingInvitations as $pending) {

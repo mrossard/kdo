@@ -40,10 +40,12 @@ final class CommentVoter extends Voter
             return false;
         }
 
+        $isMember = $project->getOwner() === $user || $project->getParticipants()->contains($user);
+
         if ($attribute === self::EDIT) {
-            return $subject->getAuthor() === $user;
+            return $subject->getAuthor() === $user && $isMember;
         }
 
-        return $subject->getAuthor() === $user || $project->getOwner() === $user;
+        return $project->getOwner() === $user || $subject->getAuthor() === $user && $isMember;
     }
 }

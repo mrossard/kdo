@@ -360,7 +360,16 @@ final class GiftProjectController extends AbstractProjectController
             return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
         }
 
-        $formattedAmount = number_format((float) $amount, 2, '.', '');
+        $requestedCents = (int) round((float) $amount * 100);
+        $owedCents = $this->computeOwedCents($project, $debtor, $currentUser);
+
+        if ($requestedCents <= 0 || $owedCents <= 0 || $requestedCents > $owedCents) {
+            $this->addFlash('danger', 'Aucune dette correspondante pour ce montant.');
+
+            return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
+        }
+
+        $formattedAmount = number_format($requestedCents / 100, 2, '.', '');
 
         if ($this->isCsrfTokenValid(
             'reimburse_' . (string) $project->getId(),
@@ -392,6 +401,21 @@ final class GiftProjectController extends AbstractProjectController
         }
 
         return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'financial']);
+    }
+
+    private function computeOwedCents(GiftProject $project, User $debtor, User $creditor): int
+    {
+        $financials = $this->financialService->calculate($project);
+        $owedCents = 0;
+
+        foreach ($financials['transfers'] as $transfer) {
+            if ($transfer['from']->getId() !== $debtor->getId() || $transfer['to']->getId() !== $creditor->getId()) {
+                continue;
+            }
+            $owedCents += (int) round($transfer['amount'] * 100);
+        }
+
+        return $owedCents;
     }
 
     #[Route('/{id}/leave', name: 'app_project_leave', methods: ['POST'])]

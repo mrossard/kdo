@@ -114,8 +114,10 @@ final class TourControllerTest extends WebTestCase
         self::assertNotNull($updatedUser);
         self::assertTrue($updatedUser->getUiPreferences()['tour_completed'] ?? false);
 
-        // Reset tour
-        $this->client->request('POST', '/tour/reset');
+        // Reset tour via profile form (with CSRF token)
+        $profileCrawler = $this->client->request('GET', '/profile');
+        $resetForm = $profileCrawler->filter('form[action="/tour/reset"]')->form();
+        $this->client->submit($resetForm);
         self::assertResponseRedirects('/profile');
 
         $this->em->clear();

@@ -31,6 +31,8 @@ class GiftIdeaRepository extends ServiceEntityRepository
         /** @var list<GiftIdea> */
         return $this
             ->createQueryBuilder('g')
+            ->leftJoin('g.giftProject', 'gp')
+            ->addSelect('gp')
             ->where('g.purchasedBy = :user')
             ->setParameter('user', $user)
             ->orderBy('g.id', 'DESC')

@@ -77,6 +77,8 @@ final class UrlMetadataFetcherTest extends TestCase
         self::assertTrue($fetcher->fetch('ftp://example.com/file')->isEmpty());
         self::assertTrue($fetcher->fetch('http://localhost/admin')->isEmpty());
         self::assertTrue($fetcher->fetch('http://127.0.0.1:8080/secret')->isEmpty());
+        self::assertTrue($fetcher->fetch('http://[::1]:8080/secret')->isEmpty());
+        self::assertTrue($fetcher->fetch('http://[fc00::1]/secret')->isEmpty());
     }
 
     public function testPopulateFromFormDataFillsEmptyFieldsOnly(): void

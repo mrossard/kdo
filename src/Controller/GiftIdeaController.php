@@ -304,10 +304,9 @@ final class GiftIdeaController extends AbstractProjectController
             return $denied;
         }
 
-        if ($this->isCsrfTokenValid(
-            'delete_idea' . (string) $giftIdea->getId(),
-            $request->query->getString('_token'),
-        )) {
+        $payloadToken = $request->getPayload()->getString('_token');
+        $token = $payloadToken !== '' ? $payloadToken : $request->query->getString('_token');
+        if ($this->isCsrfTokenValid('delete_idea' . (string) $giftIdea->getId(), $token)) {
             $this->entityManager->remove($giftIdea);
             $this->entityManager->flush();
             $this->addFlash('success', 'Idée supprimée.');

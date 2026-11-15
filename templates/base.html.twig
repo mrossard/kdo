@@ -17,6 +17,7 @@
         <div id="kdo-progress-bar" aria-hidden="true"></div>
 
         {% set currentRoute = app.request.attributes.get('_route') %}
+        {% set unreadCount = app.user ? unread_notification_count() : 0 %}
         {% if app.user or currentRoute != 'app_home' %}
         <nav class="navbar" role="navigation" aria-label="main navigation">
             <div class="navbar-brand">
@@ -29,12 +30,12 @@
                         {{ include('theme/_toggle_button.html.twig', {theme: currentTheme}) }}
                         <a href="{{ path('app_notification_index') }}"
                            aria-label="Notifications"
-                           class="button is-light is-rounded is-small {% if unread_notification_count > 0 %}has-badge-danger{% endif %}">
+                           class="button is-light is-rounded is-small {% if unreadCount > 0 %}has-badge-danger{% endif %}">
                             <span class="icon">
                                 {{ ux_icon('material-symbols:notifications') }}
                             </span>
-                            {% if unread_notification_count > 0 %}
-                                <span class="tag is-danger is-rounded is-small notification-badge">{{ unread_notification_count }}</span>
+                            {% if unreadCount > 0 %}
+                                <span class="tag is-danger is-rounded is-small notification-badge">{{ unreadCount }}</span>
                             {% endif %}
                         </a>
                     </div>
@@ -83,12 +84,12 @@
                             <a href="{{ path('app_notification_index') }}"
                                data-tour="navbar-notifications"
                                aria-label="Notifications"
-                               class="button is-light is-rounded {% if unread_notification_count > 0 %}has-badge-danger{% endif %}">
+                               class="button is-light is-rounded {% if unreadCount > 0 %}has-badge-danger{% endif %}">
                                 <span class="icon">
                                     {{ ux_icon('material-symbols:notifications') }}
                                 </span>
-                                {% if unread_notification_count > 0 %}
-                                    <span class="tag is-danger is-rounded is-small notification-badge">{{ unread_notification_count }}</span>
+                                {% if unreadCount > 0 %}
+                                    <span class="tag is-danger is-rounded is-small notification-badge">{{ unreadCount }}</span>
                                 {% endif %}
                             </a>
                         </div>

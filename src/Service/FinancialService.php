@@ -11,6 +11,7 @@ use App\Entity\Reimbursement;
 use App\Entity\User;
 use App\Repository\GiftProjectRepository;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 
 // @mago-expect lint:cyclomatic-complexity,kan-defect,halstead
@@ -29,33 +30,50 @@ class FinancialService
         EntityManagerInterface $entityManager,
         ?ActivityLogger $activityLogger = null,
     ): int {
-        $count = 0;
-        $projects = $this->giftProjectRepository->findProjectsInvolvingUsers($debtor, $creditor);
+        return $entityManager->wrapInTransaction(function () use (
+            $debtor,
+            $creditor,
+            $entityManager,
+            $activityLogger,
+        ): int {
+            $count = 0;
+            $projects = $this->giftProjectRepository->findProjectsInvolvingUsers($debtor, $creditor);
 
-        foreach ($projects as $project) {
-            $financials = $this->calculate($project);
-            foreach ($financials['transfers'] as $transfer) {
-                if (!($transfer['from'] === $debtor && $transfer['to'] === $creditor)) {
-                    continue;
+            foreach ($projects as $project) {
+                if ($project->getId() !== null) {
+                    $entityManager->lock($project, LockMode::PESSIMISTIC_WRITE);
                 }
 
-                $formattedAmount = number_format($transfer['amount'], 2, '.', '');
-                $reimbursement = new Reimbursement();
-                $reimbursement->setProject($project);
-                $reimbursement->setFromUser($debtor);
-                $reimbursement->setToUser($creditor);
-                $reimbursement->setAmount($formattedAmount);
+                $financials = $this->calculate($project);
+                foreach ($financials['transfers'] as $transfer) {
+                    if (
+                        !(
+                            $transfer['from']->getId() === $debtor->getId()
+                            && $transfer['to']->getId() === $creditor->getId()
+                        )
+                    ) {
+                        continue;
+                    }
 
-                $entityManager->persist($reimbursement);
-                $activityLogger?->log($project, Activity::TYPE_REIMBURSEMENT_CREATED, $creditor, [
-                    'amount' => $formattedAmount,
-                ]);
-                $count++;
+                    $formattedAmount = number_format($transfer['amount'], 2, '.', '');
+                    $reimbursement = new Reimbursement();
+                    $reimbursement->setProject($project);
+                    $reimbursement->setFromUser($debtor);
+                    $reimbursement->setToUser($creditor);
+                    $reimbursement->setAmount($formattedAmount);
+
+                    $entityManager->persist($reimbursement);
+                    $activityLogger?->log($project, Activity::TYPE_REIMBURSEMENT_CREATED, $creditor, [
+                        'amount' => $formattedAmount,
+                    ]);
+                    $count++;
+                }
             }
-        }
-        $entityManager->flush();
 
-        return $count;
+            $entityManager->flush();
+
+            return $count;
+        });
     }
 
     /**
@@ -72,14 +90,14 @@ class FinancialService
     public function calculate(GiftProject $project): array
     {
         $participants = $this->getProjectParticipants($project);
-        /** @var array<int, float> $paidBy */
-        $paidBy = [];
+        /** @var array<int, int> $paidByCents */
+        $paidByCents = [];
         /** @var array<int, float> $sharesBy */
         $sharesBy = [];
         /** @var array<int, User> $userMap */
         $userMap = [];
-        /** @var array<int, float> $directTargets */
-        $directTargets = [];
+        /** @var array<int, int> $directTargetsCents */
+        $directTargetsCents = [];
         $totalShares = 0.0;
 
         foreach ($participants as $p) {
@@ -87,8 +105,8 @@ class FinancialService
             if ($pid === null) {
                 continue;
             }
-            $paidBy[$pid] = 0.0;
-            $directTargets[$pid] = 0.0;
+            $paidByCents[$pid] = 0;
+            $directTargetsCents[$pid] = 0;
             $share = $project->getParticipantShare($p);
             $sharesBy[$pid] = $share;
             $totalShares += $share;
@@ -102,42 +120,45 @@ class FinancialService
             $totalShares = (float) count($sharesBy);
         }
 
-        $costs = $this->accumulatePaidIdeas($project, $paidBy, $directTargets);
-        $totalCost = $costs['total'];
-        $sharedPoolCost = $costs['shared'];
+        $costs = $this->accumulatePaidIdeas($project, $paidByCents, $directTargetsCents);
+        $totalCostCents = $costs['total'];
+        $sharedPoolCostCents = $costs['shared'];
         $count = count($participants);
+        $totalCost = $this->fromCents($totalCostCents);
         $averageCost = $count > 0 ? $totalCost / $count : 0.0;
         $costPerShare = $totalShares > 0.0 ? $totalCost / $totalShares : 0.0;
-        $sharedCostPerShare = $totalShares > 0.0 ? $sharedPoolCost / $totalShares : 0.0;
 
-        /** @var array<int, float> $targets */
-        $targets = [];
-        /** @var array<int, float> $balances */
-        $balances = [];
-        foreach ($paidBy as $uid => $amount) {
-            $target = $directTargets[$uid] + ($sharedCostPerShare * $sharesBy[$uid]);
-            $targets[$uid] = $target;
-            $balances[$uid] = $amount - $target;
+        /** @var array<int, int> $targetsCents */
+        $targetsCents = [];
+        /** @var array<int, int> $balancesCents */
+        $balancesCents = [];
+        foreach ($paidByCents as $uid => $amountCents) {
+            $sharedTargetCents = $totalShares > 0.0
+                ? (int) round(($sharedPoolCostCents * $sharesBy[$uid]) / $totalShares)
+                : 0;
+            $targetCents = $directTargetsCents[$uid] + $sharedTargetCents;
+            $targetsCents[$uid] = $targetCents;
+            $balancesCents[$uid] = $amountCents - $targetCents;
         }
 
         $reimbursements = $project->getReimbursements();
-        $this->applyReimbursements($reimbursements, $balances);
+        $this->applyReimbursements($reimbursements, $balancesCents);
 
         /** @var list<array{user: User, paid: float, share: float, target: float, balance: float}> $summary */
         $summary = [];
-        foreach ($paidBy as $uid => $amount) {
+        foreach ($paidByCents as $uid => $amountCents) {
             $summary[] = [
                 'user' => $userMap[$uid],
-                'paid' => $amount,
+                'paid' => $this->fromCents($amountCents),
                 'share' => $sharesBy[$uid],
-                'target' => $targets[$uid],
-                'balance' => $balances[$uid],
+                'target' => $this->fromCents($targetsCents[$uid]),
+                'balance' => $this->fromCents($balancesCents[$uid]),
             ];
         }
 
         return [
             'summary' => $summary,
-            'transfers' => $this->computeTransfers($balances, $userMap),
+            'transfers' => $this->computeTransfers($balancesCents, $userMap),
             'total_cost' => $totalCost,
             'average_cost' => $averageCost,
             'total_shares' => $totalShares,
@@ -190,14 +211,14 @@ class FinancialService
     }
 
     /**
-     * @param array<int, float> $paidBy
-     * @param array<int, float> $directTargets
-     * @return array{total: float, shared: float}
+     * @param array<int, int> $paidByCents
+     * @param array<int, int> $directTargetsCents
+     * @return array{total: int, shared: int}
      */
-    private function accumulatePaidIdeas(GiftProject $project, array &$paidBy, array &$directTargets): array
+    private function accumulatePaidIdeas(GiftProject $project, array &$paidByCents, array &$directTargetsCents): array
     {
-        $totalCost = 0.0;
-        $sharedCost = 0.0;
+        $totalCostCents = 0;
+        $sharedCostCents = 0;
 
         foreach ($project->getGiftIdeas() as $idea) {
             $purchaser = $idea->getPurchasedBy();
@@ -207,74 +228,74 @@ class FinancialService
             }
 
             $uid = $purchaser->getId();
-            if ($uid === null || !array_key_exists($uid, $paidBy)) {
+            if ($uid === null || !array_key_exists($uid, $paidByCents)) {
                 continue;
             }
 
-            $amount = is_numeric($price) ? (float) $price : 0.0;
-            $paidBy[$uid] += $amount;
-            $totalCost += $amount;
+            $amountCents = $this->toCents($price);
+            $paidByCents[$uid] += $amountCents;
+            $totalCostCents += $amountCents;
 
-            $totalContributed = $idea->isCrowdfunded() ? $idea->getTotalContributed() : 0.0;
-            if ($totalContributed > 0.0) {
-                $scale = min(1.0, $amount / $totalContributed);
+            $totalContributedCents = $idea->isCrowdfunded() ? $this->toCents($idea->getTotalContributed()) : 0;
+            if ($totalContributedCents > 0) {
+                $scale = min(1.0, $amountCents / $totalContributedCents);
+                $coveredCents = 0;
                 foreach ($idea->getContributions() as $contrib) {
                     $cUser = $contrib->getUser();
                     $cUid = $cUser?->getId();
-                    if ($cUid !== null && array_key_exists($cUid, $directTargets)) {
-                        $directTargets[$cUid] += $contrib->getAmountAsFloat() * $scale;
+                    if ($cUid !== null && array_key_exists($cUid, $directTargetsCents)) {
+                        $contribCents = (int) round($this->toCents($contrib->getAmount()) * $scale);
+                        $directTargetsCents[$cUid] += $contribCents;
+                        $coveredCents += $contribCents;
                     }
                 }
-                $covered = $totalContributed * $scale;
-                $remainder = max(0.0, $amount - $covered);
-                $sharedCost += $remainder;
+                $sharedCostCents += max(0, $amountCents - $coveredCents);
                 continue;
             }
 
-            $sharedCost += $amount;
+            $sharedCostCents += $amountCents;
         }
 
-        return ['total' => $totalCost, 'shared' => $sharedCost];
+        return ['total' => $totalCostCents, 'shared' => $sharedCostCents];
     }
 
     /**
      * @param Collection<int, Reimbursement> $reimbursements
-     * @param array<int, float> $balances
+     * @param array<int, int> $balancesCents
      */
-    private function applyReimbursements(Collection $reimbursements, array &$balances): void
+    private function applyReimbursements(Collection $reimbursements, array &$balancesCents): void
     {
         foreach ($reimbursements as $r) {
             $fid = $r->getFromUser()?->getId();
             $tid = $r->getToUser()?->getId();
-            $rawAmount = $r->getAmount();
-            $amount = $rawAmount !== null && is_numeric($rawAmount) ? (float) $rawAmount : 0.0;
+            $amountCents = $this->toCents($r->getAmount());
 
-            if ($fid !== null && array_key_exists($fid, $balances)) {
-                $balances[$fid] += $amount;
+            if ($fid !== null && array_key_exists($fid, $balancesCents)) {
+                $balancesCents[$fid] += $amountCents;
             }
-            if ($tid !== null && array_key_exists($tid, $balances)) {
-                $balances[$tid] -= $amount;
+            if ($tid !== null && array_key_exists($tid, $balancesCents)) {
+                $balancesCents[$tid] -= $amountCents;
             }
         }
     }
 
     /**
-     * @param array<int, float> $balances
+     * @param array<int, int> $balancesCents
      * @param array<int, User> $userMap
      * @return list<array{from: User, to: User, amount: float}>
      */
-    private function computeTransfers(array $balances, array $userMap): array
+    private function computeTransfers(array $balancesCents, array $userMap): array
     {
-        /** @var array<int, float> $debtors */
+        /** @var array<int, int> $debtors */
         $debtors = [];
-        /** @var array<int, float> $creditors */
+        /** @var array<int, int> $creditors */
         $creditors = [];
-        foreach ($balances as $uid => $balance) {
-            if ($balance < -0.01) {
-                $debtors[$uid] = $balance;
+        foreach ($balancesCents as $uid => $balanceCents) {
+            if ($balanceCents < 0) {
+                $debtors[$uid] = $balanceCents;
             }
-            if ($balance > 0.01) {
-                $creditors[$uid] = $balance;
+            if ($balanceCents > 0) {
+                $creditors[$uid] = $balanceCents;
             }
         }
 
@@ -285,25 +306,39 @@ class FinancialService
 
             $debt = abs($debtors[$dUid]);
             $credit = $creditors[$cUid];
-            $amount = min($debt, $credit);
+            $amountCents = min($debt, $credit);
 
             $transfers[] = [
                 'from' => $userMap[$dUid],
                 'to' => $userMap[$cUid],
-                'amount' => $amount,
+                'amount' => $this->fromCents($amountCents),
             ];
 
-            $debtors[$dUid] += $amount;
-            $creditors[$cUid] -= $amount;
+            $debtors[$dUid] += $amountCents;
+            $creditors[$cUid] -= $amountCents;
 
-            if (abs($debtors[$dUid]) < 0.01) {
+            if ($debtors[$dUid] >= 0) {
                 unset($debtors[$dUid]);
             }
-            if ($creditors[$cUid] < 0.01) {
+            if ($creditors[$cUid] <= 0) {
                 unset($creditors[$cUid]);
             }
         }
 
         return $transfers;
+    }
+
+    private function toCents(string|float|null $amount): int
+    {
+        if ($amount === null || is_string($amount) && !is_numeric($amount)) {
+            return 0;
+        }
+
+        return (int) round((float) $amount * 100);
+    }
+
+    private function fromCents(int $cents): float
+    {
+        return round($cents / 100, 2);
     }
 }

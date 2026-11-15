@@ -42,4 +42,16 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->persist($user);
         $this->getEntityManager()->flush();
     }
+
+    public function findOneByEmailCaseInsensitive(string $email): ?User
+    {
+        /** @var User|null */
+        return $this
+            ->createQueryBuilder('u')
+            ->where('LOWER(u.email) = :email')
+            ->setParameter('email', mb_strtolower(trim($email)))
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

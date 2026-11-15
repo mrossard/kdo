@@ -10,6 +10,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ActivityRepository::class)]
+#[ORM\Index(name: 'idx_activity_project_created', columns: ['project_id', 'created_at'])]
+#[ORM\Index(name: 'idx_activity_created_at', columns: ['created_at'])]
 #[ORM\HasLifecycleCallbacks]
 class Activity
 {

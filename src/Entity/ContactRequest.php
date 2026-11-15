@@ -11,6 +11,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: ContactRequestRepository::class)]
+#[ORM\Index(name: 'idx_contact_request_email_status', columns: ['recipient_email', 'status'])]
 #[UniqueEntity(fields: ['invitationToken'], message: 'Ce jeton d\'invitation existe déjà. Veuillez réessayer.')]
 class ContactRequest
 {

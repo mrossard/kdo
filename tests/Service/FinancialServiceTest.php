@@ -165,6 +165,10 @@ final class FinancialServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em
             ->expects(self::once())
+            ->method('wrapInTransaction')
+            ->willReturnCallback(static fn(callable $callback): mixed => $callback($em));
+        $em
+            ->expects(self::once())
             ->method('persist')
             ->with(self::callback(static function (object $entity) use (&$persisted): bool {
                 $persisted[] = $entity;
@@ -397,5 +401,36 @@ final class FinancialServiceTest extends TestCase
         self::assertEqualsWithDelta(60.0, $targetsByUser[1], 0.001);
         self::assertEqualsWithDelta(120.0, $targetsByUser[2], 0.001);
         self::assertEqualsWithDelta(120.0, $targetsByUser[3], 0.001);
+    }
+
+    public function testCalculateTenEurosAcrossThreeParticipantsUsesExactCents(): void
+    {
+        $repo = $this->createStub(GiftProjectRepository::class);
+        $service = new FinancialService($repo);
+
+        $alice = $this->createUserWithId(1, 'Alice');
+        $bob = $this->createUserWithId(2, 'Bob');
+        $charlie = $this->createUserWithId(3, 'Charlie');
+
+        $project = new GiftProject();
+        $project->setOwner($alice);
+        $project->addParticipant($bob);
+        $project->addParticipant($charlie);
+
+        $idea = new GiftIdea();
+        $idea
+            ->setName('Carte')
+            ->setStatus(GiftIdea::STATUS_SELECTED)
+            ->setPurchasedBy($alice)
+            ->setPurchasePrice('10.00');
+        $project->addGiftIdea($idea);
+
+        $result = $service->calculate($project);
+
+        self::assertSame(10.0, $result['total_cost']);
+        self::assertCount(2, $result['transfers']);
+        foreach ($result['transfers'] as $transfer) {
+            self::assertSame(3.33, $transfer['amount']);
+        }
     }
 }

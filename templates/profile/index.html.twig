@@ -118,6 +118,7 @@
                         </div>
                         <div class="level-right">
                             <form method="post" action="{{ path('app_tour_reset') }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('tour_reset') }}">
                                 <button type="submit" class="button is-ghost is-small p-0 has-text-grey">
                                     <span>Réafficher à l'accueil</span>
                                 </button>

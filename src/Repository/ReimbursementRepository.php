@@ -26,6 +26,12 @@ class ReimbursementRepository extends ServiceEntityRepository
         /** @var list<Reimbursement> */
         return $this
             ->createQueryBuilder('r')
+            ->leftJoin('r.project', 'p')
+            ->addSelect('p')
+            ->leftJoin('r.fromUser', 'fu')
+            ->addSelect('fu')
+            ->leftJoin('r.toUser', 'tu')
+            ->addSelect('tu')
             ->where('r.fromUser = :user OR r.toUser = :user')
             ->setParameter('user', $user)
             ->orderBy('r.createdAt', 'DESC')

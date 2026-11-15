@@ -18,11 +18,11 @@ class ProjectReadStatus
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'projectReadStatuses')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?User $user = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?GiftProject $project = null;
 
     #[ORM\Column]

@@ -8,23 +8,23 @@ use App\Entity\User;
 use App\Repository\ActivityRepository;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Twig\Extension\AbstractExtension;
-use Twig\Extension\GlobalsInterface;
+use Twig\TwigFunction;
 
-class NotificationExtension extends AbstractExtension implements GlobalsInterface
+class NotificationExtension extends AbstractExtension
 {
     public function __construct(
         private readonly ActivityRepository $activityRepository,
         private readonly TokenStorageInterface $tokenStorage,
     ) {}
 
-    public function getGlobals(): array
+    public function getFunctions(): array
     {
         return [
-            'unread_notification_count' => $this->getUnreadCount(),
+            new TwigFunction('unread_notification_count', $this->getUnreadCount(...)),
         ];
     }
 
-    private function getUnreadCount(): int
+    public function getUnreadCount(): int
     {
         $token = $this->tokenStorage->getToken();
         $user = $token?->getUser();

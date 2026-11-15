@@ -44,24 +44,37 @@ final class NotificationController extends AbstractController
 
         if ($this->isCsrfTokenValid('mark_all_read', $request->getPayload()->getString('_token'))) {
             $unreadProjects = $activityRepository->findUnreadProjectsForUser($user);
-            $now = new \DateTimeImmutable();
+            $projects = array_map(static fn(array $data) => $data['project'], $unreadProjects);
 
-            foreach ($unreadProjects as $data) {
-                $project = $data['project'];
-                $readStatus = $entityManager
+            if ($projects !== []) {
+                $existingStatuses = $entityManager
                     ->getRepository(ProjectReadStatus::class)
-                    ->findOneBy(['user' => $user, 'project' => $project]);
+                    ->findBy(['user' => $user, 'project' => $projects]);
 
-                if (!$readStatus) {
-                    $readStatus = new ProjectReadStatus();
-                    $readStatus->setUser($user);
-                    $readStatus->setProject($project);
-                    $entityManager->persist($readStatus);
+                $statusByProjectId = [];
+                foreach ($existingStatuses as $status) {
+                    $pid = $status->getProject()?->getId();
+                    if ($pid !== null) {
+                        $statusByProjectId[$pid] = $status;
+                    }
                 }
-                $readStatus->setLastReadAt($now);
-            }
 
-            $entityManager->flush();
+                $now = new \DateTimeImmutable();
+                foreach ($projects as $project) {
+                    $pid = $project->getId();
+                    $readStatus = $pid !== null ? $statusByProjectId[$pid] ?? null : null;
+
+                    if (!$readStatus) {
+                        $readStatus = new ProjectReadStatus();
+                        $readStatus->setUser($user);
+                        $readStatus->setProject($project);
+                        $entityManager->persist($readStatus);
+                    }
+                    $readStatus->setLastReadAt($now);
+                }
+
+                $entityManager->flush();
+            }
         }
 
         if ($request->headers->get('HX-Request')) {

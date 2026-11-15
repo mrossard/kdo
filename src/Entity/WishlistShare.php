@@ -8,6 +8,7 @@ use App\Repository\WishlistShareRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: WishlistShareRepository::class)]
+#[ORM\UniqueConstraint(name: 'uniq_wishlist_share_owner_recipient', columns: ['owner_id', 'recipient_id'])]
 class WishlistShare
 {
     #[ORM\Id]

@@ -30,9 +30,16 @@ class GiftProjectRepository extends ServiceEntityRepository
         /** @var list<GiftProject> */
         return $this
             ->createQueryBuilder('g')
+            ->leftJoin('g.owner', 'o')
+            ->addSelect('o')
             ->leftJoin('g.participants', 'p')
+            ->addSelect('p')
+            ->leftJoin('g.recipient', 'r')
+            ->addSelect('r')
+            ->leftJoin('g.managedRecipient', 'mr')
+            ->addSelect('mr')
             ->where('g.recipient IS NULL OR g.recipient != :user') // Important: Never show if I am the recipient
-            ->andWhere('g.owner = :user OR p = :user') // Show if owner OR participant
+            ->andWhere('g.owner = :user OR :user MEMBER OF g.participants') // Show if owner OR participant
             ->setParameter('user', $user)
             ->orderBy('g.createdAt', 'DESC')
             ->getQuery()
@@ -40,7 +47,7 @@ class GiftProjectRepository extends ServiceEntityRepository
     }
 
     /**
-     * Finds projects where both user1 and user2 are involved (owner, participant, or recipient).
+     * Finds projects where both user1 and user2 are involved (owner or participant, never recipient).
      *
      * @return list<GiftProject>
      */
@@ -48,9 +55,13 @@ class GiftProjectRepository extends ServiceEntityRepository
     {
         $qb = $this
             ->createQueryBuilder('gp')
+            ->leftJoin('gp.owner', 'o')
+            ->addSelect('o')
             ->leftJoin('gp.participants', 'p')
-            ->where('gp.owner = :user1 OR p = :user1')
-            ->andWhere('gp.owner = :user2 OR p = :user2')
+            ->addSelect('p')
+            ->where('gp.owner = :user1 OR :user1 MEMBER OF gp.participants')
+            ->andWhere('gp.owner = :user2 OR :user2 MEMBER OF gp.participants')
+            ->andWhere('gp.recipient IS NULL OR (gp.recipient != :user1 AND gp.recipient != :user2)')
             ->setParameter('user1', $user1)
             ->setParameter('user2', $user2);
 

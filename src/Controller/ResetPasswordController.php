@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\NewPasswordFormType;
 use App\Form\ResetPasswordRequestFormType;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -28,6 +29,7 @@ final class ResetPasswordController extends AbstractController
     public function __construct(
         private readonly ResetPasswordHelperInterface $resetPasswordHelper,
         private readonly EntityManagerInterface $entityManager,
+        private readonly UserRepository $userRepository,
     ) {}
 
     /**
@@ -137,11 +139,7 @@ final class ResetPasswordController extends AbstractController
 
     private function processSendingPasswordResetEmail(string $emailFormData, MailerInterface $mailer): RedirectResponse
     {
-        $user = $this->entityManager
-            ->getRepository(User::class)
-            ->findOneBy([
-                'email' => $emailFormData,
-            ]);
+        $user = $this->userRepository->findOneByEmailCaseInsensitive($emailFormData);
 
         // Do not reveal whether a user account was found or not.
         if (!$user) {

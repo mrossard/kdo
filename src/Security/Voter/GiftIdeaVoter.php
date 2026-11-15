@@ -40,6 +40,10 @@ final class GiftIdeaVoter extends Voter
             return false;
         }
 
-        return $project->getOwner() === $user || $subject->getProposer() === $user;
+        return (
+            $project->getOwner() === $user
+            || $subject->getProposer() === $user
+            && $project->getParticipants()->contains($user)
+        );
     }
 }

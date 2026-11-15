@@ -70,8 +70,14 @@ final class TourController extends AbstractController
     }
 
     #[Route('/tour/reset', name: 'app_tour_reset', methods: ['POST'])]
-    public function reset(EntityManagerInterface $entityManager): Response
+    public function reset(Request $request, EntityManagerInterface $entityManager): Response
     {
+        if (!$this->isCsrfTokenValid('tour_reset', $request->getPayload()->getString('_token'))) {
+            $this->addFlash('danger', 'Jeton CSRF invalide.');
+
+            return $this->redirectToRoute('app_profile');
+        }
+
         /** @var User $user */
         $user = $this->getUser();
         $prefs = $user->getUiPreferences() ?? [];

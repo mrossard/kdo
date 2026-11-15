@@ -28,6 +28,8 @@ class ActivityRepository extends ServiceEntityRepository
         /** @var list<Activity> */
         return $this
             ->createQueryBuilder('a')
+            ->leftJoin('a.user', 'u')
+            ->addSelect('u')
             ->where('a.project = :project')
             ->setParameter('project', $project)
             ->orderBy('a.createdAt', 'DESC')
@@ -52,8 +54,13 @@ class ActivityRepository extends ServiceEntityRepository
             LEFT JOIN project_read_status prs
                 ON prs.project_id = a.project_id AND prs.user_id = :userId
             INNER JOIN gift_project gp ON gp.id = a.project_id
-            LEFT JOIN gift_project_user gpu ON gpu.gift_project_id = gp.id
-            WHERE (gp.owner_id = :userId OR gpu.user_id = :userId)
+            WHERE (
+                gp.owner_id = :userId
+                OR EXISTS (
+                    SELECT 1 FROM gift_project_user gpu
+                    WHERE gpu.gift_project_id = gp.id AND gpu.user_id = :userId
+                )
+            )
               AND (gp.recipient_id IS NULL OR gp.recipient_id != :userId)
               AND (prs.last_read_at IS NULL OR a.created_at > prs.last_read_at)
             GROUP BY a.project_id
@@ -82,8 +89,13 @@ class ActivityRepository extends ServiceEntityRepository
             LEFT JOIN project_read_status prs
                 ON prs.project_id = a.project_id AND prs.user_id = :userId
             INNER JOIN gift_project gp ON gp.id = a.project_id
-            LEFT JOIN gift_project_user gpu ON gpu.gift_project_id = gp.id
-            WHERE (gp.owner_id = :userId OR gpu.user_id = :userId)
+            WHERE (
+                gp.owner_id = :userId
+                OR EXISTS (
+                    SELECT 1 FROM gift_project_user gpu
+                    WHERE gpu.gift_project_id = gp.id AND gpu.user_id = :userId
+                )
+            )
               AND (gp.recipient_id IS NULL OR gp.recipient_id != :userId)
               AND (prs.last_read_at IS NULL OR a.created_at > prs.last_read_at)
         ';
@@ -104,8 +116,10 @@ class ActivityRepository extends ServiceEntityRepository
         return $this
             ->createQueryBuilder('a')
             ->innerJoin('a.project', 'gp')
-            ->leftJoin('gp.participants', 'p')
-            ->where('gp.owner = :user OR p = :user')
+            ->addSelect('gp')
+            ->leftJoin('a.user', 'u')
+            ->addSelect('u')
+            ->where('gp.owner = :user OR :user MEMBER OF gp.participants')
             ->andWhere('gp.recipient IS NULL OR gp.recipient != :user')
             ->setParameter('user', $user)
             ->orderBy('a.createdAt', 'DESC')

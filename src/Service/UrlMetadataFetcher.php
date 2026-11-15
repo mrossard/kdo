@@ -156,7 +156,7 @@ final class UrlMetadataFetcher
             return false;
         }
 
-        $host = (string) parse_url($url, PHP_URL_HOST);
+        $host = trim((string) parse_url($url, PHP_URL_HOST), '[]');
         if ($host === '' || strtolower($host) === 'localhost') {
             return false;
         }
@@ -165,8 +165,14 @@ final class UrlMetadataFetcher
             return true;
         }
 
-        $ips = gethostbynamel($host);
-        if ($ips === false || $ips === []) {
+        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+            return (
+                filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false
+            );
+        }
+
+        $ips = $this->resolveHostIps($host);
+        if ($ips === []) {
             return false;
         }
 
@@ -179,31 +185,175 @@ final class UrlMetadataFetcher
         return true;
     }
 
+    /**
+     * @return list<string>
+     */
+    private function resolveHostIps(string $host): array
+    {
+        $ips = [];
+
+        set_error_handler(static fn(): bool => true);
+        try {
+            $records = dns_get_record($host, DNS_A | DNS_AAAA);
+        } finally {
+            restore_error_handler();
+        }
+
+        if (is_array($records)) {
+            foreach ($records as $record) {
+                if (!is_array($record)) {
+                    continue;
+                }
+                $ip = $record['ip'] ?? $record['ipv6'] ?? null;
+                if (is_string($ip) && $ip !== '') {
+                    $ips[] = $ip;
+                }
+            }
+        }
+
+        if ($ips === []) {
+            $ipv4s = gethostbynamel($host);
+            if (is_array($ipv4s)) {
+                $ips = $ipv4s;
+            }
+        }
+
+        return $ips;
+    }
+
     private function downloadHtml(string $url): ?string
     {
         if ($this->httpDownloader !== null) {
             return ($this->httpDownloader)($url);
         }
 
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'timeout' => 3.5,
-                'follow_location' => 1,
-                'max_redirects' => 3,
-                'user_agent' => 'Mozilla/5.0 (compatible; KDOBot/1.0)',
-                'header' => "Accept: text/html,application/xhtml+xml\r\nAccept-Language: fr-FR,fr;q=0.9,en;q=0.8\r\n",
-            ],
-        ]);
+        $currentUrl = $url;
+        $maxRedirects = 3;
 
-        set_error_handler(static fn(): bool => true);
-        try {
-            $content = file_get_contents($url, false, $context, 0, self::MAX_BYTES);
-        } finally {
-            restore_error_handler();
+        for ($hop = 0; $hop <= $maxRedirects; $hop++) {
+            if (!$this->isSafeUrl($currentUrl)) {
+                return null;
+            }
+
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'GET',
+                    'timeout' => 3.5,
+                    'follow_location' => 0,
+                    'ignore_errors' => true,
+                    'user_agent' => 'Mozilla/5.0 (compatible; KDOBot/1.0)',
+                    'header' => "Accept: text/html,application/xhtml+xml\r\nAccept-Language: fr-FR,fr;q=0.9,en;q=0.8\r\n",
+                ],
+            ]);
+
+            set_error_handler(static fn(): bool => true);
+            try {
+                $stream = fopen($currentUrl, 'rb', false, $context);
+            } finally {
+                restore_error_handler();
+            }
+
+            if (!is_resource($stream)) {
+                return null;
+            }
+
+            try {
+                $meta = stream_get_meta_data($stream);
+                /** @var list<string> $headers */
+                $headers = is_array($meta['wrapper_data'] ?? null) ? $meta['wrapper_data'] : [];
+                $statusCode = $this->extractStatusCode($headers);
+
+                if (in_array($statusCode, [301, 302, 303, 307, 308], strict: true)) {
+                    $location = $this->extractLocationHeader($headers);
+                    if ($location === null) {
+                        return null;
+                    }
+                    $nextUrl = $this->resolveRedirectUrl($currentUrl, $location);
+                    if ($nextUrl === null) {
+                        return null;
+                    }
+                    $currentUrl = $nextUrl;
+                    continue;
+                }
+
+                if ($statusCode >= 400) {
+                    return null;
+                }
+
+                $content = stream_get_contents($stream, self::MAX_BYTES);
+
+                return is_string($content) ? $content : null;
+            } finally {
+                fclose($stream);
+            }
         }
 
-        return is_string($content) ? $content : null;
+        return null;
+    }
+
+    /**
+     * @param list<string> $headers
+     */
+    private function extractStatusCode(array $headers): int
+    {
+        $matches = [];
+        foreach ($headers as $header) {
+            if (preg_match('/^HTTP\/\S+\s+(\d{3})\b/i', $header, $matches) === 1) {
+                return (int) $matches[1];
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * @param list<string> $headers
+     */
+    private function extractLocationHeader(array $headers): ?string
+    {
+        $matches = [];
+        foreach ($headers as $header) {
+            if (preg_match('/^Location:\s*(.+)$/i', $header, $matches) !== 1) {
+                continue;
+            }
+            $location = trim($matches[1]);
+
+            return $location !== '' ? $location : null;
+        }
+
+        return null;
+    }
+
+    private function resolveRedirectUrl(string $baseUrl, string $location): ?string
+    {
+        if (preg_match('/^https?:\/\//i', $location) === 1) {
+            return $location;
+        }
+
+        $parts = parse_url($baseUrl);
+        if (!is_array($parts)) {
+            return null;
+        }
+
+        $scheme = $parts['scheme'] ?? null;
+        $host = $parts['host'] ?? null;
+        if (!is_string($scheme) || !is_string($host)) {
+            return null;
+        }
+
+        $port = $parts['port'] ?? null;
+        $origin = $scheme . '://' . $host . ($port !== null ? ':' . $port : '');
+        if (str_starts_with($location, '//')) {
+            return $scheme . ':' . $location;
+        }
+        if (str_starts_with($location, '/')) {
+            return $origin . $location;
+        }
+
+        $basePath = $parts['path'] ?? '/';
+        $dir = rtrim(substr($basePath, 0, (int) strrpos($basePath, '/') + 1), '/');
+
+        return $origin . $dir . '/' . $location;
     }
 
     /**
