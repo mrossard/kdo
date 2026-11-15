@@ -8,10 +8,8 @@ use App\Entity\GiftIdea;
 use App\Entity\GiftProject;
 use App\Entity\User;
 use App\Enum\GiftIdeaStatus;
-use App\Form\CommentType;
 use App\Security\Voter\GiftProjectVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -101,22 +99,5 @@ abstract class AbstractProjectController extends AbstractController
         }
 
         return $statusA <=> $statusB;
-    }
-
-    /**
-     * @param list<GiftIdea> $ideas
-     * @return array<int, FormView>
-     */
-    protected function buildCommentForms(array $ideas): array
-    {
-        $commentForms = [];
-        foreach ($ideas as $idea) {
-            $ideaId = $idea->getId();
-            if ($ideaId !== null) {
-                $commentForms[$ideaId] = $this->createForm(CommentType::class)->createView();
-            }
-        }
-
-        return $commentForms;
     }
 }

@@ -20,9 +20,7 @@
                 <div class="level-right">
                     <button type="button"
                             class="button is-primary"
-                            hx-get="{{ path('app_tour_modal', {'step': 1}) }}"
-                            hx-target="#kdo-tour-modal-container"
-                            hx-swap="innerHTML">
+                            data-tour-start>
                         <span class="icon">{{ ux_icon('material-symbols:redeem') }}</span>
                         <span>Lancer la visite interactive</span>
                     </button>
@@ -142,8 +140,9 @@
 
                     <ul class="mb-4" style="line-height: 1.8;">
                         <li><strong>Extraction d'URL intelligente :</strong> lorsque vous ajoutez un souhait, collez le lien du site marchand (ex: Fnac, Amazon, Decathlon). KDO interroge la page et remplit automatiquement le nom, la photo et le prix !</li>
-                        <li><strong>Priorités :</strong> choisissez un niveau d'envie (<em>Faible</em>, <em>Moyen</em>, <em>Élevé</em>, <em>Coup de cœur</em>) pour aider vos proches à prioriser.</li>
-                        <li><strong>Partage de liste :</strong> partagez votre liste avec vos contacts KDO ou générez un lien privé pour les proches qui n'ont pas encore de compte.</li>
+                        <li><strong>Priorités & Tri :</strong> choisissez un niveau d'envie (<em>Faible</em>, <em>Moyen</em>, <em>Élevé</em>, <em>Coup de cœur</em>) et triez votre liste pour aider vos proches à prioriser.</li>
+                        <li><strong>Proches sans compte & Co-gestionnaires :</strong> créez des listes dédiées pour vos enfants ou proches qui n'ont pas de compte via l'onglet <em>Ajouter un proche</em>, et invitez éventuellement d'autres contacts comme co-gestionnaires.</li>
+                        <li><strong>Partage automatique & Cadeaux reçus :</strong> vos listes (et celles de vos proches gérés) sont automatiquement partagées avec vos contacts mutuels. Vous pouvez aussi afficher ou masquer les cadeaux déjà reçus.</li>
                         <li><strong>Réservation secrète :</strong> vos amis peuvent cocher qu'ils vous offrent un cadeau précis. <em>Vous ne voyez jamais cette information</em> : la surprise reste garantie pour le jour J !</li>
                     </ul>
 
@@ -168,9 +167,10 @@
                     </p>
 
                     <ul class="mb-4" style="line-height: 1.8;">
-                        <li><strong>Ajouter un contact :</strong> saisissez l'email de votre ami. Dès qu'il accepte l'invitation, vous pouvez interagir.</li>
-                        <li><strong>Voir les souhaits d'un ami :</strong> cliquez sur un contact pour consulter sa liste de souhaits à jour.</li>
-                        <li><strong>Réserver ou créer un projet :</strong> depuis la liste d'un ami, vous pouvez réserver un cadeau individuellement ou lancer un <em>Projet Cadeau commun</em> pour cotiser à plusieurs !</li>
+                        <li><strong>Ajouter un contact :</strong> saisissez l'email de votre proche (même s'il n'est pas encore inscrit, il recevra une invitation). Dès qu'il accepte, le partage de vos listes devient mutuel.</li>
+                        <li><strong>Voir les souhaits d'un proche (et de ses personnes gérées) :</strong> cliquez sur un contact ou sur les badges de ses proches sans compte pour consulter leurs listes à jour.</li>
+                        <li><strong>Réserver ou lancer un projet :</strong> depuis la liste d'un contact, réservez un cadeau en solo ou créez directement un <em>Projet Cadeau commun</em> à partir d'un de ses souhaits !</li>
+                        <li><strong>Solde par contact :</strong> visualisez votre balance financière avec chaque contact et soldez vos dettes en un clic.</li>
                     </ul>
 
                     <a href="{{ path('app_contact_index') }}" class="button is-light is-small">
@@ -199,10 +199,11 @@
 
                     <h3 class="title is-6 mb-2">Les fonctionnalités dans un projet :</h3>
                     <ul class="mb-4" style="line-height: 1.8;">
-                        <li><strong>Boîte à idées collaborative :</strong> chaque participant peut suggérer des idées avec photo, description, prix et lien web.</li>
-                        <li><strong>Système de vote démocratique :</strong> votez pour ou contre les propositions pour dégager l'idée favorite.</li>
-                        <li><strong>Discussion intégrée :</strong> échangez librement par commentaires entre complices.</li>
-                        <li><strong>Choix & Verrouillage :</strong> l'organisateur sélectionne l'idée retenue dès que la décision est prise.</li>
+                        <li><strong>Date cible & Participants :</strong> définissez une date d'échéance (anniversaire, Noël…) et invitez les participants parmi vos contacts.</li>
+                        <li><strong>Boîte à idées collaborative :</strong> suggérez des idées (avec auto-remplissage par URL) ou importez directement un souhait depuis la liste du bénéficiaire.</li>
+                        <li><strong>Système de vote & Discussion :</strong> votez pour les propositions et échangez librement par commentaires entre complices.</li>
+                        <li><strong>Cagnotte participative & Verrouillage :</strong> activez le mode cagnotte sur une idée pour collecter les contributions, puis verrouillez le projet une fois le choix arrêté.</li>
+                        <li><strong>Remise du cadeau & Archivage :</strong> marquez le projet comme remis le jour J, puis archivez-le une fois les comptes réglés.</li>
                     </ul>
 
                     <a href="{{ path('app_project_index') }}" class="button is-light is-small">
@@ -226,11 +227,11 @@
                     </p>
 
                     <ul class="mb-4" style="line-height: 1.8;">
-                        <li><strong>Déclaration d'achat :</strong> la personne qui avance l'argent saisit le montant réel du cadeau.</li>
-                        <li><strong>Contributions :</strong> chaque participant enregistre sa participation (parts égales ou montants personnalisés).</li>
-                        <li><strong>Algorithme de simplification des remboursements :</strong> KDO calcule automatiquement le chemin le plus court pour rembourser tout le monde avec le minimum de virements.</li>
-                        <li><strong>Validation rapide :</strong> dès qu'un remboursement est reçu, cliquez sur « Marquer comme remboursé » pour solder la dette.</li>
-                        <li><strong>Page Finances globale :</strong> retrouvez l'ensemble de vos créances et dettes consolidées sur tous vos projets.</li>
+                        <li><strong>Déclaration d'achat :</strong> la personne qui achète l'idée retenue saisit le montant réel payé.</li>
+                        <li><strong>Parts & Contributions :</strong> ajustez le nombre de parts de chaque participant (ou contribuez à une cagnotte) pour répartir la dépense équitablement.</li>
+                        <li><strong>Algorithme de simplification des remboursements :</strong> KDO calcule automatiquement qui doit combien à qui avec le minimum de virements possibles.</li>
+                        <li><strong>Validation rapide :</strong> dès qu'un remboursement est reçu, cliquez sur « Marquer comme remboursé » (depuis le projet, Contacts ou Finances) pour solder la dette.</li>
+                        <li><strong>Page Finances globale :</strong> retrouvez l'ensemble de vos créances, dettes et votre solde net consolidés sur tous vos projets.</li>
                     </ul>
 
                     <a href="{{ path('app_financial_index') }}" class="button is-light is-small">

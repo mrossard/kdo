@@ -60,6 +60,17 @@
                         <span>Bilan Financier</span>
                     </a>
                 </li>
+                <li class="{{ current_tab == 'discussion' ? 'is-active' : '' }}">
+                    <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'discussion'}) }}"
+                       hx-target="#project-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       onclick="changeTab(this)">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:forum') }}</span>
+                        <span>Discussion</span>
+                        <span class="tag is-rounded ml-2">{{ project.comments|length }}</span>
+                    </a>
+                </li>
                 <li class="{{ current_tab == 'activite' ? 'is-active' : '' }}">
                     <a hx-get="{{ path('app_project_show', {'id': project.id, 'tab': 'activite'}) }}"
                        hx-target="#project-content"
@@ -77,7 +88,7 @@
 
                             {% if current_tab == 'ideas' %}
 
-                                {% include 'gift_project/_ideas.html.twig' with { project: project, gift_ideas: gift_ideas|default([]), comment_forms: comment_forms|default([]) } %}
+                                {% include 'gift_project/_ideas.html.twig' with { project: project, gift_ideas: gift_ideas|default([]) } %}
 
                             {% elseif current_tab == 'liste_souhaits' %}
 
@@ -86,6 +97,10 @@
                             {% elseif current_tab == 'financial' %}
 
                                 {% include 'gift_project/_financial.html.twig' with { project: project, summary: summary|default([]), transfers: transfers|default([]), total_cost: total_cost|default(0), average_cost: average_cost|default(0) } %}
+
+                            {% elseif current_tab == 'discussion' %}
+
+                                {% include 'gift_project/_discussion.html.twig' with { project: project, comment_form: comment_form } %}
 
                             {% elseif current_tab == 'activite' %}
 

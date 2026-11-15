@@ -18,12 +18,12 @@ class CommentType extends AbstractType
         $builder->add('content', TextareaType::class, [
             'label' => false,
             'attr' => [
-                'placeholder' => 'Écrire un commentaire...',
+                'placeholder' => 'Écrire un message...',
                 'rows' => 2,
                 'class' => 'textarea is-small',
             ],
             'constraints' => [
-                new NotBlank(message: 'Le commentaire ne peut pas être vide.'),
+                new NotBlank(message: 'Le message ne peut pas être vide.'),
             ],
         ]);
     }

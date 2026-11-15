@@ -7,6 +7,7 @@
 import 'bulma/css/bulma.min.css';
 import './styles/app.css';
 import htmx from 'htmx.org';
+import './tour.js';
 
 window.htmx = htmx;
 htmx.config.noSwap = [204, 304, '4xx', '5xx'];
@@ -52,6 +53,8 @@ function showToast(type, message) {
     stack.appendChild(toast);
     bindToast(toast);
 }
+
+window.kdoShowToast = showToast;
 
 // 1. Top Progress Bar & Button Loading State during HTMX 4 requests
 document.addEventListener('htmx:before:request', (e) => {

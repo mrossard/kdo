@@ -5,7 +5,6 @@ Expected variables:
 - idea: App\Entity\GiftIdea
 - project: App\Entity\GiftProject (the parent project)
 - user: App\Entity\User (the current authenticated user, for authorization checks)
-- comment_forms: Array of forms for adding comments (optional, if rendered directly)
 #}
 
 {% set card_class = '' %}
@@ -14,7 +13,6 @@ Expected variables:
 {% elseif idea.status == constant('App\\Entity\\GiftIdea::STATUS_DISCARDED') %}
     {% set card_class = 'has-background-grey-lighter is-discarded' %}
 {% endif %}
-{% set comment_forms = comment_forms|default([]) %}
 
 <div class="card idea-card h-100 {{ card_class }}" id="gift-idea-{{ idea.id }}">
     <div class="card-content p-4">
@@ -259,54 +257,6 @@ Expected variables:
                 {% endif %}
             </div>
         {% endif %}
-
-        {# Comments discussion #}
-        <hr class="my-3">
-        <div class="comments-section">
-            <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
-                <h6 class="title is-6 mb-0 is-flex is-align-items-center" style="gap: 0.4rem;">
-                    <span class="icon is-small has-text-grey">{{ ux_icon('material-symbols:chat-bubble-outline') }}</span>
-                    <span>Commentaires</span>
-                </h6>
-                {% if idea.comments|length > 0 %}
-                    <span class="tag is-rounded is-light is-small">{{ idea.comments|length }}</span>
-                {% endif %}
-            </div>
-
-            <div id="comments-list-{{ idea.id }}">
-                {% for comment in idea.comments %}
-                    {% include 'gift_project/_comment.html.twig' %}
-                {% else %}
-                    <p id="no-comments-{{ idea.id }}" class="is-size-7 has-text-grey is-italic mb-2">Aucun commentaire.</p>
-                {% endfor %}
-            </div>
-
-            <div class="mt-2">
-                {% if comment_forms[idea.id] is defined and project.deliveredAt is null %}
-                    {% set comment_form = comment_forms[idea.id] %}
-                    {{ form_start(comment_form, {
-                        'action': path('app_gift_idea_comment', {'id': idea.id}),
-                        'attr': {
-                            'hx-post': path('app_gift_idea_comment', {'id': idea.id}),
-                            'hx-target': '#comments-list-' ~ idea.id,
-                            'hx-swap': 'beforeend',
-                            'hx-on::after-request': 'if(event.detail.successful){ this.reset(); document.getElementById("no-comments-' ~ idea.id ~ '")?.remove(); }'
-                        }
-                    }) }}
-                    <div class="field has-addons">
-                        <div class="control is-expanded">
-                            {{ form_widget(comment_form.content, {'attr': {'placeholder': 'Ajouter un mot...', 'class': 'textarea is-small', 'rows': '1'}}) }}
-                        </div>
-                        <div class="control">
-                            <button type="submit" class="button is-small is-primary is-light" style="height: auto;">
-                                <span class="icon is-small">{{ ux_icon('material-symbols:send') }}</span>
-                            </button>
-                        </div>
-                    </div>
-                    {{ form_end(comment_form) }}
-                {% endif %}
-            </div>
-        </div>
 
         {# Delete button #}
         {% if (app.user == idea.proposer or app.user == project.owner) and not project.locked and project.deliveredAt is null %}

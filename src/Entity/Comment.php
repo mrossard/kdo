@@ -28,7 +28,7 @@ class Comment
 
     #[ORM\ManyToOne(inversedBy: 'comments')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?GiftIdea $giftIdea = null;
+    private ?GiftProject $project = null;
 
     public function __construct()
     {
@@ -76,14 +76,14 @@ class Comment
         return $this;
     }
 
-    public function getGiftIdea(): ?GiftIdea
+    public function getProject(): ?GiftProject
     {
-        return $this->giftIdea;
+        return $this->project;
     }
 
-    public function setGiftIdea(?GiftIdea $giftIdea): static
+    public function setProject(?GiftProject $project): static
     {
-        $this->giftIdea = $giftIdea;
+        $this->project = $project;
 
         return $this;
     }

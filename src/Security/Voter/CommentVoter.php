@@ -35,7 +35,7 @@ final class CommentVoter extends Voter
             return false;
         }
 
-        $project = $subject->getGiftIdea()?->getGiftProject();
+        $project = $subject->getProject();
         if ($project === null || $project->getRecipient() === $user) {
             return false;
         }

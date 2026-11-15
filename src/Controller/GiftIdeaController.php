@@ -369,7 +369,6 @@ final class GiftIdeaController extends AbstractProjectController
             return $this->render('gift_project/_ideas.html.twig', [
                 'project' => $project,
                 'gift_ideas' => $sortedGiftIdeas,
-                'comment_forms' => $this->buildCommentForms($sortedGiftIdeas),
                 'current_sort' => $sort,
             ]);
         }
@@ -409,7 +408,6 @@ final class GiftIdeaController extends AbstractProjectController
                     'project' => $project,
                     'idea' => $giftIdea,
                     'user' => $user,
-                    'comment_forms' => $this->buildCommentForms([$giftIdea]),
                 ]);
             }
 
@@ -439,7 +437,6 @@ final class GiftIdeaController extends AbstractProjectController
             'idea' => $idea,
             'project' => $project,
             'user' => $user,
-            'comment_forms' => $this->buildCommentForms([$idea]),
         ]);
     }
 
@@ -627,12 +624,10 @@ final class GiftIdeaController extends AbstractProjectController
         if ($request->headers->get('HX-Request')) {
             $sort = $request->query->getString('sort', 'status');
             $sortedGiftIdeas = $this->sortGiftIdeas($project, $sort);
-            $commentForms = $this->buildCommentForms($sortedGiftIdeas);
 
             return $this->render('gift_project/_ideas.html.twig', [
                 'project' => $project,
                 'gift_ideas' => $sortedGiftIdeas,
-                'comment_forms' => $commentForms,
                 'current_sort' => $sort,
             ]);
         }
@@ -677,7 +672,6 @@ final class GiftIdeaController extends AbstractProjectController
                 'project' => $project,
                 'idea' => $giftIdea,
                 'user' => $user,
-                'comment_forms' => $this->buildCommentForms([$giftIdea]),
             ]);
         }
 
@@ -764,7 +758,6 @@ final class GiftIdeaController extends AbstractProjectController
                 'project' => $project,
                 'idea' => $giftIdea,
                 'user' => $user,
-                'comment_forms' => $this->buildCommentForms([$giftIdea]),
             ]);
         }
 

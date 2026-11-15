@@ -10,7 +10,7 @@
 {% block body %}
     <section class="section">
         <div class="container" id="wish-list-container">
-            <div class="tabs is-boxed mb-4">
+            <div class="tabs is-boxed mb-4" data-tour="wish-tabs">
                 <ul>
                     <li class="{{ not is_managed ? 'is-active' : '' }}">
                         <a href="{{ path('app_wish_index') }}"
@@ -114,6 +114,7 @@
                            hx-target="#kdo-dynamic-modal-body"
                            hx-select="#wish-modal-content"
                            hx-swap="innerHTML"
+                           data-tour="wish-add-btn"
                            class="button is-primary">
                             <span class="icon">{{ ux_icon('material-symbols:add') }}</span>
                             <span>Ajouter un souhait</span>

@@ -170,4 +170,48 @@ final class TourControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorNotExists('#kdo-tour-banner');
     }
+
+    public function testInteractiveTourConfigAndTargetsExistOnPages(): void
+    {
+        $user = $this->createUser('eve@example.com', 'Eve');
+        $this->client->loginUser($user);
+
+        // Dashboard
+        $crawler = $this->client->request('GET', '/');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#kdo-tour-config');
+        self::assertSelectorExists('[data-tour-start]');
+        self::assertSelectorExists('[data-tour="dashboard-kpis"]');
+        self::assertSelectorExists('[data-tour="dashboard-quick-actions"]');
+        self::assertSelectorExists('[data-tour="navbar-notifications"]');
+
+        $configJson = $crawler->filter('#kdo-tour-config')->text();
+        $config = json_decode($configJson, true, 512, JSON_THROW_ON_ERROR);
+        self::assertArrayHasKey('completeUrl', $config);
+        self::assertArrayHasKey('routes', $config);
+        self::assertSame(['home', 'wish', 'contact', 'project', 'financial'], array_keys($config['routes']));
+
+        // Wishlist
+        $this->client->request('GET', $config['routes']['wish']);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('[data-tour="wish-tabs"]');
+        self::assertSelectorExists('[data-tour="wish-add-btn"]');
+
+        // Contacts
+        $this->client->request('GET', $config['routes']['contact']);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('[data-tour="contact-invite"]');
+        self::assertSelectorExists('[data-tour="contact-list"]');
+
+        // Projects
+        $this->client->request('GET', $config['routes']['project']);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('[data-tour="project-new-btn"]');
+        self::assertSelectorExists('[data-tour="project-archives-btn"]');
+
+        // Financials
+        $this->client->request('GET', $config['routes']['financial']);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('[data-tour="financial-summary"]');
+    }
 }

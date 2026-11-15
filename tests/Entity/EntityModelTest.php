@@ -181,14 +181,18 @@ final class EntityModelTest extends TestCase
         $user->removeProposedGiftIdea($idea);
         self::assertCount(0, $user->getProposedGiftIdeas());
 
+        $project = new GiftProject();
+        $project->setName('Projet');
+
         $comment = new \App\Entity\Comment();
         $comment->setContent('Super !');
-        $idea->addComment($comment);
+        $project->addComment($comment);
         $user->addComment($comment);
-        self::assertCount(1, $idea->getComments());
+        self::assertCount(1, $project->getComments());
         self::assertCount(1, $user->getComments());
-        $idea->removeComment($comment);
+        $project->removeComment($comment);
         $user->removeComment($comment);
+        self::assertCount(0, $project->getComments());
 
         $readStatus = new \App\Entity\ProjectReadStatus();
         $user->addProjectReadStatus($readStatus);
@@ -252,7 +256,7 @@ final class EntityModelTest extends TestCase
 
         $comment = new Comment()
             ->setContent('Super')
-            ->setGiftIdea($idea)
+            ->setProject($project)
             ->setAuthor($participant);
 
         $projectVoter = new GiftProjectVoter();

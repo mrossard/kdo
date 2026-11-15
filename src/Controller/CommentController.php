@@ -6,7 +6,6 @@ namespace App\Controller;
 
 use App\Entity\Activity;
 use App\Entity\Comment;
-use App\Entity\GiftIdea;
 use App\Entity\GiftProject;
 use App\Entity\User;
 use App\Form\CommentType;
@@ -27,15 +26,14 @@ final class CommentController extends AbstractProjectController
         private readonly EntityManagerInterface $entityManager,
     ) {}
 
-    #[Route('/idea/{id}/comment', name: 'app_gift_idea_comment', methods: ['POST'])]
-    public function addComment(Request $request, GiftIdea $giftIdea): Response
+    #[Route('/{id}/comment', name: 'app_project_comment', methods: ['POST'])]
+    public function addComment(Request $request, GiftProject $project): Response
     {
         /** @var User $user */
         $user = $this->getUser();
-        $project = $this->requireIdeaProject($giftIdea);
         $this->denyUnlessCanViewProject($project, $user);
 
-        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        $denied = $this->denyWhenDelivered($project, $request, 'discussion');
         if ($denied !== null) {
             return $denied;
         }
@@ -46,23 +44,22 @@ final class CommentController extends AbstractProjectController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $comment->setAuthor($user);
-            $comment->setGiftIdea($giftIdea);
+            $project->addComment($comment);
 
-            $this->activityLogger->log($project, Activity::TYPE_COMMENT_ADDED, $user, [
-                'idea_name' => $giftIdea->getName(),
-            ]);
+            $this->activityLogger->log($project, Activity::TYPE_COMMENT_ADDED, $user);
 
             $this->entityManager->persist($comment);
             $this->entityManager->flush();
 
             if ($request->headers->get('HX-Request')) {
-                return $this->render('gift_project/_comment.html.twig', [
-                    'comment' => $comment,
+                return $this->render('gift_project/_discussion.html.twig', [
+                    'project' => $project,
+                    'comment_form' => $this->createForm(CommentType::class)->createView(),
                 ]);
             }
         }
 
-        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'ideas']);
+        return $this->redirectToRoute('app_project_show', ['id' => $project->getId(), 'tab' => 'discussion']);
     }
 
     #[Route('/comment/{id}', name: 'app_comment_show', methods: ['GET'])]
@@ -87,7 +84,7 @@ final class CommentController extends AbstractProjectController
             throw $this->createAccessDeniedException('Vous ne pouvez modifier que vos propres commentaires.');
         }
 
-        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        $denied = $this->denyWhenDelivered($project, $request, 'discussion');
         if ($denied !== null) {
             return $denied;
         }
@@ -106,7 +103,7 @@ final class CommentController extends AbstractProjectController
 
             return $this->redirectToRoute('app_project_show', [
                 'id' => $project->getId(),
-                'tab' => 'ideas',
+                'tab' => 'discussion',
             ]);
         }
 
@@ -119,7 +116,7 @@ final class CommentController extends AbstractProjectController
 
         return $this->redirectToRoute('app_project_show', [
             'id' => $project->getId(),
-            'tab' => 'ideas',
+            'tab' => 'discussion',
         ]);
     }
 
@@ -132,7 +129,7 @@ final class CommentController extends AbstractProjectController
             throw $this->createAccessDeniedException();
         }
 
-        $denied = $this->denyWhenDelivered($project, $request, 'ideas');
+        $denied = $this->denyWhenDelivered($project, $request, 'discussion');
         if ($denied !== null) {
             return $denied;
         }
@@ -151,14 +148,13 @@ final class CommentController extends AbstractProjectController
 
         return $this->redirectToRoute('app_project_show', [
             'id' => $project->getId(),
-            'tab' => 'ideas',
+            'tab' => 'discussion',
         ]);
     }
 
     private function requireCommentProject(Comment $comment): GiftProject
     {
-        $idea = $comment->getGiftIdea();
-        $project = $idea?->getGiftProject();
+        $project = $comment->getProject();
         if ($project === null) {
             throw $this->createNotFoundException();
         }

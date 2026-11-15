@@ -33,7 +33,7 @@ enum ActivityType: string
             self::IDEA_SELECTED => "{$userName} a sélectionné l'idée « {$ideaName} »",
             self::IDEA_DISCARDED => "{$userName} a écarté l'idée « {$ideaName} »",
             self::IDEA_PURCHASED => "{$userName} a acheté « {$ideaName} » pour {$price} €",
-            self::COMMENT_ADDED => "{$userName} a commenté « {$ideaName} »",
+            self::COMMENT_ADDED => "{$userName} a posté un message dans la discussion",
             self::PARTICIPANT_ADDED => "{$userName} a rejoint le projet",
             self::PARTICIPANT_REMOVED => "{$userName} a quitté le projet",
             self::PROJECT_LOCKED => "{$userName} a verrouillé le projet",

@@ -286,7 +286,7 @@ final class GiftProjectControllerTest extends WebTestCase
         self::assertNotNull($idea);
         $ideaId = $idea->getId();
 
-        // 6. Edit gift idea via HTMX + display fragment (and ensure comment form stays available)
+        // 6. Edit gift idea via HTMX + display fragment (and ensure comment form is NOT on ideas)
         $editIdeaCrawler = $this->client->request('GET', "/project/idea/{$ideaId}/edit", [], [], ['HTTP_HX-Request' => 'true']);
         self::assertResponseIsSuccessful();
         $ideaForm = $editIdeaCrawler->selectButton('Enregistrer')->form([
@@ -295,30 +295,37 @@ final class GiftProjectControllerTest extends WebTestCase
         ]);
         $editedIdeaCrawler = $this->client->submit($ideaForm, [], ['HTTP_HX-Request' => 'true']);
         self::assertResponseIsSuccessful();
-        self::assertCount(1, $editedIdeaCrawler->filter("form[action$='/idea/{$ideaId}/comment']"));
+        self::assertCount(0, $editedIdeaCrawler->filter("form[action$='/comment']"));
 
         $displayCrawler = $this->client->request('GET', "/project/idea/{$ideaId}/display");
         self::assertResponseIsSuccessful();
-        self::assertCount(1, $displayCrawler->filter("form[action$='/idea/{$ideaId}/comment']"));
+        self::assertCount(0, $displayCrawler->filter("form[action$='/comment']"));
 
-        // Direct non-HTMX load of liste_souhaits & activite tabs
+        // Direct non-HTMX load of liste_souhaits, discussion & activite tabs
         $nonHtmxWishCrawler = $this->client->request('GET', "/project/{$projectId}?tab=liste_souhaits");
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('Déjà copié', $nonHtmxWishCrawler->text());
+
+        $nonHtmxDiscussionCrawler = $this->client->request('GET', "/project/{$projectId}?tab=discussion");
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Discussion du projet', $nonHtmxDiscussionCrawler->text());
 
         $nonHtmxActivityCrawler = $this->client->request('GET', "/project/{$projectId}?tab=activite");
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('Souhait Destinataire', $nonHtmxActivityCrawler->text());
 
-        // 7. Add, show, edit, and delete a comment on the idea
-        $ideasCrawler = $this->client->request('GET', "/project/{$projectId}?tab=ideas", [], [], ['HTTP_HX-Request' => 'true']);
-        $commentForm = $ideasCrawler->filter("form[action$='/idea/{$ideaId}/comment']")->form([
+        // 7. Add, show, edit, and delete a message in the project discussion tab
+        $discussionCrawler = $this->client->request('GET', "/project/{$projectId}?tab=discussion", [], [], ['HTTP_HX-Request' => 'true']);
+        self::assertResponseIsSuccessful();
+        $commentForm = $discussionCrawler->filter("form[action$='/project/{$projectId}/comment']")->form([
             'comment[content]' => 'Super idée de cadeau !',
         ]);
-        $this->client->submit($commentForm, [], ['HTTP_HX-Request' => 'true']);
+        $postCrawler = $this->client->submit($commentForm, [], ['HTTP_HX-Request' => 'true']);
         self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Super idée de cadeau !', $postCrawler->text());
+        self::assertStringNotContainsString('Aucun message pour le moment', $postCrawler->text());
 
-        $comment = $this->em->getRepository(\App\Entity\Comment::class)->findOneBy(['giftIdea' => $idea]);
+        $comment = $this->em->getRepository(\App\Entity\Comment::class)->findOneBy(['project' => $project]);
         self::assertNotNull($comment);
         $commentId = $comment->getId();
 

@@ -103,9 +103,7 @@
                     <div class="buttons mb-3">
                         <button type="button"
                                 class="button is-primary is-light is-fullwidth"
-                                hx-get="{{ path('app_tour_modal', {'step': 1}) }}"
-                                hx-target="#kdo-tour-modal-container"
-                                hx-swap="innerHTML">
+                                data-tour-start>
                             <span class="icon">{{ ux_icon('material-symbols:redeem') }}</span>
                             <span>Relancer la visite guidée</span>
                         </button>

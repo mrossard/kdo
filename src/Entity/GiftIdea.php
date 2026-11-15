@@ -12,7 +12,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-// @mago-expect lint:too-many-properties,too-many-methods,cyclomatic-complexity,kan-defect
+// @mago-expect lint:too-many-properties,too-many-methods,cyclomatic-complexity
 #[ORM\Entity(repositoryClass: GiftIdeaRepository::class)]
 class GiftIdea
 {
@@ -46,13 +46,6 @@ class GiftIdea
     #[ORM\ManyToOne(inversedBy: 'proposedGiftIdeas')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $proposer = null;
-
-    /**
-     * @var Collection<int, Comment>
-     */
-    #[ORM\OneToMany(mappedBy: 'giftIdea', targetEntity: Comment::class, orphanRemoval: true)]
-    #[ORM\OrderBy(['createdAt' => 'ASC'])]
-    private Collection $comments;
 
     #[ORM\Column(length: 20, options: ['default' => 'PROPOSED'])]
     private ?string $status = self::STATUS_PROPOSED;
@@ -98,7 +91,6 @@ class GiftIdea
 
     public function __construct()
     {
-        $this->comments = new ArrayCollection();
         $this->votes = new ArrayCollection();
         $this->contributions = new ArrayCollection();
     }
@@ -265,36 +257,6 @@ class GiftIdea
     public function setProposer(?User $proposer): static
     {
         $this->proposer = $proposer;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Comment>
-     */
-    public function getComments(): Collection
-    {
-        return $this->comments;
-    }
-
-    public function addComment(Comment $comment): static
-    {
-        if (!$this->comments->contains($comment)) {
-            $this->comments->add($comment);
-            $comment->setGiftIdea($this);
-        }
-
-        return $this;
-    }
-
-    public function removeComment(Comment $comment): static
-    {
-        if ($this->comments->removeElement($comment)) {
-            // set the owning side to null (unless already changed)
-            if ($comment->getGiftIdea() === $this) {
-                $comment->setGiftIdea(null);
-            }
-        }
 
         return $this;
     }

@@ -20,7 +20,9 @@
             </div>
             <div class="level-right">
                 <div class="buttons">
-                    <a href="{{ path('app_project_index', {'archived': show_archived ? 0 : 1}) }}" class="button is-light">
+                    <a href="{{ path('app_project_index', {'archived': show_archived ? 0 : 1}) }}"
+                       data-tour="project-archives-btn"
+                       class="button is-light">
                         {% if show_archived %}
                             <span class="icon">{{ ux_icon('material-symbols:arrow-back') }}</span>
                             <span>Retour aux projets actifs</span>
@@ -29,7 +31,9 @@
                             <span>Voir les archives</span>
                         {% endif %}
                     </a>
-                    <a href="{{ path('app_project_new') }}" class="button is-primary">
+                    <a href="{{ path('app_project_new') }}"
+                       data-tour="project-new-btn"
+                       class="button is-primary">
                         <span class="icon">{{ ux_icon('material-symbols:add') }}</span>
                         <span>Nouveau Projet</span>
                     </a>
@@ -105,7 +109,9 @@
                     </span>
                     <p class="title is-5 mb-2">Aucun projet de cadeau</p>
                     <p class="subtitle is-6 mb-4">Vous ne participez à aucun projet de cadeau pour le moment.</p>
-                    <a href="{{ path('app_project_new') }}" class="button is-primary">
+                    <a href="{{ path('app_project_new') }}"
+                       data-tour="project-new-btn"
+                       class="button is-primary">
                         <span class="icon">{{ ux_icon('material-symbols:add') }}</span>
                         <span>Créer un premier projet</span>
                     </a>

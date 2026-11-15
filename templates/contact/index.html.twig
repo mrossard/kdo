@@ -17,7 +17,7 @@
         <div class="columns is-multiline">
             {# Contacts mutuels #}
             <div class="column is-7-desktop is-12-tablet">
-                <div class="box h-100">
+                <div class="box h-100" data-tour="contact-list">
                     <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
                         <h2 class="title is-5 mb-0">Mes contacts mutuels</h2>
                         <span class="tag is-rounded is-light">{{ my_contacts|length }}</span>
@@ -106,7 +106,7 @@
 
             {# Demandes reçues & envoyées #}
             <div class="column is-5-desktop is-12-tablet">
-                <div class="box mb-5">
+                <div class="box mb-5" data-tour="contact-invite">
                     <h2 class="title is-5 mb-3">Inviter un proche</h2>
                     {{ form_start(add_contact_form) }}
                         <div class="field has-addons">

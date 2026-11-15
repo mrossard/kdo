@@ -88,6 +88,13 @@ class GiftProject
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: Activity::class, orphanRemoval: true)]
     private Collection $activities;
 
+    /**
+     * @var Collection<int, Comment>
+     */
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Comment::class, orphanRemoval: true)]
+    #[ORM\OrderBy(['createdAt' => 'ASC'])]
+    private Collection $comments;
+
     public function __construct()
     {
         $this->participants = new ArrayCollection();
@@ -95,6 +102,7 @@ class GiftProject
         $this->giftIdeas = new ArrayCollection();
         $this->reimbursements = new ArrayCollection();
         $this->activities = new ArrayCollection();
+        $this->comments = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -428,6 +436,35 @@ class GiftProject
         $userId = $user->getId();
         if ($userId !== null) {
             $this->participantShares[(string) $userId] = max(0.0, $share);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Comment>
+     */
+    public function getComments(): Collection
+    {
+        return $this->comments;
+    }
+
+    public function addComment(Comment $comment): static
+    {
+        if (!$this->comments->contains($comment)) {
+            $this->comments->add($comment);
+            $comment->setProject($this);
+        }
+
+        return $this;
+    }
+
+    public function removeComment(Comment $comment): static
+    {
+        if ($this->comments->removeElement($comment)) {
+            if ($comment->getProject() === $this) {
+                $comment->setProject(null);
+            }
         }
 
         return $this;

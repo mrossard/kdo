@@ -1,0 +1,43 @@
+<div class="box">
+    <h2 class="title is-5 mb-4 is-flex is-align-items-center" style="gap: 0.5rem;">
+        <span class="icon has-text-primary">{{ ux_icon('material-symbols:forum') }}</span>
+        <span>Discussion du projet</span>
+    </h2>
+
+    <div id="discussion-messages" class="mb-4">
+        {% for comment in project.comments %}
+            {% include 'gift_project/_comment.html.twig' %}
+        {% else %}
+            <div id="no-comments" class="notification is-info is-light">
+                <span class="icon">{{ ux_icon('material-symbols:info') }}</span>
+                <span>Aucun message pour le moment. Lancez la discussion !</span>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if project.deliveredAt is null and comment_form is defined and comment_form is not null %}
+        <hr class="my-4">
+        {{ form_start(comment_form, {
+            'action': path('app_project_comment', {'id': project.id}),
+            'attr': {
+                'hx-post': path('app_project_comment', {'id': project.id}),
+                'hx-target': '#project-content',
+                'hx-swap': 'innerHTML'
+            }
+        }) }}
+            <div class="field">
+                <div class="control">
+                    {{ form_widget(comment_form.content) }}
+                </div>
+            </div>
+            <div class="field is-grouped is-grouped-right">
+                <div class="control">
+                    <button type="submit" class="button is-primary is-small">
+                        <span class="icon is-small">{{ ux_icon('material-symbols:send') }}</span>
+                        <span>Envoyer</span>
+                    </button>
+                </div>
+            </div>
+        {{ form_end(comment_form) }}
+    {% endif %}
+</div>

@@ -70,14 +70,14 @@
                                     class="button is-light is-rounded"
                                     title="Visite guidée"
                                     aria-label="Visite guidée"
-                                    hx-get="{{ path('app_tour_modal') }}"
-                                    hx-target="#kdo-tour-modal-container"
-                                    hx-swap="innerHTML">
+                                    data-tour-start>
                                 <span class="icon">{{ ux_icon('material-symbols:help') }}</span>
                             </button>
                         </div>
                         <div class="navbar-item">
-                            <a href="{{ path('app_notification_index') }}" class="button is-light is-rounded {% if unread_notification_count > 0 %}has-badge-danger{% endif %}">
+                            <a href="{{ path('app_notification_index') }}"
+                               data-tour="navbar-notifications"
+                               class="button is-light is-rounded {% if unread_notification_count > 0 %}has-badge-danger{% endif %}">
                                 <span class="icon">
                                     {{ ux_icon('material-symbols:notifications') }}
                                 </span>
@@ -107,9 +107,7 @@
                                 </a>
                                 <a class="navbar-item"
                                    role="button"
-                                   hx-get="{{ path('app_tour_modal') }}"
-                                   hx-target="#kdo-tour-modal-container"
-                                   hx-swap="innerHTML">
+                                   data-tour-start>
                                     <span class="icon">{{ ux_icon('material-symbols:help') }}</span>
                                     <span>Visite guidée</span>
                                 </a>
@@ -176,5 +174,20 @@
 
         {# Guided Tour Modal Container #}
         <div id="kdo-tour-modal-container"></div>
+
+        {% if app.user %}
+            <script type="application/json" id="kdo-tour-config">
+                {{ {
+                    completeUrl: path('app_tour_complete'),
+                    routes: {
+                        home: path('app_home'),
+                        wish: path('app_wish_index'),
+                        contact: path('app_contact_index'),
+                        project: path('app_project_index'),
+                        financial: path('app_financial_index')
+                    }
+                }|json_encode|raw }}
+            </script>
+        {% endif %}
     </body>
 </html>

@@ -145,7 +145,7 @@
         <div class="columns is-multiline">
             {% for idea in gift_ideas %}
                 <div class="column is-6">
-                    {% include 'gift_project/_idea_display.html.twig' with {'idea': idea, 'project': project, 'user': app.user, 'comment_forms': comment_forms} %}
+                    {% include 'gift_project/_idea_display.html.twig' with {'idea': idea, 'project': project, 'user': app.user} %}
                 </div>
             {% endfor %}
         </div>

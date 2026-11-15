@@ -14,7 +14,7 @@
                     </div>
                 </div>
                 <div class="level-right">
-                    <div class="buttons">
+                    <div class="buttons" data-tour="dashboard-quick-actions">
                         <a href="{{ path('app_wish_new') }}" class="button is-light">
                             <span class="icon">{{ ux_icon('material-symbols:add') }}</span>
                             <span>Nouveau souhait</span>
@@ -31,7 +31,7 @@
                 {{ include('tour/_banner.html.twig') }}
             {% endif %}
 
-            <div class="columns is-multiline">
+            <div class="columns is-multiline" data-tour="dashboard-kpis">
                 <div class="column is-3-desktop is-6-tablet">
                     <a href="{{ path('app_wish_index') }}" class="box kpi-card h-100">
                         <div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-4">

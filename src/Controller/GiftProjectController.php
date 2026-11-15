@@ -11,6 +11,7 @@ use App\Entity\ProjectReadStatus;
 use App\Entity\Reimbursement;
 use App\Entity\User;
 use App\Form\AddParticipantType;
+use App\Form\CommentType;
 use App\Form\GiftIdeaType;
 use App\Form\GiftProjectType;
 use App\Repository\ActivityRepository;
@@ -197,14 +198,13 @@ final class GiftProjectController extends AbstractProjectController
         }
 
         $sortedGiftIdeas = $this->sortGiftIdeas($project, $sort);
-        $commentForms = $this->buildCommentForms($sortedGiftIdeas);
         $financialData = $currentTab === 'financial' ? $this->financialService->calculate($project) : [];
 
         return $this->render('gift_project/show.html.twig', array_merge([
             'project' => $project,
             'add_participant_form' => $addParticipantForm,
             'gift_idea_form' => $giftIdeaForm,
-            'comment_forms' => $commentForms,
+            'comment_form' => $currentTab === 'discussion' ? $this->createForm(CommentType::class)->createView() : null,
             'gift_ideas' => $sortedGiftIdeas,
             'current_sort' => $sort,
             'copied_wish_ids' => $currentTab === 'liste_souhaits' ? $this->getCopiedWishIds($project) : [],
@@ -732,8 +732,14 @@ final class GiftProjectController extends AbstractProjectController
             return $this->render('gift_project/_ideas.html.twig', [
                 'project' => $project,
                 'gift_ideas' => $sortedGiftIdeas,
-                'comment_forms' => $this->buildCommentForms($sortedGiftIdeas),
                 'current_sort' => $sort,
+            ]);
+        }
+
+        if ($tab === 'discussion') {
+            return $this->render('gift_project/_discussion.html.twig', [
+                'project' => $project,
+                'comment_form' => $this->createForm(CommentType::class)->createView(),
             ]);
         }
 

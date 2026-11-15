@@ -1114,3 +1114,78 @@ html[data-theme="dark"] .transfer-amount-badge {
     background-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.22);
     color: hsl(var(--bulma-primary-h), var(--bulma-primary-s), 78%);
 }
+
+/* ==========================================================================
+   EnjoyHint-style Interactive Guided Tour
+   ========================================================================== */
+
+.kdo-tour-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: auto;
+}
+
+.kdo-tour-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.kdo-tour-spotlight-ring {
+    stroke: #ffffff;
+    stroke-width: 2.5;
+    filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.75));
+    animation: kdo-tour-pulse 2s ease-in-out infinite;
+}
+
+.kdo-tour-nav-ring {
+    stroke: rgba(255, 255, 255, 0.8);
+    stroke-width: 1.5;
+    filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.5));
+}
+
+.kdo-tour-arrow-path {
+    stroke: #ffffff;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-dasharray: 8 6;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+    animation: kdo-tour-dash 1.2s linear infinite;
+}
+
+@keyframes kdo-tour-pulse {
+    0%, 100% {
+        stroke-opacity: 0.95;
+    }
+    50% {
+        stroke-opacity: 0.45;
+    }
+}
+
+@keyframes kdo-tour-dash {
+    to {
+        stroke-dashoffset: -28;
+    }
+}
+
+.kdo-tour-tooltip {
+    position: fixed;
+    z-index: 9999;
+    width: min(370px, calc(100vw - 32px));
+    margin-bottom: 0 !important;
+    border: 1px solid var(--bulma-border-weak);
+    box-shadow: 0 20px 45px rgba(10, 14, 24, 0.35);
+    animation: kdo-tour-fade-in 180ms ease-out;
+}
+
+@keyframes kdo-tour-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
