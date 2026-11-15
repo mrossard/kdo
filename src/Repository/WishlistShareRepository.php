@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\User;
 use App\Entity\WishlistShare;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -33,7 +34,7 @@ class WishlistShareRepository extends ServiceEntityRepository
             ->innerJoin(
                 WishlistShare::class,
                 'ws_reverse',
-                'WITH',
+                Join::ON,
                 'ws_reverse.owner = ws.recipient AND ws_reverse.recipient = ws.owner',
             )
             ->addSelect('u')

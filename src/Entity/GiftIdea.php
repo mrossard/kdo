@@ -76,7 +76,7 @@ class GiftIdea
         cascade: ['persist', 'remove'],
         orphanRemoval: true,
     )]
-    #[ORM\OrderBy(['createdAt' => 'ASC'])]
+    #[ORM\OrderBy(['createdAt' => \SortDirection::Ascending])]
     private Collection $contributions;
 
     /**

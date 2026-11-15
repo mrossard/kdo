@@ -92,7 +92,7 @@ class GiftProject
      * @var Collection<int, Comment>
      */
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: Comment::class, orphanRemoval: true)]
-    #[ORM\OrderBy(['createdAt' => 'ASC'])]
+    #[ORM\OrderBy(['createdAt' => \SortDirection::Ascending])]
     private Collection $comments;
 
     public function __construct()
