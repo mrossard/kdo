@@ -43,10 +43,13 @@
                                             {% if contact_managed is not empty %}
                                                 <div class="tags mt-1 mb-0">
                                                     {% for person in contact_managed %}
+                                                        {% set person_wish_count = managed_wish_counts[person.id]|default(0) %}
                                                         <a href="{{ path('app_contact_managed_view', {'id': person.id}) }}"
-                                                           class="tag is-info is-light">
+                                                           class="tag {{ person_wish_count > 0 ? 'is-info is-light' : 'is-light has-text-grey' }}"
+                                                           title="{{ person_wish_count > 0 ? person_wish_count ~ ' souhait(s) dans la liste de ' ~ person.displayName : 'Liste vide' }}">
                                                             <span class="icon is-small mr-1">{{ ux_icon('material-symbols:face') }}</span>
                                                             <span>{{ person.displayName }}</span>
+                                                            <span class="ml-1 has-text-weight-semibold tabular-nums">({{ person_wish_count }})</span>
                                                         </a>
                                                     {% endfor %}
                                                 </div>
@@ -78,9 +81,13 @@
                                                 </button>
                                             </form>
                                         {% endif %}
-                                        <a href="{{ path('app_contact_view', {'id': contact.id}) }}" class="button is-info is-light" title="Voir la liste de souhaits">
+                                        {% set wish_count = contact_wish_counts[contact.id]|default(0) %}
+                                        <a href="{{ path('app_contact_view', {'id': contact.id}) }}"
+                                           class="button {{ wish_count > 0 ? 'is-info is-light' : 'is-light has-text-grey' }}"
+                                           title="{{ wish_count > 0 ? wish_count ~ ' souhait(s) dans la liste de ' ~ contact.displayName : 'Liste de souhaits vide' }}">
                                             <span class="icon">{{ ux_icon('material-symbols:list') }}</span>
                                             <span>Sa liste</span>
+                                            <span class="tag is-rounded {{ wish_count > 0 ? 'is-info' : 'is-white has-text-grey' }} ml-2 tabular-nums">{{ wish_count }}</span>
                                         </a>
                                         <form method="post"
                                               action="{{ path('app_contact_remove', {'id': contact.id}) }}"

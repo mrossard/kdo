@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\ContactRequest;
+use App\Entity\ManagedPerson;
 use App\Entity\User;
 use App\Entity\Wish;
 use App\Entity\WishlistShare;
@@ -42,6 +43,7 @@ final class ContactController extends AbstractHtmxController
         Request $request,
         UserRepository $userRepository,
         ManagedPersonRepository $managedPersonRepository,
+        WishRepository $wishRepository,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -59,6 +61,18 @@ final class ContactController extends AbstractHtmxController
         }
 
         $myContacts = $this->wishlistShareRepository->findMutualContactsForUser($user);
+        $managedPersonsByManager = $managedPersonRepository->findByManagersGrouped($myContacts);
+
+        /** @var array<int, ManagedPerson> $allManagedPersons */
+        $allManagedPersons = [];
+        foreach ($managedPersonsByManager as $personList) {
+            foreach ($personList as $person) {
+                $personId = $person->getId();
+                if ($personId !== null) {
+                    $allManagedPersons[$personId] = $person;
+                }
+            }
+        }
 
         /** @var array<int, float> $contactBalances */
         $contactBalances = [];
@@ -76,7 +90,11 @@ final class ContactController extends AbstractHtmxController
         return $this->render('contact/index.html.twig', [
             'add_contact_form' => $addContactForm,
             'my_contacts' => $myContacts,
-            'managed_persons_by_manager' => $managedPersonRepository->findByManagersGrouped($myContacts),
+            'managed_persons_by_manager' => $managedPersonsByManager,
+            'contact_wish_counts' => $wishRepository->countUndeliveredByUsers($myContacts),
+            'managed_wish_counts' => $wishRepository->countUndeliveredByManagedPersons(array_values(
+                $allManagedPersons,
+            )),
             'sent_requests' => $sentRequests,
             'received_requests' => $receivedRequests,
             'contact_balances' => $contactBalances,

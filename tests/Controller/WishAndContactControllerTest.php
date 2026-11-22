@@ -401,4 +401,53 @@ final class WishAndContactControllerTest extends WebTestCase
         $this->client->followRedirect();
         self::assertSelectorTextContains('.notification.is-danger', 'Jeton de sécurité invalide.');
     }
+
+    public function testContactListShowsWishCountIndicatorsExcludingDelivered(): void
+    {
+        $alice = $this->createUser('alice@example.com', 'Alice');
+        $bob = $this->createUser('bob@example.com', 'Bob');
+        $charlie = $this->createUser('charlie@example.com', 'Charlie');
+
+        // Mutual shares between Alice & Bob, and Alice & Charlie
+        $this->em->persist(new WishlistShare()->setOwner($alice)->setRecipient($bob));
+        $this->em->persist(new WishlistShare()->setOwner($bob)->setRecipient($alice));
+        $this->em->persist(new WishlistShare()->setOwner($alice)->setRecipient($charlie));
+        $this->em->persist(new WishlistShare()->setOwner($charlie)->setRecipient($alice));
+
+        // Bob has 2 active wishes and 1 delivered wish
+        $this->em->persist(new Wish()->setName('Vélo')->setUser($bob));
+        $this->em->persist(new Wish()->setName('Montre')->setUser($bob));
+        $deliveredWish = new Wish()->setName('Livre offert')->setUser($bob);
+        $this->em->persist($deliveredWish);
+
+        $deliveredProject = new GiftProject()
+            ->setName('Anniv Bob')
+            ->setOwner($alice)
+            ->setRecipient($bob)
+            ->setLocked(true)
+            ->setDeliveredAt(new \DateTimeImmutable());
+        $this->em->persist($deliveredProject);
+        $this->em->persist(
+            new GiftIdea()
+                ->setName('Livre offert')
+                ->setGiftProject($deliveredProject)
+                ->setProposer($alice)
+                ->setFromWish($deliveredWish)
+                ->setStatus(GiftIdea::STATUS_SELECTED),
+        );
+
+        $this->em->flush();
+
+        $this->client->loginUser($alice);
+        $crawler = $this->client->request('GET', '/contact/');
+        self::assertResponseIsSuccessful();
+
+        $bobListButton = $crawler->filter('a[href="/contact/view/' . $bob->getId() . '"]');
+        self::assertStringContainsString('is-info', (string) $bobListButton->attr('class'));
+        self::assertSame('2', trim($bobListButton->filter('.tag')->text()));
+
+        $charlieListButton = $crawler->filter('a[href="/contact/view/' . $charlie->getId() . '"]');
+        self::assertStringNotContainsString('is-info', (string) $charlieListButton->attr('class'));
+        self::assertSame('0', trim($charlieListButton->filter('.tag')->text()));
+    }
 }

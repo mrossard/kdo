@@ -154,6 +154,9 @@ final class ManagedPersonControllerTest extends WebTestCase
         $contactsCrawler = $this->client->request('GET', '/contact/');
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('Emma', $contactsCrawler->text());
+        $emmaTag = $contactsCrawler->filter('a[href="/contact/managed/' . $emma->getId() . '"]');
+        self::assertStringContainsString('(1)', $emmaTag->text());
+        self::assertStringContainsString('is-info', (string) $emmaTag->attr('class'));
 
         $viewCrawler = $this->client->request('GET', '/contact/managed/' . $emma->getId());
         self::assertResponseIsSuccessful();
