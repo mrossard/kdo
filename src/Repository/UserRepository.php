@@ -54,4 +54,36 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    /**
+     * @return list<User>
+     */
+    public function searchRegisteredUsersForContact(User $currentUser, string $query, int $limit = 10): array
+    {
+        $normalized = mb_strtolower(trim($query));
+        if ($normalized === '') {
+            return [];
+        }
+
+        $pattern = '%' . addcslashes($normalized, '%_\\') . '%';
+
+        /** @var list<User> */
+        return $this
+            ->createQueryBuilder('u')
+            ->where('u != :me')
+            ->andWhere(
+                'LOWER(COALESCE(u.firstname, \'\')) LIKE :pattern'
+                . ' OR LOWER(COALESCE(u.lastname, \'\')) LIKE :pattern'
+                . ' OR LOWER(CONCAT(COALESCE(u.firstname, \'\'), \' \', COALESCE(u.lastname, \'\'))) LIKE :pattern'
+                . ' OR LOWER(u.email) LIKE :pattern',
+            )
+            ->setParameter('me', $currentUser)
+            ->setParameter('pattern', $pattern)
+            ->orderBy('u.firstname', 'ASC')
+            ->addOrderBy('u.lastname', 'ASC')
+            ->addOrderBy('u.email', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

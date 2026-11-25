@@ -1,0 +1,54 @@
+{% if query is not empty %}
+    {% if results is empty %}
+        <p class="is-size-7 has-text-grey is-italic mt-2">
+            Aucun membre inscrit trouvé pour « {{ query }} ». Utilisez l'invitation par e-mail ci-dessous s'il n'a pas encore de compte.
+        </p>
+    {% else %}
+        <div class="mt-2" style="border: 1px solid var(--bulma-border-weak); border-radius: var(--bulma-radius);">
+            {% for item in results %}
+                {% set candidate = item.user %}
+                <div class="is-flex is-justify-content-space-between is-align-items-center p-2{% if not loop.last %}" style="border-bottom: 1px solid var(--bulma-border-weak);"{% else %}"{% endif %}>
+                    <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                        {{ include('_components/_avatar.html.twig', {name: candidate.displayName, size: 'sm'}) }}
+                        <span class="has-text-weight-medium is-size-6">{{ candidate.displayName }}</span>
+                    </div>
+                    <div>
+                        {% if item.status == 'contact' %}
+                            <div class="buttons are-small mb-0">
+                                <span class="tag is-success is-light mb-0">Déjà contact</span>
+                                <a href="{{ path('app_contact_view', {'id': candidate.id}) }}" class="button is-info is-light mb-0" title="Voir sa liste">
+                                    <span class="icon">{{ ux_icon('material-symbols:list') }}</span>
+                                </a>
+                            </div>
+                        {% elseif item.status == 'sent' %}
+                            <span class="tag is-warning is-light">Demande envoyée</span>
+                        {% elseif item.status == 'received' and item.receivedRequest is not null %}
+                            <form method="post"
+                                  action="{{ path('app_contact_request_accept', {'id': item.receivedRequest.id}) }}"
+                                  hx-post="{{ path('app_contact_request_accept', {'id': item.receivedRequest.id}) }}"
+                                  hx-confirm="Accepter la demande de {{ candidate.displayName }} ?"
+                                  hx-target="body">
+                                <input type="hidden" name="_token" value="{{ csrf_token('accept_request' ~ item.receivedRequest.id) }}">
+                                <button type="submit" class="button is-small is-success">
+                                    <span class="icon">{{ ux_icon('material-symbols:check') }}</span>
+                                    <span>Accepter</span>
+                                </button>
+                            </form>
+                        {% else %}
+                            <form method="post"
+                                  action="{{ path('app_contact_request_send', {'id': candidate.id}) }}"
+                                  hx-post="{{ path('app_contact_request_send', {'id': candidate.id}) }}"
+                                  hx-target="body">
+                                <input type="hidden" name="_token" value="{{ csrf_token('send_contact_request' ~ candidate.id) }}">
+                                <button type="submit" class="button is-small is-primary is-light">
+                                    <span class="icon">{{ ux_icon('material-symbols:person-add') }}</span>
+                                    <span>Ajouter</span>
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endif %}

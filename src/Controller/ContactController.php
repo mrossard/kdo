@@ -25,7 +25,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Uid\Uuid;
 
-// @mago-expect lint:cyclomatic-complexity,kan-defect
+// @mago-expect lint:cyclomatic-complexity,kan-defect,too-many-methods
 #[Route('/contact')]
 #[IsGranted('ROLE_USER')]
 final class ContactController extends AbstractHtmxController
@@ -99,6 +99,90 @@ final class ContactController extends AbstractHtmxController
             'received_requests' => $receivedRequests,
             'contact_balances' => $contactBalances,
         ]);
+    }
+
+    #[Route('/search', name: 'app_contact_search', methods: ['GET'])]
+    public function searchUsers(Request $request, UserRepository $userRepository): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $query = trim($request->query->getString('q'));
+
+        if ($query === '') {
+            return $this->render('contact/_search_results.html.twig', [
+                'query' => '',
+                'results' => [],
+            ]);
+        }
+
+        $candidates = $userRepository->searchRegisteredUsersForContact($user, $query);
+
+        $contactIds = [];
+        foreach ($this->wishlistShareRepository->findMutualContactsForUser($user) as $contact) {
+            $contactId = $contact->getId();
+            if ($contactId !== null) {
+                $contactIds[$contactId] = true;
+            }
+        }
+
+        $sentRecipientIds = [];
+        foreach ($this->contactRequestRepository->findPendingSentByUser($user) as $sentRequest) {
+            $recipientId = $sentRequest->getRecipient()?->getId();
+            if ($recipientId !== null) {
+                $sentRecipientIds[$recipientId] = true;
+            }
+        }
+
+        $receivedBySenderId = [];
+        foreach ($this->contactRequestRepository->findPendingReceivedByUser($user) as $receivedRequest) {
+            $senderId = $receivedRequest->getSender()?->getId();
+            if ($senderId !== null) {
+                $receivedBySenderId[$senderId] = $receivedRequest;
+            }
+        }
+
+        $results = [];
+        foreach ($candidates as $candidate) {
+            $candidateId = $candidate->getId();
+            $receivedRequest = $candidateId !== null ? $receivedBySenderId[$candidateId] ?? null : null;
+            $status = match (true) {
+                $candidateId !== null && array_key_exists($candidateId, $contactIds) => 'contact',
+                $candidateId !== null && array_key_exists($candidateId, $sentRecipientIds) => 'sent',
+                $receivedRequest !== null => 'received',
+                default => 'none',
+            };
+
+            $results[] = [
+                'user' => $candidate,
+                'status' => $status,
+                'receivedRequest' => $receivedRequest,
+            ];
+        }
+
+        return $this->render('contact/_search_results.html.twig', [
+            'query' => $query,
+            'results' => $results,
+        ]);
+    }
+
+    #[Route('/request/user/{id}', name: 'app_contact_request_send', methods: ['POST'])]
+    public function sendRequestToUser(Request $request, User $recipient): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$this->isCsrfTokenValid(
+            'send_contact_request' . (string) $recipient->getId(),
+            $request->getPayload()->getString('_token'),
+        )) {
+            $this->addFlash('danger', 'Jeton de sécurité invalide.');
+
+            return $this->redirectOrHtmx($request, 'app_contact_index');
+        }
+
+        $this->processContactRequest($user, $recipient->getEmail() ?? '', $recipient);
+
+        return $this->redirectOrHtmx($request, 'app_contact_index');
     }
 
     #[Route('/request/{id}/accept', name: 'app_contact_request_accept', methods: ['POST'])]
@@ -352,7 +436,12 @@ final class ContactController extends AbstractHtmxController
 
     private function handleAddContactSubmission(User $user, string $email, UserRepository $userRepository): void
     {
-        $recipient = $userRepository->findOneBy(['email' => $email]);
+        $recipient = $userRepository->findOneByEmailCaseInsensitive($email);
+        $this->processContactRequest($user, $email, $recipient);
+    }
+
+    private function processContactRequest(User $user, string $email, ?User $recipient): void
+    {
         if ($recipient === $user) {
             $this->addFlash('warning', 'Vous ne pouvez pas vous ajouter vous-même comme contact.');
 

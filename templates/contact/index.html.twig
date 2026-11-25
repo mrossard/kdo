@@ -116,7 +116,28 @@
             {# Demandes reçues & envoyées #}
             <div class="column is-5-desktop is-12-tablet">
                 <div class="box mb-5" data-tour="contact-invite">
-                    <h2 class="title is-5 mb-3">Inviter un proche</h2>
+                    <h2 class="title is-5 mb-3">Ajouter ou inviter un proche</h2>
+
+                    <div class="field">
+                        <label class="label is-small" for="contact-search-input">Rechercher un membre déjà inscrit</label>
+                        <div class="control has-icons-left">
+                            <input id="contact-search-input"
+                                   type="search"
+                                   name="q"
+                                   class="input"
+                                   placeholder="Prénom, nom ou e-mail..."
+                                   autocomplete="off"
+                                   hx-get="{{ path('app_contact_search') }}"
+                                   hx-trigger="input changed delay:250ms, search"
+                                   hx-target="#contact-search-results">
+                            <span class="icon is-small is-left">{{ ux_icon('material-symbols:search') }}</span>
+                        </div>
+                    </div>
+                    <div id="contact-search-results" class="mb-4"></div>
+
+                    <hr class="my-4">
+
+                    <label class="label is-small" for="{{ add_contact_form.email.vars.id }}">Ou inviter par e-mail (pas encore inscrit)</label>
                     {{ form_start(add_contact_form) }}
                         <div class="field has-addons">
                             <div class="control is-expanded">

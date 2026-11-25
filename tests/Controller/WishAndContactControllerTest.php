@@ -450,4 +450,116 @@ final class WishAndContactControllerTest extends WebTestCase
         self::assertStringNotContainsString('is-info', (string) $charlieListButton->attr('class'));
         self::assertSame('0', trim($charlieListButton->filter('.tag')->text()));
     }
+
+    public function testSearchRegisteredUsersReturnsMatchingUsersWithStatuses(): void
+    {
+        $alice = $this->createUser('alice@example.com', 'Alice')->setLastname('Dupont');
+        $bob = $this->createUser('bob@example.com', 'Bob')->setLastname('Martin');
+        $charlie = $this->createUser('charlie@example.com', 'Charlie')->setLastname('Durand');
+        $dave = $this->createUser('dave@example.com', 'Dave')->setLastname('Bernard');
+        $eve = $this->createUser('eve@example.com', 'Eve')->setLastname('Moreau');
+
+        // Bob is already a mutual contact
+        $this->em->persist(new WishlistShare()->setOwner($alice)->setRecipient($bob));
+        $this->em->persist(new WishlistShare()->setOwner($bob)->setRecipient($alice));
+
+        // Charlie has a pending request sent by Alice
+        $this->em->persist(
+            new ContactRequest()
+                ->setSender($alice)
+                ->setRecipient($charlie)
+                ->setStatus(ContactRequest::STATUS_PENDING),
+        );
+
+        // Dave sent a pending request to Alice
+        $this->em->persist(
+            new ContactRequest()
+                ->setSender($dave)
+                ->setRecipient($alice)
+                ->setStatus(ContactRequest::STATUS_PENDING),
+        );
+
+        $this->em->flush();
+
+        $this->client->loginUser($alice);
+
+        // Empty query returns empty body
+        $emptyCrawler = $this->client->request('GET', '/contact/search?q=');
+        self::assertResponseIsSuccessful();
+        self::assertSame('', trim($emptyCrawler->text()));
+
+        // Search matching everyone on example.com excludes Alice and shows exact statuses
+        $crawler = $this->client->request('GET', '/contact/search?q=example.com');
+        self::assertResponseIsSuccessful();
+        $text = $crawler->text();
+
+        self::assertStringNotContainsString('Alice Dupont', $text);
+        self::assertStringContainsString('Bob Martin', $text);
+        self::assertStringContainsString('Déjà contact', $text);
+        self::assertStringContainsString('Charlie Durand', $text);
+        self::assertStringContainsString('Demande envoyée', $text);
+        self::assertStringContainsString('Dave Bernard', $text);
+        self::assertStringContainsString('Accepter', $text);
+        self::assertStringContainsString('Eve Moreau', $text);
+        self::assertStringContainsString('Ajouter', $text);
+
+        // Case-insensitive search by full name
+        $eveCrawler = $this->client->request('GET', '/contact/search?q=eve+moreau');
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Eve Moreau', $eveCrawler->text());
+        self::assertStringNotContainsString('Bob Martin', $eveCrawler->text());
+
+        // No results message
+        $noneCrawler = $this->client->request('GET', '/contact/search?q=inconnu');
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Aucun membre inscrit trouvé', $noneCrawler->text());
+    }
+
+    public function testSendContactRequestToRegisteredUserById(): void
+    {
+        $alice = $this->createUser('alice@example.com', 'Alice');
+        $eve = $this->createUser('eve@example.com', 'Eve')->setLastname('Moreau');
+        $this->em->flush();
+
+        $this->client->loginUser($alice);
+
+        // Invalid CSRF token is rejected
+        $this->client->request('POST', '/contact/request/user/' . $eve->getId(), [
+            '_token' => 'invalid_token',
+        ]);
+        self::assertResponseRedirects('/contact/');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.notification.is-danger', 'Jeton de sécurité invalide.');
+
+        // Fetch valid CSRF token from search results
+        $searchCrawler = $this->client->request('GET', '/contact/search?q=eve');
+        self::assertResponseIsSuccessful();
+        $csrfToken = $searchCrawler
+            ->filter('form[action="/contact/request/user/' . $eve->getId() . '"] input[name="_token"]')
+            ->attr('value');
+
+        // Send via HTMX request -> 204 with HX-Redirect
+        $this->client->request(
+            'POST',
+            '/contact/request/user/' . $eve->getId(),
+            ['_token' => $csrfToken],
+            [],
+            ['HTTP_HX-Request' => 'true'],
+        );
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame('/contact/', $this->client->getResponse()->headers->get('HX-Redirect'));
+
+        $this->em->clear();
+        $contactRequest = $this->em->getRepository(ContactRequest::class)->findOneBy([
+            'sender' => $alice->getId(),
+            'recipient' => $eve->getId(),
+            'status' => ContactRequest::STATUS_PENDING,
+        ]);
+        self::assertNotNull($contactRequest);
+
+        // Searching again now shows "Demande envoyée"
+        $afterCrawler = $this->client->request('GET', '/contact/search?q=eve');
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Demande envoyée', $afterCrawler->text());
+    }
 }
